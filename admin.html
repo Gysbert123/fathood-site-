@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<title>$FATHOOD — Wall of Fat admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{color-scheme:light;--lime:#D4F53C;--cream:#FFF8E7;--ink:#111111;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--cream)}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--cream:#FFF8E7}}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif}
+header{background:var(--ink);color:var(--cream);padding:16px 20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
+h1{margin:0;font-family:'Bowlby One',Impact,sans-serif;font-weight:400;font-size:1.5rem}
+main{max-width:1100px;margin:0 auto;padding:24px 20px 60px;display:flex;flex-direction:column;gap:20px}
+.login{max-width:420px;display:flex;flex-direction:column;gap:12px;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:22px;box-shadow:6px 6px 0 var(--ink)}
+input[type=password]{min-height:48px;border:3px solid var(--ink);border-radius:12px;padding:10px 14px;font:500 16px inherit;font-family:inherit}
+button{min-height:44px;padding:10px 18px;border-radius:12px;border:3px solid var(--ink);background:var(--ink);color:var(--cream);font:700 15px 'Space Grotesk',system-ui,sans-serif;cursor:pointer}
+button.ghost{background:#fff;color:var(--ink)}
+button.ok{background:var(--lime);color:var(--ink)}
+button.no{background:#C8221C;color:#fff}
+button[aria-selected=true]{background:var(--lime);color:var(--ink)}
+.tabs,.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:18px}
+.card{background:#fff;border:3px solid var(--ink);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px;box-shadow:5px 5px 0 var(--ink)}
+.card img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#eee;display:block}
+.card .row{display:flex;gap:8px}.card .row button{flex:1}
+.card small{color:#555}
+.msg{margin:0;font-weight:700}
+.empty{padding:28px;border:3px dashed var(--ink);border-radius:14px;text-align:center;font-weight:700}
+</style>
+</head>
+<body>
+<header><h1>Wall of Fat admin</h1><a href="/" style="color:var(--lime);font-weight:700">Back to the site</a></header>
+<main>
+  <form class="login" id="login">
+    <label for="pw" style="font-weight:700">Admin password</label>
+    <input type="password" id="pw" autocomplete="current-password" required>
+    <button type="submit">Open the review queue</button>
+    <p class="msg" id="loginmsg" role="alert"></p>
+  </form>
+  <section id="app" hidden>
+    <div class="bar" style="justify-content:space-between">
+      <div class="tabs" role="tablist">
+        <button type="button" class="ghost" role="tab" data-s="pending" aria-selected="true">Waiting for review <span id="cnt-pending"></span></button>
+        <button type="button" class="ghost" role="tab" data-s="approved" aria-selected="false">On the wall <span id="cnt-approved"></span></button>
+      </div>
+      <div class="bar"><button type="button" class="ghost" id="refresh">Refresh</button><button type="button" class="ghost" id="logout">Log out</button></div>
+    </div>
+    <p class="msg" id="msg" role="status"></p>
+    <div class="grid" id="grid"></div>
+  </section>
+</main>
+<script>
+(function(){
+  var key='', state='pending', urls=[];
+  try{ key=sessionStorage.getItem('fh-admin')||''; }catch(e){}
+  var $=function(s){return document.querySelector(s)};
+  function api(path,opt){opt=opt||{};opt.headers=Object.assign({'x-admin-key':key},opt.headers||{});return fetch('/api/admin'+path,opt);}
+  function when(ts){var d=new Date(Number(ts.split('-')[0]));return d.toLocaleString();}
+  function load(){
+    $('#msg').textContent='Loading…'; urls.forEach(URL.revokeObjectURL); urls=[];
+    Promise.all(['pending','approved'].map(function(s){return api('?list='+s).then(function(r){if(r.status===401)throw 'auth';return r.json();}).then(function(j){if(j.error)throw j.error;$('#cnt-'+s).textContent='('+j.ids.length+')';return j.ids;});}))
+    .then(function(lists){
+      var ids=state==='pending'?lists[0]:lists[1], g=$('#grid'); g.innerHTML='';
+      $('#msg').textContent='';
+      if(!ids.length){g.innerHTML='<p class="empty">'+(state==='pending'?'Nothing waiting. All caught up.':'Nothing on the wall yet.')+'</p>';return;}
+      ids.forEach(function(id){
+        var c=document.createElement('div');c.className='card';
+        var im=new Image();im.alt='Submitted meme';c.appendChild(im);
+        api('?image='+state+'/'+id).then(function(r){return r.blob();}).then(function(b){var u=URL.createObjectURL(b);urls.push(u);im.src=u;});
+        var t=document.createElement('small');t.textContent='Sent '+when(id);c.appendChild(t);
+        var row=document.createElement('div');row.className='row';
+        if(state==='pending'){row.appendChild(btn('Approve','ok',function(){act('approve',id,c);}));row.appendChild(btn('Delete','no',function(){act('delete',id,c,'pending');}));}
+        else{row.appendChild(btn('Take down','ghost',function(){act('unpublish',id,c);}));row.appendChild(btn('Delete','no',function(){act('delete',id,c,'approved');}));}
+        c.appendChild(row);g.appendChild(c);
+      });
+    }).catch(function(e){ if(e==='auth'){logout('Wrong password.');} else $('#msg').textContent=String(e); });
+  }
+  function btn(t,cls,cb){var b=document.createElement('button');b.type='button';b.className=cls;b.textContent=t;b.addEventListener('click',cb);return b;}
+  function act(action,id,card,from){
+    if(action==='delete'&&!confirm('Delete this meme for good?'))return;
+    card.style.opacity='.4';
+    api('',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:action,id:id,from:from})})
+      .then(function(r){return r.json();}).then(function(j){if(j.error)throw j.error;card.remove();load();})
+      .catch(function(e){card.style.opacity='1';$('#msg').textContent='That didn’t work: '+e;});
+  }
+  function show(){ $('#login').hidden=true; $('#app').hidden=false; load(); }
+  function logout(m){ key=''; try{sessionStorage.removeItem('fh-admin');}catch(e){} $('#app').hidden=true; $('#login').hidden=false; $('#loginmsg').textContent=m||''; }
+  $('#login').addEventListener('submit',function(e){e.preventDefault();key=$('#pw').value;
+    api('?list=pending').then(function(r){return r.json().then(function(j){return {r:r,j:j};});}).then(function(x){
+      if(x.r.ok){try{sessionStorage.setItem('fh-admin',key);}catch(e){} show();} else $('#loginmsg').textContent=x.j.error||'Something went wrong.';
+    }).catch(function(){$('#loginmsg').textContent='The admin only works once the site is live on Netlify.';});
+  });
+  document.querySelectorAll('[role=tab]').forEach(function(b){b.addEventListener('click',function(){state=b.dataset.s;document.querySelectorAll('[role=tab]').forEach(function(x){x.setAttribute('aria-selected',x===b?'true':'false');});load();});});
+  $('#refresh').addEventListener('click',load); $('#logout').addEventListener('click',function(){logout('');});
+  if(key) show();
+})();
+</script>
+</body>
+</html>
