@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Unlock with $FATHOOD — Fathood Battlegrounds</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --accent:#D4F53C; --cream:#FFF8E7; --ink:#111; --red:#E5484D; --green:#3FD62A; }
+  * { box-sizing:border-box; }
+  body { margin:0; min-height:100vh; background:#111; color:var(--cream); font-family:'Space Grotesk', system-ui, sans-serif; display:flex; justify-content:center; padding:32px 16px; }
+  main { width:100%; max-width:560px; display:flex; flex-direction:column; gap:20px; }
+  a { color:var(--accent); }
+  h1 { font-family:'Bowlby One', Impact, sans-serif; font-weight:400; font-size:clamp(1.8rem, 6vw, 2.6rem); line-height:1.05; margin:0; }
+  .tag { align-self:flex-start; background:var(--accent); color:var(--ink); font-weight:700; letter-spacing:1px; text-transform:uppercase; font-size:13px; padding:6px 14px; border-radius:999px; }
+  .card { background:var(--cream); color:var(--ink); border:3px solid var(--ink); border-radius:20px; box-shadow:6px 6px 0 var(--accent); padding:22px; display:flex; flex-direction:column; gap:14px; }
+  .item { font-family:'Bowlby One', Impact, sans-serif; font-size:1.8rem; }
+  .price { font-size:1.15rem; font-weight:700; }
+  .muted { color:#555; font-size:.95rem; line-height:1.5; margin:0; }
+  .btn { font:700 18px 'Space Grotesk', sans-serif; padding:14px 22px; border-radius:14px; border:3px solid var(--ink); background:var(--accent); color:var(--ink); cursor:pointer; box-shadow:3px 3px 0 var(--ink); }
+  .btn.burn { background:var(--red); color:#fff; }
+  .btn:disabled { opacity:.45; cursor:not-allowed; }
+  .row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+  .warn { background:#FFE7E0; border:2px solid var(--red); border-radius:12px; padding:12px; font-size:.95rem; line-height:1.45; }
+  .ok { background:#E5FBD9; border:2px solid var(--green); border-radius:12px; padding:14px; font-weight:700; }
+  .status { min-height:1.4em; font-weight:700; }
+  .status.err { color:var(--red); }
+  label.check { display:flex; gap:10px; align-items:flex-start; font-size:.95rem; line-height:1.4; }
+  label.check input { width:20px; height:20px; margin-top:2px; flex:none; }
+  input.hash { width:100%; font:15px monospace; padding:10px; border:2px solid var(--ink); border-radius:10px; }
+  details { color:#ccc; font-size:.95rem; }
+  details summary { cursor:pointer; font-weight:700; color:var(--cream); }
+  code { word-break:break-all; }
+  [hidden] { display:none !important; }
+</style>
+</head>
+<body>
+<main>
+  <span class="tag">Fathood Battlegrounds</span>
+  <h1>Unlock with a $FATHOOD burn</h1>
+
+  <div class="card" id="noid" hidden>
+    <p class="muted"><b>Open this page from the game.</b> In Fathood Battlegrounds, go to fighter select, pick a locked fighter and press <b>UNLOCK ON FATHOOD.ORG</b>. That link tells this page which player to unlock it for.</p>
+  </div>
+
+  <div class="card" id="main" hidden>
+    <div class="item" id="item-name">…</div>
+    <div class="price" id="item-price"></div>
+
+    <div class="ok" id="done" hidden>✅ Unlocked! Go back to the game. It shows up within a few seconds (or press REFRESH on the fighter select screen).</div>
+
+    <div id="flow">
+      <p class="muted" id="howto">Burning sends $FATHOOD to the burn address <code>0x…dEaD</code>, where nobody can ever spend it. Fewer tokens in circulation, and you get the unlock forever.</p>
+      <div class="row" style="margin-top:12px">
+        <button class="btn" id="connect" type="button">Connect wallet</button>
+        <span id="who" class="muted"></span>
+      </div>
+      <p class="muted" id="nowallet" hidden>No wallet found in this browser. Install <a href="https://metamask.io" target="_blank" rel="noopener">MetaMask</a> or <a href="https://rabby.io" target="_blank" rel="noopener">Rabby</a>, or open this page inside your wallet app's browser.</p>
+
+      <div id="burnbox" hidden style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
+        <div class="muted" id="bal"></div>
+        <div class="warn">Burning is <b>permanent</b>. The tokens are destroyed and can't be refunded. Your wallet will ask you to approve the transaction. Fathood never sees your keys, and you should never type your seed phrase anywhere.</div>
+        <label class="check"><input type="checkbox" id="agree"> I understand the burn can't be undone.</label>
+        <button class="btn burn" id="burn" type="button" disabled>Burn &amp; unlock</button>
+      </div>
+    </div>
+
+    <div class="status" id="status" role="status"></div>
+  </div>
+
+  <details id="recover" hidden>
+    <summary>Already burned but it didn't unlock?</summary>
+    <p>Paste the transaction hash of your burn (it starts with 0x) and press Check.</p>
+    <div class="row"><input class="hash" id="hash" placeholder="0x…" autocomplete="off"><button class="btn" id="check" type="button">Check</button></div>
+  </details>
+
+  <p class="muted" style="color:#aaa">Token: <code id="ca"></code> on Robinhood Chain. <a href="/">Back to fathood.org</a></p>
+</main>
+
+<script>
+(function () {
+  var $ = function (s) { return document.querySelector(s); };
+  var q = new URLSearchParams(location.search);
+  var ID = (q.get('id') || '').toLowerCase();
+  var ITEM = q.get('item') || 'predator';
+  var C = null, IT = null, account = null;
+  var status = function (t, err) { var s = $('#status'); s.textContent = t || ''; s.className = 'status' + (err ? ' err' : ''); };
+
+  if (!/^[a-f0-9]{32}$/.test(ID)) { $('#noid').hidden = false; return; }
+
+  function hex(n) { return '0x' + n.toString(16); }
+  function fmt(units) { var d = 10n ** BigInt(C.decimals); var w = units / d; return w.toLocaleString('en-US'); }
+  function units(whole) { return BigInt(whole) * 10n ** BigInt(C.decimals); }
+  function pad(h) { return h.replace(/^0x/, '').toLowerCase().padStart(64, '0'); }
+  function eth() { return window.ethereum; }
+  function req(m, p) { return eth().request({ method: m, params: p || [] }); }
+
+  fetch('/api/unlock?id=' + ID, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
+    C = d.chain; IT = d.items[ITEM];
+    $('#ca').textContent = C.token;
+    $('#main').hidden = false; $('#recover').hidden = false;
+    if (!IT) { $('#item-name').textContent = 'Unknown item'; $('#flow').hidden = true; return; }
+    $('#item-name').textContent = IT.name;
+    if (d.unlocked.indexOf(ITEM) >= 0) { $('#done').hidden = false; $('#flow').hidden = true; $('#recover').hidden = true; return; }
+    if (IT.price == null) {
+      $('#item-price').textContent = 'Burn price: coming soon';
+      $('#flow').hidden = true; $('#recover').hidden = true;
+      status('Burning for this unlock opens soon. Watch our X and Telegram.');
+      return;
+    }
+    $('#item-price').textContent = 'Burn ' + Number(IT.price).toLocaleString('en-US') + ' $' + C.symbol;
+    var pending = localStorage.getItem('fh-burn-' + ID + '-' + ITEM);
+    if (pending) { status('Checking your earlier burn…'); claim(pending); }
+  }).catch(function () { $('#main').hidden = false; status('Could not load. Check your internet and refresh.', true); });
+
+  async function toChain() {
+    var want = hex(BigInt(C.chainId));
+    try { await req('wallet_switchEthereumChain', [{ chainId: want }]); }
+    catch (e) {
+      if (e && (e.code === 4902 || /unrecognized|not added|unknown chain/i.test(e.message || ''))) {
+        await req('wallet_addEthereumChain', [{ chainId: want, chainName: C.name, rpcUrls: [C.rpc],
+          nativeCurrency: { name: 'Ether', symbol: 'ETH', decimals: 18 }, blockExplorerUrls: [C.explorer] }]);
+      } else throw e;
+    }
+  }
+
+  async function balance() {
+    var r = await fetch(C.rpc, { method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'eth_call', params: [{ to: C.token, data: '0x70a08231' + pad(account) }, 'latest'] }) });
+    var j = await r.json(); return BigInt(j.result || '0x0');
+  }
+
+  $('#connect').addEventListener('click', async function () {
+    if (!eth()) { $('#nowallet').hidden = false; return; }
+    status('');
+    try {
+      var acc = await req('eth_requestAccounts');
+      account = acc[0];
+      await toChain();
+      $('#who').textContent = 'Connected: ' + account.slice(0, 6) + '…' + account.slice(-4);
+      $('#connect').textContent = 'Connected';
+      $('#connect').disabled = true;
+      $('#burnbox').hidden = false;
+      var b = await balance();
+      var need = units(IT.price);
+      $('#bal').textContent = 'You hold ' + fmt(b) + ' $' + C.symbol + '.';
+      if (b < need) { status('Not enough $' + C.symbol + ' in this wallet for this unlock.', true); $('#burn').dataset.short = '1'; }
+      $('#burn').disabled = !$('#agree').checked || $('#burn').dataset.short === '1';
+    } catch (e) { status((e && e.message) || 'Wallet connection failed.', true); }
+  });
+
+  $('#agree').addEventListener('change', function () { $('#burn').disabled = !this.checked || $('#burn').dataset.short === '1'; });
+
+  $('#burn').addEventListener('click', async function () {
+    var btn = this; btn.disabled = true;
+    try {
+      await toChain();
+      // ERC-20 transfer(burn address, amount) + this player's unlock id on the end (the token ignores it,
+      // the server reads it back to know who the burn is for)
+      var data = '0xa9059cbb' + pad(C.burn) + pad(units(IT.price).toString(16)) + ID;
+      status('Approve the burn in your wallet…');
+      var tx = await req('eth_sendTransaction', [{ from: account, to: C.token, data: data, value: '0x0' }]);
+      localStorage.setItem('fh-burn-' + ID + '-' + ITEM, tx);
+      status('Burn sent. Waiting for Robinhood Chain to confirm…');
+      claim(tx);
+    } catch (e) {
+      btn.disabled = false;
+      status(e && e.code === 4001 ? 'You cancelled the burn. Nothing was sent.' : ((e && e.message) || 'The burn did not go through.'), true);
+    }
+  });
+
+  var tries = 0;
+  async function claim(tx) {
+    try {
+      var r = await fetch('/api/unlock', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: ID, item: ITEM, tx: tx }) });
+      var j = await r.json();
+      if (j.ok) {
+        localStorage.removeItem('fh-burn-' + ID + '-' + ITEM);
+        $('#done').hidden = false; $('#flow').hidden = true; $('#recover').hidden = true;
+        status('');
+        return;
+      }
+      if (j.wait && tries++ < 60) { status('Waiting for Robinhood Chain to confirm…'); setTimeout(function () { claim(tx); }, 4000); return; }
+      if (!j.wait) localStorage.removeItem('fh-burn-' + ID + '-' + ITEM);
+      status(j.error || 'Could not check the burn.', true);
+    } catch (e) { if (tries++ < 60) setTimeout(function () { claim(tx); }, 4000); else status('Could not reach fathood.org. Use "Already burned?" below to try again.', true); }
+  }
+
+  $('#check').addEventListener('click', function () {
+    var h = $('#hash').value.trim().toLowerCase();
+    if (!/^0x[a-f0-9]{64}$/.test(h)) { status('That does not look like a transaction hash.', true); return; }
+    tries = 0; status('Checking…'); claim(h);
+  });
+})();
+</script>
+</body>
+</html>
