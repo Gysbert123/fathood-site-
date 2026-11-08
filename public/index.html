@@ -122,6 +122,7 @@ body{position:relative}
         <a href="#lore" style="color: #FFF8E7; text-decoration: none; padding: 12px 0">Lore</a>
         <a href="#rules" style="color: #FFF8E7; text-decoration: none; padding: 12px 0">The rules</a>
         <a href="#tokenomics" style="color: #FFF8E7; text-decoration: none; padding: 12px 0">Tokenomics</a>
+        <a href="#roadmap" style="color: #FFF8E7; text-decoration: none; padding: 12px 0">Roadmap</a>
         <a href="#torchpad" style="color: #FFF8E7; text-decoration: none; padding: 12px 0">Launch</a>
         <a href="#buy" style="color: #FFF8E7; text-decoration: none; padding: 12px 0">How to buy</a>
         <a href="#safe" style="color: #FFF8E7; text-decoration: none; padding: 12px 0">Stay safe</a>
@@ -313,6 +314,129 @@ body{position:relative}
         <div style="flex: 1 1 200px; min-width: 0; border: 4px solid #111111; border-radius: 20px; padding: 24px; background: #FFFFFF; box-shadow: 6px 6px 0 #111111">
           <p style="margin: 0 0 8px; font-weight: 700; font-size: 14px; letter-spacing: 1px; text-transform: uppercase">Buy / sell tax</p>
           <p style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-size: 1.8rem">3%</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ROADMAP -->
+  <style>
+    .rm-tree { display: flex; flex-direction: column; align-items: center; }
+    .rm-card { background: #FFFFFF; color: #111111; border: 4px solid #111111; border-radius: 20px; padding: 24px; box-shadow: 6px 6px 0 #111111; display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 460px; box-sizing: border-box; }
+    .rm-card h3 { margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: 1.45rem; line-height: 1.1; }
+    .rm-card ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; line-height: 1.45; }
+    .rm-card li { display: flex; gap: 10px; }
+    .rm-card li::before { content: ""; flex: none; width: 12px; height: 12px; margin-top: 6px; border: 3px solid #111111; border-radius: 50%; box-sizing: border-box; }
+    .rm-done li::before { background: #3FD62A; }
+    .rm-now li::before { background: #111111; }
+    .rm-badge { align-self: flex-start; font-weight: 700; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; border: 3px solid #111111; }
+    .rm-done { background: #E9FBE0; }
+    .rm-done .rm-badge { background: #3FD62A; }
+    .rm-now { background: var(--accent); box-shadow: 6px 6px 0 #1F4FD1; }
+    .rm-now .rm-badge { background: #111111; color: var(--accent); animation: rm-pulse 1.6s ease-in-out infinite; }
+    .rm-next .rm-badge { background: #1F4FD1; color: #FFFFFF; }
+    .rm-later .rm-badge { background: #FFF8E7; }
+    .rm-token.rm-next { box-shadow: 6px 6px 0 #3FD62A; }
+    .rm-token.rm-later { box-shadow: 6px 6px 0 #3FD62A; }
+    @keyframes rm-pulse { 50% { transform: scale(1.06); } }
+    @media (prefers-reduced-motion: reduce) { .rm-now .rm-badge { animation: none; } }
+    .rm-line { width: 6px; height: 40px; background: #111111; border-radius: 3px; }
+    .rm-fork { width: 100%; display: flex; flex-direction: column; align-items: center; }
+    .rm-bar { height: 6px; background: #111111; border-radius: 3px; width: 50%; }
+    .rm-branches { width: 100%; display: flex; gap: 28px; }
+    .rm-branch { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; }
+    .rm-label { font-family: 'Bowlby One', Impact, sans-serif; font-size: 1.1rem; letter-spacing: 1px; padding: 8px 18px; border-radius: 14px; border: 4px solid #111111; background: #111111; color: #FFF8E7; }
+    .rm-branch-token .rm-label { background: #3FD62A; color: #111111; }
+    @media (max-width: 760px) {
+      .rm-bar { display: none; }
+      .rm-branches { flex-direction: column; gap: 0; }
+      .rm-branch + .rm-branch::before { content: ""; display: block; width: 6px; height: 40px; background: #111111; border-radius: 3px; }
+    }
+  </style>
+  <section id="roadmap" aria-labelledby="roadmap-title" style="padding: 88px 24px; background: #FFF8E7; border-top: 4px solid #111111">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px">
+      <div style="display: flex; flex-direction: column; gap: 12px; max-width: 44rem">
+        <p style="margin: 0; font-weight: 700; font-size: 15px; letter-spacing: 2px; text-transform: uppercase; color: #1F4FD1">Roadmap</p>
+        <h2 id="roadmap-title" style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: clamp(2rem, 4.4vw, 3.4rem); line-height: 1.05">The Fathood family tree.</h2>
+        <p style="margin: 0; font-size: 1.15rem; line-height: 1.6">One trunk, two branches: the game keeps getting bigger, and $FATHOOD keeps getting more useful. No dates, no fake deadlines. We ship it when it’s fat enough.</p>
+      </div>
+
+      <div class="rm-tree">
+        <div class="rm-card rm-done">
+          <span class="rm-badge">Done</span>
+          <h3>Phase 1 · The launch</h3>
+          <ul>
+            <li>Fair launch of $FATHOOD on Torchpad, Robinhood Chain</li>
+            <li>fathood.org is live</li>
+            <li>Meme Booth + the Wall of Fat</li>
+          </ul>
+        </div>
+        <div class="rm-line" aria-hidden="true"></div>
+        <div class="rm-card rm-now">
+          <span class="rm-badge">Now</span>
+          <h3>Phase 2 · Fathood Battlegrounds beta</h3>
+          <ul>
+            <li>Free PC beta of our own battle royale game</li>
+            <li>Weekly online leaderboard</li>
+            <li>5 fighters, each with a special move</li>
+            <li>Burn $FATHOOD to unlock Predator</li>
+          </ul>
+        </div>
+        <div class="rm-fork" aria-hidden="true">
+          <div class="rm-line"></div>
+          <div class="rm-bar"></div>
+        </div>
+
+        <div class="rm-branches">
+          <div class="rm-branch rm-branch-game">
+            <div class="rm-line" aria-hidden="true"></div>
+            <span class="rm-label">THE GAME</span>
+            <div class="rm-line" aria-hidden="true"></div>
+            <div class="rm-card rm-next">
+              <span class="rm-badge">Next</span>
+              <h3>Phase 3 · Ranks + rare drip</h3>
+              <ul>
+                <li>New fighters: reach the rank, then burn to unlock</li>
+                <li>Rare, epic and legendary cosmetics: rank + burn</li>
+                <li>More maps and weapons</li>
+              </ul>
+            </div>
+            <div class="rm-line" aria-hidden="true"></div>
+            <div class="rm-card rm-later">
+              <span class="rm-badge">Later</span>
+              <h3>Phase 4 · Online + the Arena</h3>
+              <ul>
+                <li>Real online multiplayer</li>
+                <li>Release on itch.io and the Epic Games Store</li>
+                <li>Ranked Arena for top players: perk gear like crit, stun and life steal</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="rm-branch rm-branch-token">
+            <div class="rm-line" aria-hidden="true"></div>
+            <span class="rm-label">THE TOKEN</span>
+            <div class="rm-line" aria-hidden="true"></div>
+            <div class="rm-card rm-next rm-token">
+              <span class="rm-badge">Next</span>
+              <h3>Grow $FATHOOD</h3>
+              <ul>
+                <li>Paid DEX Screener profile</li>
+                <li>Supply lock</li>
+                <li>Regular token burns, fed by every in-game unlock</li>
+              </ul>
+            </div>
+            <div class="rm-line" aria-hidden="true"></div>
+            <div class="rm-card rm-later rm-token">
+              <span class="rm-badge">Later</span>
+              <h3>Spread the fat</h3>
+              <ul>
+                <li>New exchange listings</li>
+                <li>New Fathood games</li>
+                <li>More utility for holders</li>
+              </ul>
+            </div>
+          </div>
         </div>
       </div>
     </div>
