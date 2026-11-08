@@ -2,7 +2,7 @@
 // CHANGE PRICES HERE (whole tokens, e.g. 50000). `price: null` = "price coming soon" (burning is off).
 // The game itself decides which rank is needed first; this list only knows the burn price.
 export const ITEMS = {
-  predator: { kind: "fighter", name: "Predator", price: null },
+  predator: { kind: "fighter", name: "Predator", price: 50000 },
 };
 
 export const CHAIN = {
