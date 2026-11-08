@@ -252,7 +252,8 @@ function bootBooth(M) {
         else { base = A.eyeMid; w = A.eyeDist * it.fit; }
         var s = w / it.w * (o.ds || 1), ang = A.eyeAng + (o.dr || 0);
         var oy = (it.oy || 0) * it.h * s;
-        var cx = base.x + (o.dx || 0) * A.s - Math.sin(ang) * oy, cy = base.y + (o.dy || 0) * A.s + Math.cos(ang) * oy;
+        var ox = (it.ox || 0) * A.eyeDist * (find(o.attach).flip ? -1 : 1);
+        var cx = base.x + (o.dx || 0) * A.s - Math.sin(ang) * oy + Math.cos(ang) * ox, cy = base.y + (o.dy || 0) * A.s + Math.cos(ang) * oy + Math.sin(ang) * ox;
         return { x: cx, y: cy, s: s, rot: ang, flip: false, A: A };
       }
     }
@@ -318,10 +319,19 @@ function bootBooth(M) {
   /* ---------- adding things ---------- */
   function firstPose() { for (var i = S.objs.length - 1; i >= 0; i--) if (S.objs[i].kind === 'pose') return S.objs[i]; return null; }
   function selectedPose() { var o = sel && find(sel); if (o && o.kind === 'pose') return o; if (o && o.kind === 'acc' && o.attach) return find(o.attach); return firstPose(); }
+  // Hatless poses get Fathood's black cap as a normal accessory, so any other hat
+  // simply replaces it (one item per slot). Poses that still have the cap drawn in drop it.
+  var CAP = 'acc-black-cap';
+  function capFor(p) {
+    var bald = !!itemById(p.item).bald;
+    var head = S.objs.filter(function (o) { return o.kind === 'acc' && o.attach === p.id && itemById(o.item).slot === 'head'; });
+    if (!bald) { S.objs = S.objs.filter(function (o) { return !(o.kind === 'acc' && o.attach === p.id && o.item === CAP); }); return; }
+    if (!head.length && itemById(CAP)) S.objs.push({ id: uid++, kind: 'acc', item: CAP, attach: p.id, dx: 0, dy: 0, ds: 1, dr: 0 });
+  }
   function addPose(id) {
     snapshot(); var it = itemById(id), cur = selectedPose();
-    if (cur) { var oldH = itemById(cur.item).h; cur.item = id; cur.s = cur.s * oldH / it.h; sel = cur.id; }
-    else { var o = { id: uid++, kind: 'pose', item: id, x: SIZE / 2, y: SIZE * .58, s: 780 / it.h, rot: 0, flip: false }; S.objs.push(o); sel = o.id; reorderAcc(); }
+    if (cur) { var oldH = itemById(cur.item).h, wasBald = !!itemById(cur.item).bald; cur.item = id; cur.s = cur.s * oldH / it.h; sel = cur.id; if (wasBald !== !!it.bald) capFor(cur); reorderAcc(); }
+    else { var o = { id: uid++, kind: 'pose', item: id, x: SIZE / 2, y: SIZE * .58, s: 780 / it.h, rot: 0, flip: false }; S.objs.push(o); capFor(o); sel = o.id; reorderAcc(); }
     ui(); draw();
   }
   function reorderAcc() { // keep attached accessories above their pose
@@ -432,7 +442,7 @@ function bootBooth(M) {
       var cur = selectedPose(); var g2 = el('div', 'bt-grid');
       M.poses.forEach(function (it) { g2.appendChild(thumbBtn(it.label, it.src, cur && cur.item === it.id, function () { addPose(it.id); })); }); P.appendChild(g2);
       var add = el('button', 'bt-btn ghost', 'Add another Fathood'); add.type = 'button';
-      add.addEventListener('click', function () { snapshot(); var it = M.poses[Math.floor(Math.random() * M.poses.length)]; var o = { id: uid++, kind: 'pose', item: it.id, x: SIZE * (.3 + Math.random() * .4), y: SIZE * .62, s: 560 / it.h, rot: 0, flip: Math.random() < .5 }; S.objs.push(o); sel = o.id; ui(); draw(); });
+      add.addEventListener('click', function () { snapshot(); var it = M.poses[Math.floor(Math.random() * M.poses.length)]; var o = { id: uid++, kind: 'pose', item: it.id, x: SIZE * (.3 + Math.random() * .4), y: SIZE * .62, s: 560 / it.h, rot: 0, flip: Math.random() < .5 }; S.objs.push(o); capFor(o); reorderAcc(); sel = o.id; ui(); draw(); });
       P.appendChild(add);
       P.appendChild(el('h4', null, 'Shirt colour'));
       var r1 = el('div', 'bt-row'); SHIRTS.forEach(function (c) { r1.appendChild(swatch(c, S.shirt === c, function () { snapshot(); S.shirt = c; panel(); draw(); }, c ? 'Shirt ' + c : 'Original shirt')); }); P.appendChild(r1);
@@ -494,8 +504,8 @@ function bootBooth(M) {
     S.bg = Math.random() < .8 ? { type: 'scene', id: pick(SCENE_LIST)[0] } : { type: 'color', value: pick(COLORS) };
     S.shirt = Math.random() < .5 ? null : pick(SHIRTS.slice(1)); S.shorts = Math.random() < .6 ? null : pick(SHORTS.slice(1));
     var pz = pick(M.poses); var p = { id: uid++, kind: 'pose', item: pz.id, x: SIZE * (.42 + Math.random() * .16), y: SIZE * .6, s: 760 / pz.h, rot: 0, flip: Math.random() < .3 }; S.objs.push(p);
-    var slots = {}; M.acc.slice().sort(function () { return Math.random() - .5; }).forEach(function (a) { if (Object.keys(slots).length < 2 && !slots[a.slot] && Math.random() < .6) { slots[a.slot] = 1; S.objs.push({ id: uid++, kind: 'acc', item: a.id, attach: p.id, dx: 0, dy: 0, ds: 1, dr: 0 }); } });
-    reorderAcc();
+    var slots = {}; M.acc.slice().sort(function () { return Math.random() - .5; }).forEach(function (a) { if (a.id !== CAP && Object.keys(slots).length < 2 && !slots[a.slot] && Math.random() < .6) { slots[a.slot] = 1; S.objs.push({ id: uid++, kind: 'acc', item: a.id, attach: p.id, dx: 0, dy: 0, ds: 1, dr: 0 }); } });
+    capFor(p); reorderAcc();
     var n = Math.floor(Math.random() * 3); for (var i = 0; i < n; i++) { var it = pick(M.props); var corner = [[.16, .2], [.84, .2], [.15, .8], [.85, .78]][i % 4]; S.objs.push({ id: uid++, kind: 'prop', item: it.id, x: SIZE * corner[0], y: SIZE * corner[1], s: (it.def || 260) / Math.max(it.w, it.h) * .9, rot: (Math.random() - .5) * .5, flip: Math.random() < .5 }); }
     if (Math.random() < .55) S.objs.push({ id: uid++, kind: 'text', text: pick(['HOLDING UNTIL\nWE’RE FAT', 'NO BUNDLES\nNO RUGS', 'FAT BAGS ONLY', 'RUGS FEAR HIM', 'GM FATTIES', '$FATHOOD']), font: 'bowlby', color: '#FFFFFF', stroke: '#111111', size: 88, x: SIZE / 2, y: SIZE * .13, s: 1, rot: 0, flip: false });
     ui(); draw();
@@ -576,7 +586,7 @@ function bootBooth(M) {
   [].concat(M.poses, M.acc, M.props).forEach(function (it) { M.index[it.id] = it; });
   var fontsReady = document.fonts && document.fonts.load ? Promise.all([document.fonts.load('400 40px "Bowlby One"'), document.fonts.load('700 40px "Space Grotesk"')]).catch(function () {}) : Promise.resolve();
   fontsReady.then(function () {
-    var p = M.poses[0]; S.objs.push({ id: uid++, kind: 'pose', item: p.id, x: SIZE / 2, y: SIZE * .6, s: 780 / p.h, rot: 0, flip: false });
+    var p = M.poses[0], p0 = { id: uid++, kind: 'pose', item: p.id, x: SIZE / 2, y: SIZE * .6, s: 780 / p.h, rot: 0, flip: false }; S.objs.push(p0); capFor(p0); reorderAcc();
     S.objs.push({ id: uid++, kind: 'text', text: 'HOLDING UNTIL\nWE’RE FAT', font: 'bowlby', color: '#FFFFFF', stroke: '#111111', size: 92, x: SIZE / 2, y: SIZE * .13, s: 1, rot: 0, flip: false });
     ui(); draw();
   });
