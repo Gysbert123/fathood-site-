@@ -439,7 +439,7 @@ function bootBooth(M) {
       P.appendChild(el('h4', null, 'Shorts colour'));
       var r2 = el('div', 'bt-row'); SHORTS.forEach(function (c) { r2.appendChild(swatch(c, S.shorts === c, function () { snapshot(); S.shorts = c; panel(); draw(); }, c ? 'Shorts ' + c : 'Original shorts')); }); P.appendChild(r2);
     } else if (tab === 'wear') {
-      P.appendChild(el('p', 'bt-hint', 'Tap an item and it snaps onto Fathood. Drag it to nudge it, or use the blue handle to resize.'));
+      P.appendChild(el('p', 'bt-hint', 'Tap an item and it snaps onto Fathood. Drag it to nudge it. Use Bigger / Smaller (or the blue handle) to resize, so glasses cover his eyes and hats cover his cap.'));
       var g3 = el('div', 'bt-grid'); M.acc.forEach(function (it) { g3.appendChild(thumbBtn(it.label, it.thumb || it.src, false, function () { addAcc(it.id); })); }); P.appendChild(g3);
     } else if (tab === 'props') {
       var g4 = el('div', 'bt-grid'); M.props.forEach(function (it) { g4.appendChild(thumbBtn(it.label, it.src, false, function () { addProp(it.id); })); }); P.appendChild(g4);
@@ -473,6 +473,16 @@ function bootBooth(M) {
   $('#bt-clear').addEventListener('click', function () { snapshot(); S.objs = []; sel = null; ui(); draw(); });
   $('#bt-random').addEventListener('click', randomise);
   $('#bt-del').addEventListener('click', function () { var o = find(sel); if (!o) return; snapshot(); S.objs = S.objs.filter(function (q) { return q !== o && !(q.attach === o.id); }); sel = null; ui(); draw(); });
+  // Bigger / Smaller buttons: grow or shrink the selected piece (glasses, hats, props, poses, text)
+  function grow(k) {
+    var o = find(sel); if (!o) return; snapshot();
+    if (o.kind === 'text') o.size = Math.max(14, Math.min(400, Math.round(o.size * k)));
+    else if (o.kind === 'acc' && o.attach) o.ds = Math.max(0.3, Math.min(5, (o.ds || 1) * k));
+    else o.s = Math.max(0.05, Math.min(8, o.s * k));
+    draw();
+  }
+  $('#bt-big').addEventListener('click', function () { grow(1.15); });
+  $('#bt-small').addEventListener('click', function () { grow(1 / 1.15); });
   $('#bt-flip').addEventListener('click', function () { var o = find(sel); if (!o) return; snapshot(); o.flip = !o.flip; draw(); });
   $('#bt-fwd').addEventListener('click', function () { var o = find(sel); if (!o) return; snapshot(); var i = S.objs.indexOf(o); if (i < S.objs.length - 1) { S.objs.splice(i, 1); S.objs.splice(i + 1, 0, o); } reorderAcc(); draw(); });
   $('#bt-back').addEventListener('click', function () { var o = find(sel); if (!o) return; snapshot(); var i = S.objs.indexOf(o); if (i > 0) { S.objs.splice(i, 1); S.objs.splice(i - 1, 0, o); } draw(); });
