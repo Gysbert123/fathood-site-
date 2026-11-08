@@ -1,11 +1,11 @@
 /* Fathood Meme Booth */
-(function () {
+function bootBooth(M) {
   var CA = '0xf97bE5444346befC52571e7140394a4cC22B1111';
-  var SITE = 'fathood.netlify.app';
+  var SITE = 'fathood.org';
   var SIZE = 1080;
-  var M = window.BOOTH_MANIFEST;
   var root = document.getElementById('booth');
   if (!root || !M) return;
+  M.scenes = M.scenes || [];
 
   var cv = root.querySelector('#bt-canvas');
   var ctx = cv.getContext('2d');
@@ -67,17 +67,35 @@
     var x = c.getContext('2d'); x.drawImage(im, 0, 0);
     var d = x.getImageData(0, 0, c.width, c.height), p = d.data;
     var t1 = S.shirt ? hueOf(S.shirt) : null, t2 = S.shorts ? hueOf(S.shorts) : null;
-    for (var i = 0; i < p.length; i += 4) {
-      if (p[i + 3] < 20) continue;
+    var W = c.width, H = c.height, N = W * H, kind = new Uint8Array(N), hs = new Float32Array(N), ls = new Float32Array(N), ss = new Float32Array(N), opaque = 0;
+    for (var i = 0, j = 0; i < p.length; i += 4, j++) {
+      if (p[i + 3] < 20) continue; opaque++;
       var hh = hueOf('#' + ((1 << 24) + (p[i] << 16) + (p[i + 1] << 8) + p[i + 2]).toString(16).slice(1));
-      var tgt = null;
-      if (t1 && hh.s > 0.42 && hh.l > 0.18 && hh.l < 0.66 && (hh.h < 12 || hh.h > 348)) tgt = t1;
-      else if (t2 && hh.s > 0.35 && hh.l > 0.15 && hh.l < 0.75 && hh.h > 195 && hh.h < 240) tgt = t2;
-      if (!tgt) continue;
-      var nl = tgt.l < 0.12 ? hh.l * 0.35 : tgt.l > 0.9 ? Math.min(0.95, hh.l + 0.45) : hh.l * (0.55 + tgt.l * 0.9);
-      var ns = tgt.s < 0.08 ? 0.03 : Math.min(1, hh.s * (0.5 + tgt.s * 0.6));
-      var rgb = hsl2rgb(tgt.h, ns, Math.max(0, Math.min(1, nl)));
-      p[i] = rgb[0]; p[i + 1] = rgb[1]; p[i + 2] = rgb[2];
+      hs[j] = hh.h; ls[j] = hh.l; ss[j] = hh.s;
+      if (t1 && hh.s > 0.42 && hh.l > 0.18 && hh.l < 0.66 && (hh.h < 12 || hh.h > 348)) kind[j] = 1;
+      else if (t2 && hh.s > 0.35 && hh.l > 0.15 && hh.l < 0.75 && hh.h > 195 && hh.h < 240) kind[j] = 2;
+    }
+    // only recolour the big connected areas (the shirt and the shorts), never small bits like the tongue
+    var seen = new Uint8Array(N), stack = new Int32Array(N), minSize = opaque * 0.035;
+    for (var st = 0; st < N; st++) {
+      if (!kind[st] || seen[st]) continue;
+      var k = kind[st], sp = 0, comp = []; stack[sp++] = st; seen[st] = 1;
+      while (sp) {
+        var q = stack[--sp]; comp.push(q); var qx = q % W;
+        if (qx > 0 && !seen[q - 1] && kind[q - 1] === k) { seen[q - 1] = 1; stack[sp++] = q - 1; }
+        if (qx < W - 1 && !seen[q + 1] && kind[q + 1] === k) { seen[q + 1] = 1; stack[sp++] = q + 1; }
+        if (q >= W && !seen[q - W] && kind[q - W] === k) { seen[q - W] = 1; stack[sp++] = q - W; }
+        if (q < N - W && !seen[q + W] && kind[q + W] === k) { seen[q + W] = 1; stack[sp++] = q + W; }
+      }
+      if (comp.length < minSize) continue;
+      var tgt = k === 1 ? t1 : t2;
+      for (var m = 0; m < comp.length; m++) {
+        var px = comp[m], o = px * 4, hl = ls[px], hsat = ss[px];
+        var nl = tgt.l < 0.12 ? hl * 0.35 : tgt.l > 0.9 ? Math.min(0.95, hl + 0.45) : hl * (0.55 + tgt.l * 0.9);
+        var ns = tgt.s < 0.08 ? 0.03 : Math.min(1, hsat * (0.5 + tgt.s * 0.6));
+        var rgb = hsl2rgb(tgt.h, ns, Math.max(0, Math.min(1, nl)));
+        p[o] = rgb[0]; p[o + 1] = rgb[1]; p[o + 2] = rgb[2];
+      }
     }
     x.putImageData(d, 0, 0);
     recCache[key] = c; return c;
@@ -189,9 +207,15 @@
       var r = rng(21), y = 900; for (var c = 0; c < 17; c++) { var up = r() < .78, h = 30 + r() * 90, cx = 40 + c * 62; var top = up ? y - h : y, bot = up ? y : y + h * .6; x.strokeStyle = up ? '#3FD62A' : '#E5484D'; x.lineWidth = 4; x.beginPath(); x.moveTo(cx, top - 25); x.lineTo(cx, bot + 25); x.stroke(); x.fillStyle = x.strokeStyle; x.fillRect(cx - 16, top, 32, Math.max(8, bot - top)); y = up ? top : bot; }
     }
   };
-  var SCENE_LIST = [['lime', 'Fat rays'], ['sky', 'Sunny hill'], ['mountains', 'Mountains'], ['beach', 'Beach'], ['underwater', 'Under the sea'], ['moon', 'The moon'], ['space', 'Space'], ['city-night', 'City at night'], ['graveyard', 'Graveyard'], ['torch', 'Torchlight'], ['pump', 'Green candles']];
+  var SCENE_LIST = M.scenes.map(function (s) { return [s.id, s.label]; }).concat([['lime', 'Fat rays'], ['sky', 'Sunny hill'], ['city-night', 'City at night'], ['graveyard', 'Graveyard'], ['torch', 'Torchlight'], ['pump', 'Green candles']]);
   function sceneCanvas(id) {
     if (sceneCache[id]) return sceneCache[id];
+    var sc = M.sceneIndex && M.sceneIndex[id];
+    if (sc) {
+      var im = getImg(sc.src); if (!im) { var ph = document.createElement('canvas'); ph.width = ph.height = SIZE; var px = ph.getContext('2d'); px.fillStyle = '#D4F53C'; px.fillRect(0, 0, SIZE, SIZE); return ph; }
+      var ci = document.createElement('canvas'); ci.width = ci.height = SIZE; var cx = ci.getContext('2d'); var r = Math.max(SIZE / im.naturalWidth, SIZE / im.naturalHeight);
+      cx.drawImage(im, (SIZE - im.naturalWidth * r) / 2, (SIZE - im.naturalHeight * r) / 2, im.naturalWidth * r, im.naturalHeight * r); sceneCache[id] = ci; return ci;
+    }
     var c = document.createElement('canvas'); c.width = c.height = SIZE; SCENES[id](c.getContext('2d')); sceneCache[id] = c; return c;
   }
 
@@ -394,7 +418,7 @@
     var P = $('#bt-panel'); P.innerHTML = '';
     if (tab === 'bg') {
       P.appendChild(el('h4', null, 'Scenes'));
-      var g = el('div', 'bt-grid'); SCENE_LIST.forEach(function (s) { g.appendChild(thumbBtn(s[1], null, S.bg.type === 'scene' && S.bg.id === s[0], function () { snapshot(); S.bg = { type: 'scene', id: s[0] }; panel(); draw(); }, s[0])); }); P.appendChild(g);
+      var g = el('div', 'bt-grid'); SCENE_LIST.forEach(function (s) { var isImg = M.sceneIndex[s[0]]; g.appendChild(thumbBtn(s[1], isImg ? isImg.src : null, S.bg.type === 'scene' && S.bg.id === s[0], function () { snapshot(); S.bg = { type: 'scene', id: s[0] }; panel(); draw(); }, isImg ? null : s[0])); }); P.appendChild(g);
       P.appendChild(el('h4', null, 'Plain colour'));
       var r = el('div', 'bt-row'); COLORS.forEach(function (c) { r.appendChild(swatch(c, S.bg.type === 'color' && S.bg.value === c, function () { snapshot(); S.bg = { type: 'color', value: c }; panel(); draw(); })); });
       var ci = el('input'); ci.type = 'color'; ci.className = 'bt-color'; ci.value = S.bg.type === 'color' ? S.bg.value : '#D4F53C'; ci.setAttribute('aria-label', 'Pick any colour');
@@ -468,7 +492,7 @@
   }
 
   /* ---------- snap & share ---------- */
-  var POSE_ACT = { standing: 'raising the fat fist', running: 'running down the scammers', dancing: 'dancing on the rugs', 'arms-out': 'ready to swallow the market', kicking: 'kicking out the paid KOLs', juggling: 'juggling fat bags' };
+  var POSE_ACT = { standing: 'raising the fat fist', running: 'running down the scammers', dancing: 'dancing on the rugs', singing: 'singing the rugs to sleep', driving: 'driving straight past the paper hands', fishing: 'fishing for rug pullers', eating: 'eating the market', sign: 'holding the line', 'arms-out': 'ready to swallow the market', kicking: 'kicking out the paid KOLs', juggling: 'juggling fat bags' };
   var LINES = [
     'Fathood is {act}. The trenches could never.', 'POV: you held. Now you’re {act}.', 'KOLs shilling. Fathood {act}.', 'No bundles. No rugs. Just fat bags.',
     'Holding until we’re fat 🍔', 'Paper hands left. Fathood stayed.', 'Built different. Built fat.', 'Wall Street called. Fathood ate the phone.',
@@ -480,12 +504,14 @@
     var line = pick(LINES).replace('{act}', act);
     return line + '\n\n$FATHOOD on Torchpad 🔥\nCA: ' + CA + '\n' + SITE;
   }
-  var lastBlob = null;
+  var lastBlob = null, lastCanvas = null;
+  var IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
   function snap() {
     sel = null; ui();
     var c = document.createElement('canvas'); c.width = c.height = SIZE; var x = c.getContext('2d'); render(x, false);
     x.font = '400 34px "Bowlby One", Impact, sans-serif'; x.textAlign = 'right'; x.textBaseline = 'bottom'; x.lineJoin = 'round';
     x.lineWidth = 8; x.strokeStyle = '#111'; x.strokeText('$FATHOOD', SIZE - 24, SIZE - 20); x.fillStyle = '#D4F53C'; x.fillText('$FATHOOD', SIZE - 24, SIZE - 20);
+    lastCanvas = c;
     c.toBlob(function (b) {
       lastBlob = b; var url = URL.createObjectURL(b);
       $('#bt-shot').src = url; $('#bt-post').value = caption(); $('#bt-status').textContent = ''; $('#bt-count').textContent = $('#bt-post').value.length + ' / 280';
@@ -505,12 +531,26 @@
   function download() { var a = document.createElement('a'); a.href = URL.createObjectURL(lastBlob); a.download = 'fathood-meme.jpg'; document.body.appendChild(a); a.click(); a.remove(); }
   function intent() { window.open('https://x.com/intent/post?text=' + encodeURIComponent($('#bt-post').value), '_blank', 'noopener'); }
   $('#bt-snap').addEventListener('click', snap);
+  function pngBlob() { return new Promise(function (res, rej) { lastCanvas.toBlob(function (b) { b ? res(b) : rej(); }, 'image/png'); }); }
   $('#bt-share').addEventListener('click', function () {
-    var text = $('#bt-post').value, f = file();
-    if (navigator.canShare && navigator.canShare({ files: [f] })) {
+    var text = $('#bt-post').value, f = file(), st = $('#bt-status');
+    // phones: the share sheet hands the image straight to the X app
+    if (navigator.canShare && navigator.canShare({ files: [f] }) && /Android|iPhone|iPad|Mobile/i.test(navigator.userAgent)) {
       navigator.clipboard && navigator.clipboard.writeText(text).catch(function () {});
       navigator.share({ files: [f], text: text }).catch(function () {});
-    } else { download(); intent(); $('#bt-status').textContent = 'Your meme downloaded. Drag it into the X post that just opened.'; }
+      return;
+    }
+    // computers: copy the meme to the clipboard, open X with the text filled in, paste the image there
+    var copied = null;
+    try {
+      if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) copied = navigator.clipboard.write([new ClipboardItem({ 'image/png': pngBlob() })]);
+    } catch (e) { copied = null; }
+    intent();
+    if (!copied) { download(); st.textContent = 'Your meme downloaded. In the X post that opened, click the photo icon and pick fathood-meme.jpg.'; return; }
+    st.textContent = 'Copying your meme…';
+    copied.then(function () {
+      st.innerHTML = '<strong>Meme copied!</strong> In the X post that just opened, click in the text box and press <strong>' + (IS_MAC ? 'Cmd+V' : 'Ctrl+V') + '</strong> to paste it.';
+    }).catch(function () { download(); st.textContent = 'Your meme downloaded. In the X post that opened, click the photo icon and pick fathood-meme.jpg.'; });
   });
   $('#bt-dl').addEventListener('click', download);
   $('#bt-copy').addEventListener('click', function () { var b = $('#bt-copy'); (navigator.clipboard ? navigator.clipboard.writeText($('#bt-post').value) : Promise.reject()).then(function () { b.textContent = 'Copied!'; setTimeout(function () { b.textContent = 'Copy post text'; }, 1500); }).catch(function () { $('#bt-post').select(); }); });
@@ -521,7 +561,8 @@
   $('#bt-post').addEventListener('input', function () { $('#bt-count').textContent = $('#bt-post').value.length + ' / 280'; });
 
   /* ---------- start ---------- */
-  M.index = {};
+  M.index = {}; M.sceneIndex = {};
+  M.scenes.forEach(function (s) { M.sceneIndex[s.id] = s; });
   [].concat(M.poses, M.acc, M.props).forEach(function (it) { M.index[it.id] = it; });
   var fontsReady = document.fonts && document.fonts.load ? Promise.all([document.fonts.load('400 40px "Bowlby One"'), document.fonts.load('700 40px "Space Grotesk"')]).catch(function () {}) : Promise.resolve();
   fontsReady.then(function () {
@@ -530,6 +571,13 @@
     ui(); draw();
   });
   window.addEventListener('resize', draw);
+}
+
+(function () {
+  if (window.BOOTH_MANIFEST) { bootBooth(window.BOOTH_MANIFEST); return; }
+  fetch('/booth/manifest.json').then(function (r) { return r.json(); }).then(bootBooth).catch(function () {
+    var p = document.getElementById('bt-panel'); if (p) p.textContent = 'The meme pieces could not load. Refresh the page to try again.';
+  });
 })();
 
 /* ---------- Wall of Fat ---------- */

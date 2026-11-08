@@ -1,11 +1,47 @@
-import { memes, listIds, isAdmin, json, ID_RE } from "../lib/shared.mjs";
+import { getStore } from "@netlify/blobs";
+
+const memes = () => getStore({ name: "memes", consistency: "strong" });
+const ID_RE = /^\d{13}-[a-f0-9]{8}$/;
+
+function newId() {
+  return `${Date.now()}-${crypto.randomUUID().replace(/-/g, "").slice(0, 8)}`;
+}
+
+async function listIds(prefix) {
+  const { blobs } = await memes().list({ prefix: `${prefix}/` });
+  return blobs.map((b) => b.key.slice(prefix.length + 1)).filter((id) => ID_RE.test(id)).sort().reverse();
+}
+
+function json(data, status = 200, headers = {}) {
+  return new Response(JSON.stringify(data), { status, headers: { "content-type": "application/json", ...headers } });
+}
+
+function isAdmin(req) {
+  const want = process.env.ADMIN_PASSWORD || "";
+  const got = req.headers.get("x-admin-key") || "";
+  if (want.length < 8 || got.length !== want.length) return false;
+  let diff = 0;
+  for (let i = 0; i < want.length; i++) diff |= want.charCodeAt(i) ^ got.charCodeAt(i);
+  return diff === 0;
+}
+
 
 const STATES = ["pending", "approved"];
 
-export default async (req) => {
+const MAX_FAILS = 10;
+
+export default async (req, context) => {
   if (!process.env.ADMIN_PASSWORD || process.env.ADMIN_PASSWORD.length < 8)
     return json({ error: "ADMIN_PASSWORD is not set on Netlify (it needs at least 8 characters)." }, 500);
-  if (!isAdmin(req)) return json({ error: "Wrong password." }, 401);
+  const ip = String((context && context.ip) || "unknown").replace(/[^a-zA-Z0-9.:]/g, "_");
+  const guard = getStore("ratelimit");
+  const failKey = `adminfail/${Math.floor(Date.now() / 3600000)}/${ip}`;
+  const fails = Number((await guard.get(failKey)) || 0);
+  if (fails >= MAX_FAILS) return json({ error: "Too many wrong passwords. Try again in an hour." }, 429);
+  if (!isAdmin(req)) {
+    await guard.set(failKey, String(fails + 1));
+    return json({ error: "Wrong password." }, 401);
+  }
 
   const url = new URL(req.url);
   if (req.method === "GET") {
