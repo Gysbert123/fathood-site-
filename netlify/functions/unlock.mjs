@@ -7,8 +7,16 @@
 // transaction data. The token ignores the extra bytes; this function reads them back from the
 // chain, so nobody can claim someone else's burn. Each transaction can only be used once.
 // The unlock id is a hash of the game's secret account id, so it is safe to have it on-chain.
+//
+// Dollar prices: items with `usd` cost that many dollars of $FATHOOD at the live price. When the
+// page loads, the player gets a quote (token amount) that stays the same for 15 minutes; a burn
+// made within 30 minutes of the quote only needs that amount, even if the price moved since.
 import { getStore } from "@netlify/blobs";
 import { ITEMS, CHAIN } from "../lib/unlock-items.mjs";
+import { tokenUsd, tokensFor } from "../lib/token-price.mjs";
+
+const QUOTE_KEEP_MS = 15 * 60 * 1000;  // the page shows the same amount for this long
+const QUOTE_VALID_MS = 30 * 60 * 1000; // a burn this long after the quote may still use it
 
 const ID_RE = /^[a-f0-9]{32}$/;
 const TX_RE = /^0x[a-f0-9]{64}$/;
@@ -37,10 +45,51 @@ async function rpc(method, params) {
 const pad = (addr) => addr.toLowerCase().replace(/^0x/, "").padStart(64, "0");
 const units = (whole) => BigInt(whole) * 10n ** BigInt(CHAIN.decimals);
 
-function publicItems() {
+// Token amount for an item right now (whole tokens), or null if it has no price / price unknown.
+async function currentAmount(item, priceUsd) {
+  const it = ITEMS[item];
+  if (it.usd != null) return priceUsd ? tokensFor(it.usd, priceUsd) : null;
+  return it.price ?? null;
+}
+
+// Items with the amount this player should burn. Saves a 15-minute quote for usd items.
+async function publicItems(id) {
+  const s = store();
+  const priceUsd = await tokenUsd(s);
   const out = {};
-  for (const [k, v] of Object.entries(ITEMS)) out[k] = { kind: v.kind, name: v.name, price: v.price };
-  return out;
+  for (const [k, v] of Object.entries(ITEMS)) {
+    let price = await currentAmount(k, priceUsd);
+    let until = null;
+    if (v.usd != null && id) {
+      const q = await s.get(`q/${id}/${k}`, { type: "json" });
+      if (q && Date.now() - q.at < QUOTE_KEEP_MS) {
+        price = price == null ? q.amount : Math.min(price, q.amount);
+        until = q.at + QUOTE_KEEP_MS;
+      } else if (price != null) {
+        const at = Date.now();
+        // keep the previous quote too, so a burn made just before this one replaced it still counts
+        await s.setJSON(`q/${id}/${k}`, { amount: price, at, prev: q ? { amount: q.amount, at: q.at } : null });
+        until = at + QUOTE_KEEP_MS;
+      }
+    }
+    out[k] = { kind: v.kind, name: v.name, price, usd: v.usd ?? null, until };
+  }
+  return { items: out, priceUsd };
+}
+
+// Smallest amount (whole tokens) a burn made at `blockMs` must have, or null if unknown.
+async function requiredAmount(id, item, blockMs) {
+  const s = store();
+  const it = ITEMS[item];
+  if (it.usd == null) return it.price ?? null;
+  const opts = [];
+  const now = await currentAmount(item, await tokenUsd(s));
+  if (now != null) opts.push(now);
+  const q = await s.get(`q/${id}/${item}`, { type: "json" });
+  for (const x of q ? [q, q.prev] : []) {
+    if (x && blockMs - x.at > -120000 && blockMs - x.at < QUOTE_VALID_MS) opts.push(x.amount);
+  }
+  return opts.length ? Math.min(...opts) : null;
 }
 
 async function unlockedFor(id) {
@@ -65,8 +114,12 @@ async function checkBurn(tx, id, item) {
   const tag = input.slice(138);
   if (to !== pad(CHAIN.burn)) return { why: "Those tokens weren't sent to the burn address." };
   if (tag !== id) return { why: "That burn belongs to a different player." };
-  const price = units(ITEMS[item].price);
-  if (amount < price) return { why: `That burn was too small for ${ITEMS[item].name}.` };
+
+  const blk = await rpc("eth_getBlockByNumber", [rc.blockNumber, false]);
+  const need = await requiredAmount(id, item, blk ? Number(BigInt(blk.timestamp)) * 1000 : Date.now());
+  if (need == null) return { wait: true, why: "Can't read the $FATHOOD price right now. Trying again…" };
+  // 1% slack for rounding
+  if (amount * 100n < units(need) * 99n) return { why: `That burn was too small for ${ITEMS[item].name} (needs ${need.toLocaleString("en-US")} $FATHOOD).` };
 
   // the token's own Transfer event must show the burn really happened
   const ok = (rc.logs || []).some(
@@ -74,7 +127,7 @@ async function checkBurn(tx, id, item) {
       String(l.address).toLowerCase() === CHAIN.token.toLowerCase() &&
       l.topics?.[0] === TRANSFER_TOPIC &&
       String(l.topics?.[2] || "").toLowerCase() === "0x" + pad(CHAIN.burn) &&
-      BigInt(l.data) >= price
+      BigInt(l.data) >= amount
   );
   if (!ok) return { why: "Couldn't find the burn in that transaction." };
   return { from: String(t.from).toLowerCase(), amount: amount.toString() };
@@ -85,7 +138,9 @@ export default async (req) => {
   if (req.method === "OPTIONS") return json({});
   if (req.method === "GET") {
     const id = String(url.searchParams.get("id") || "").toLowerCase();
-    return json({ unlocked: ID_RE.test(id) ? await unlockedFor(id) : [], items: publicItems(), chain: CHAIN });
+    const ok = ID_RE.test(id);
+    const { items, priceUsd } = await publicItems(ok ? id : null);
+    return json({ unlocked: ok ? await unlockedFor(id) : [], items, priceUsd, chain: CHAIN });
   }
   if (req.method !== "POST") return json({ error: "method" }, 405);
 
@@ -100,7 +155,7 @@ export default async (req) => {
   const tx = String(b.tx || "").toLowerCase();
   if (!ID_RE.test(id)) return json({ error: "Bad player id. Open this page from the game." }, 400);
   if (!ITEMS[item]) return json({ error: "Unknown item." }, 400);
-  if (ITEMS[item].price == null) return json({ error: "This unlock has no price yet." }, 400);
+  if (ITEMS[item].price == null && ITEMS[item].usd == null) return json({ error: "This unlock has no price yet." }, 400);
   if (!TX_RE.test(tx)) return json({ error: "Bad transaction hash." }, 400);
 
   const s = store();

@@ -48,6 +48,7 @@
   <div class="card" id="main" hidden>
     <div class="item" id="item-name">…</div>
     <div class="price" id="item-price"></div>
+    <p class="muted" id="usdnote" hidden></p>
 
     <div class="ok" id="done" hidden>✅ Unlocked! Go back to the game. It shows up within a few seconds (or press REFRESH on the fighter select screen).</div>
 
@@ -110,10 +111,30 @@
       status('Burning for this unlock opens soon. Watch our X and Telegram.');
       return;
     }
-    $('#item-price').textContent = 'Burn ' + Number(IT.price).toLocaleString('en-US') + ' $' + C.symbol;
+    showPrice();
     var pending = localStorage.getItem('fh-burn-' + ID + '-' + ITEM);
     if (pending) { status('Checking your earlier burn…'); claim(pending); }
   }).catch(function () { $('#main').hidden = false; status('Could not load. Check your internet and refresh.', true); });
+
+  function showPrice() {
+    var t = 'Burn ' + Number(IT.price).toLocaleString('en-US') + ' $' + C.symbol;
+    if (IT.usd != null) {
+      t += ' (about $' + IT.usd + ')';
+      $('#usdnote').hidden = false;
+      $('#usdnote').textContent = 'The price is set in dollars, so the number of tokens follows the live $FATHOOD price. This amount is held for you for 15 minutes.';
+    }
+    $('#item-price').textContent = t;
+  }
+
+  // Ask the server for the current amount right before burning (it may have refreshed).
+  async function refreshPrice() {
+    var d = await (await fetch('/api/unlock?id=' + ID, { cache: 'no-store' })).json();
+    var n = d.items && d.items[ITEM];
+    if (!n || n.price == null) throw new Error('Could not read the $FATHOOD price right now. Try again in a minute.');
+    var changed = n.price !== IT.price;
+    IT = n; showPrice();
+    return changed;
+  }
 
   async function toChain() {
     var want = hex(BigInt(C.chainId));
@@ -156,6 +177,13 @@
   $('#burn').addEventListener('click', async function () {
     var btn = this; btn.disabled = true;
     try {
+      if (await refreshPrice()) {
+        var b = await balance();
+        if (b < units(IT.price)) { status('The price moved. Not enough $' + C.symbol + ' in this wallet for this unlock now.', true); return; }
+        btn.disabled = false;
+        status('The price moved, so the amount was updated. Check it and press Burn again.');
+        return;
+      }
       await toChain();
       // ERC-20 transfer(burn address, amount) + this player's unlock id on the end (the token ignores it,
       // the server reads it back to know who the burn is for)
