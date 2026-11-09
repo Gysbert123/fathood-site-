@@ -6,6 +6,7 @@
 // The game itself decides which rank is needed first; this list only knows the burn price.
 export const ITEMS = {
   predator: { kind: "fighter", name: "Predator", usd: 1 },
+  bear: { kind: "fighter", name: "Bear Market", usd: 2 },
 };
 
 export const CHAIN = {
