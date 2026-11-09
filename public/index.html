@@ -117,6 +117,7 @@ body{position:relative}
         <span style="font-family: 'Bowlby One', Impact, sans-serif; font-size: 24px; letter-spacing: 0.5px">$FATHOOD</span>
       </a>
       <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px 24px; font-weight: 500; font-size: 16px">
+        <a href="#play" style="color: var(--accent); text-decoration: none; padding: 12px 0; font-weight: 700">Play the game</a>
         <a href="#booth" style="color: #FFF8E7; text-decoration: none; padding: 12px 0">Meme Booth</a>
         <a href="#wall" style="color: #FFF8E7; text-decoration: none; padding: 12px 0">Wall of Fat</a>
         <a href="#lore" style="color: #FFF8E7; text-decoration: none; padding: 12px 0">Lore</a>
@@ -144,6 +145,7 @@ body{position:relative}
             <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"></path><path d="M13 6l6 6-6 6"></path></svg>
           </a>
           <a href="https://x.com/FATHO0D" style="display: inline-flex; align-items: center; gap: 10px; background: #FFF8E7; color: #111111; text-decoration: none; font-weight: 700; font-size: 18px; padding: 16px 28px; border-radius: 14px; border: 3px solid #111111; box-shadow: 5px 5px 0 #111111">Follow on X</a>
+          <a href="#play" style="display: inline-flex; align-items: center; gap: 10px; background: #C8221C; color: #FFF8E7; text-decoration: none; font-weight: 700; font-size: 18px; padding: 16px 28px; border-radius: 14px; border: 3px solid #111111; box-shadow: 5px 5px 0 #111111">Play the game</a>
           <a href="#booth" style="display: inline-flex; align-items: center; gap: 10px; background: #1F4FD1; color: #FFFFFF; text-decoration: none; font-weight: 700; font-size: 18px; padding: 16px 28px; border-radius: 14px; border: 3px solid #111111; box-shadow: 5px 5px 0 #111111">Make a meme</a>
         </div>
         <div style="background: #FFF8E7; border: 3px dashed #111111; border-radius: 14px; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; max-width: 34rem">
@@ -162,6 +164,46 @@ body{position:relative}
   <div style="background: #C8221C; color: #FFF8E7; border-bottom: 4px solid #111111; padding: 18px 24px; overflow: hidden">
     <p style="margin: 0; text-align: center; font-family: 'Bowlby One', Impact, sans-serif; font-size: clamp(1rem, 2.4vw, 1.6rem); letter-spacing: 1px">NO BUNDLES · FAIR LAUNCH · NO RUGS · NO DEV DUMPS · FAT BAGS ONLY</p>
   </div>
+
+  <!-- PLAY THE GAME -->
+  <style>
+    .pg-wrap { max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 48px; }
+    .pg-text { flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 20px; }
+    .pg-pics { flex: 1 1 480px; min-width: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .pg-pics img { width: 100%; height: auto; display: block; border: 3px solid #FFF8E7; border-radius: 16px; }
+    .pg-pics img:first-child { grid-column: 1 / -1; box-shadow: 8px 8px 0 var(--accent); }
+    .pg-btn { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font-weight: 700; font-size: 18px; padding: 16px 28px; border-radius: 14px; border: 3px solid #FFF8E7; }
+    .pg-list { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; font-size: 1.1rem; line-height: 1.45; }
+    .pg-list li { display: flex; gap: 12px; }
+    .pg-list li::before { content: ""; flex: none; width: 12px; height: 12px; margin-top: 7px; background: var(--accent); border-radius: 3px; }
+  </style>
+  <section id="play" aria-labelledby="play-title" style="background: #111111; color: #FFF8E7; padding: 88px 24px; border-bottom: 4px solid #111111">
+    <div class="pg-wrap">
+      <div class="pg-text">
+        <p style="margin: 0; align-self: flex-start; background: var(--accent); color: #111111; font-weight: 700; font-size: 15px; letter-spacing: 1px; text-transform: uppercase; padding: 8px 16px; border-radius: 999px">Open beta · Free to play</p>
+        <h2 id="play-title" style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: clamp(2.2rem, 5vw, 3.8rem); line-height: 1.02">Fathood Battlegrounds</h2>
+        <p style="margin: 0; font-size: 1.25rem; line-height: 1.5; max-width: 34rem">40 fighters. One island. The flames are closing in. Drop in, grab loot, fight your way through and be the last fat one standing.</p>
+        <ul class="pg-list">
+          <li>Play free as Fathood, Ghost Fathood, Torch or Fathood&rsquo;s Wife</li>
+          <li>Climb the weekly leaderboard</li>
+          <li>Unlock Predator with a $1 burn of $FATHOOD</li>
+        </ul>
+        <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px">
+          <a class="pg-btn" href="https://github.com/Gysbert123/fathood-site-/releases/latest/download/FathoodBattlegrounds-beta-0.1.zip" style="background: #C8221C; color: #FFF8E7; box-shadow: 5px 5px 0 var(--accent)">
+            Download for Windows
+            <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v12"></path><path d="M6 11l6 6 6-6"></path><path d="M5 20h14"></path></svg>
+          </a>
+          <a class="pg-btn" href="/play" style="background: transparent; color: #FFF8E7">How to play &amp; leaderboard</a>
+        </div>
+        <p style="margin: 0; color: #bbbbbb; font-size: 0.95rem">Windows 10 / 11 (64-bit) · about 160 MB · beta 0.1</p>
+      </div>
+      <div class="pg-pics">
+        <img src="/beta-78c91828/pick.jpg" alt="Pick your fighter: Fathood, Ghost Fathood, Torch and Fathood's Wife" width="1280" height="720" loading="lazy">
+        <img src="/beta-78c91828/play1.jpg" alt="Gameplay on the beach" width="1280" height="720" loading="lazy">
+        <img src="/beta-78c91828/play2.jpg" alt="Gameplay in town" width="1280" height="720" loading="lazy">
+      </div>
+    </div>
+  </section>
 
   <!-- MEME BOOTH -->
   <section id="booth" aria-labelledby="booth-title" style="padding: 88px 24px; background: #1F4FD1; border-bottom: 4px solid #111111">

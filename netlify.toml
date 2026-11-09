@@ -16,3 +16,9 @@
   [headers.values]
     X-Robots-Tag = "noindex, nofollow"
     Cache-Control = "no-store"
+
+# short link for the game: fathood.org/play
+[[redirects]]
+  from = "/play"
+  to = "/beta-78c91828/"
+  status = 301
