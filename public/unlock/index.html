@@ -34,6 +34,10 @@
   details summary { cursor:pointer; font-weight:700; color:var(--cream); }
   code { word-break:break-all; }
   [hidden] { display:none !important; }
+  .wallets { display:flex; flex-direction:column; gap:8px; }
+  .wallets button { display:flex; align-items:center; gap:12px; width:100%; text-align:left; font:700 17px 'Space Grotesk', sans-serif; padding:12px 14px; border:3px solid var(--ink); border-radius:12px; background:#fff; color:var(--ink); cursor:pointer; }
+  .wallets button:hover { background:var(--accent); }
+  .wallets img { width:32px; height:32px; border-radius:8px; flex:none; }
 </style>
 </head>
 <body>
@@ -58,7 +62,12 @@
         <button class="btn" id="connect" type="button">Connect wallet</button>
         <span id="who" class="muted"></span>
       </div>
-      <p class="muted" id="nowallet" hidden>No wallet found in this browser. Install <a href="https://metamask.io" target="_blank" rel="noopener">MetaMask</a> or <a href="https://rabby.io" target="_blank" rel="noopener">Rabby</a>, or open this page inside your wallet app's browser.</p>
+      <div id="picker" hidden style="margin-top:12px;display:flex;flex-direction:column;gap:8px">
+        <p class="muted" style="margin:0"><b>Pick your wallet.</b> Use one that supports Robinhood Chain (EVM), like MetaMask or Rabby. Solana-only wallets won't work.</p>
+        <div class="wallets" id="wallets"></div>
+        <p class="muted" style="margin:0">Don't see MetaMask or Rabby? Install <a href="https://metamask.io/download/" target="_blank" rel="noopener">MetaMask</a> or <a href="https://rabby.io" target="_blank" rel="noopener">Rabby</a>, then refresh this page. On a phone, <a class="mml" href="#">open this page in the MetaMask app</a>.</p>
+      </div>
+      <p class="muted" id="nowallet" hidden>No EVM wallet found in this browser. Install <a href="https://metamask.io" target="_blank" rel="noopener">MetaMask</a> or <a href="https://rabby.io" target="_blank" rel="noopener">Rabby</a>, or open this page inside your wallet app's browser. <a id="mmlink" href="#">Open in the MetaMask app</a></p>
 
       <div id="burnbox" hidden style="display:flex;flex-direction:column;gap:12px;margin-top:12px">
         <div class="muted" id="bal"></div>
@@ -95,7 +104,17 @@
   function fmt(units) { var d = 10n ** BigInt(C.decimals); var w = units / d; return w.toLocaleString('en-US'); }
   function units(whole) { return BigInt(whole) * 10n ** BigInt(C.decimals); }
   function pad(h) { return h.replace(/^0x/, '').toLowerCase().padStart(64, '0'); }
-  function eth() { return window.ethereum; }
+  // Every installed EVM wallet announces itself (EIP-6963), so the player can pick MetaMask, Rabby, etc.
+  // instead of whichever wallet grabbed window.ethereum first (e.g. a Solana wallet like Phantom).
+  var wallets = [], prov = null;
+  window.addEventListener('eip6963:announceProvider', function (e) {
+    var d = e.detail;
+    if (d && d.info && d.provider && !wallets.some(function (w) { return w.info.uuid === d.info.uuid; })) wallets.push(d);
+  });
+  window.dispatchEvent(new Event('eip6963:requestProvider'));
+  var mm = 'https://metamask.app.link/dapp/' + location.host + location.pathname + location.search;
+  $('#mmlink').href = mm; document.querySelectorAll('.mml').forEach(function (a) { a.href = mm; });
+  function eth() { return prov; }
   function req(m, p) { return eth().request({ method: m, params: p || [] }); }
 
   fetch('/api/unlock?id=' + ID, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (d) {
@@ -153,8 +172,25 @@
     var j = await r.json(); return BigInt(j.result || '0x0');
   }
 
-  $('#connect').addEventListener('click', async function () {
-    if (!eth()) { $('#nowallet').hidden = false; return; }
+  $('#connect').addEventListener('click', function () {
+    status('');
+    window.dispatchEvent(new Event('eip6963:requestProvider'));
+    var list = wallets.slice();
+    if (!list.length && window.ethereum) list.push({ info: { name: 'Browser wallet', uuid: 'injected' }, provider: window.ethereum });
+    if (!list.length) { $('#nowallet').hidden = false; return; }
+    var box = $('#wallets'); box.innerHTML = '';
+    list.forEach(function (w) {
+      var b = document.createElement('button'); b.type = 'button';
+      if (w.info.icon && /^data:image\//.test(w.info.icon)) { var i = document.createElement('img'); i.src = w.info.icon; i.alt = ''; b.appendChild(i); }
+      b.appendChild(document.createTextNode(w.info.name || 'Wallet'));
+      b.addEventListener('click', function () { $('#picker').hidden = true; connectWith(w.provider); });
+      box.appendChild(b);
+    });
+    $('#picker').hidden = false;
+  });
+
+  async function connectWith(p) {
+    prov = p;
     status('');
     try {
       var acc = await req('eth_requestAccounts');
@@ -169,8 +205,8 @@
       $('#bal').textContent = 'You hold ' + fmt(b) + ' $' + C.symbol + '.';
       if (b < need) { status('Not enough $' + C.symbol + ' in this wallet for this unlock.', true); $('#burn').dataset.short = '1'; }
       $('#burn').disabled = !$('#agree').checked || $('#burn').dataset.short === '1';
-    } catch (e) { status((e && e.message) || 'Wallet connection failed.', true); }
-  });
+    } catch (e) { prov = null; status((e && e.message) || 'Wallet connection failed.', true); }
+  }
 
   $('#agree').addEventListener('change', function () { $('#burn').disabled = !this.checked || $('#burn').dataset.short === '1'; });
 
