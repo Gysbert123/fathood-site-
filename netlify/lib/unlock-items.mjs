@@ -5,13 +5,13 @@
 //   usd: null and no price -> "price coming soon" (burning is off)
 // The game itself decides which rank is needed first; this list only knows the burn price.
 export const ITEMS = {
-  predator: { kind: "fighter", name: "Predator", usd: 1 },
-  bear: { kind: "fighter", name: "Bear Market", usd: 2 },
-  bullrun: { kind: "fighter", name: "Bull Run", usd: 2 },
-  boomer: { kind: "fighter", name: "Boomer", usd: 2 },
-  frostbite: { kind: "fighter", name: "Frostbite", usd: 3 },
-  bulldozer: { kind: "fighter", name: "Bulldozer", usd: 3 },
-  shadow: { kind: "fighter", name: "Shadow", usd: 5 },
+  predator: { kind: "fighter", name: "Predator", usd: 0.5 },
+  bear: { kind: "fighter", name: "Bear Market", usd: 0.5 },
+  bullrun: { kind: "fighter", name: "Bull Run", usd: 0.5 },
+  boomer: { kind: "fighter", name: "Boomer", usd: 0.5 },
+  frostbite: { kind: "fighter", name: "Frostbite", usd: 1 },
+  bulldozer: { kind: "fighter", name: "Bulldozer", usd: 1 },
+  shadow: { kind: "fighter", name: "Shadow", usd: 1.5 },
 };
 
 export const CHAIN = {

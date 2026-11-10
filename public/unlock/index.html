@@ -138,7 +138,7 @@
   function showPrice() {
     var t = 'Burn ' + Number(IT.price).toLocaleString('en-US') + ' $' + C.symbol;
     if (IT.usd != null) {
-      t += ' (about $' + IT.usd + ')';
+      t += ' (about $' + (Number.isInteger(IT.usd) ? IT.usd : IT.usd.toFixed(2)) + ')';
       $('#usdnote').hidden = false;
       $('#usdnote').textContent = 'The price is set in dollars, so the number of tokens follows the live $FATHOOD price. This amount is held for you for 15 minutes.';
     }
