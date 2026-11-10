@@ -7,6 +7,11 @@
 export const ITEMS = {
   predator: { kind: "fighter", name: "Predator", usd: 1 },
   bear: { kind: "fighter", name: "Bear Market", usd: 2 },
+  bullrun: { kind: "fighter", name: "Bull Run", usd: 2 },
+  boomer: { kind: "fighter", name: "Boomer", usd: 2 },
+  frostbite: { kind: "fighter", name: "Frostbite", usd: 3 },
+  bulldozer: { kind: "fighter", name: "Bulldozer", usd: 3 },
+  shadow: { kind: "fighter", name: "Shadow", usd: 5 },
 };
 
 export const CHAIN = {
