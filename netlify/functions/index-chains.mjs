@@ -1,7 +1,7 @@
 // Runs every 30 minutes (kept slow to save Netlify credits): pulls brand-new, trending and the biggest (by 24h volume) coins on the chains in INDEX_CHAINS from GeckoTerminal,
 // so the Fat List has every coin, not only the ones people add. Also tidies up old rows.
 import { sql } from "../lib/db.mjs";
-import { INDEX_CHAINS, newId, clean, cleanUrl } from "../lib/coinlist.mjs";
+import { INDEX_CHAINS, newId, clean, cleanUrl, fakeVolume } from "../lib/coinlist.mjs";
 
 export const config = { schedule: "*/30 * * * *" };
 const QUOTES = new Set(["WETH", "ETH", "USDG", "USDC", "USDT", "SYRUPUSDG", "DAI"]);
@@ -21,6 +21,8 @@ export async function indexChain(chain, network, pages) {
         const address = clean(t.address, 90);
         const symbol = clean(t.symbol, 12).replace(/^\$/, "");
         if (!/^0x[a-fA-F0-9]{40}$/.test(address) || !symbol || QUOTES.has(symbol.toUpperCase())) continue;
+        const tx = a.transactions?.h24 || {};
+        if (fakeVolume(a.volume_usd?.h24, (tx.buys || 0) + (tx.sells || 0), (tx.buyers || 0) + (tx.sellers || 0))) continue;
         const img = cleanUrl(t.image_url);
         rows.push({
           id: newId(), chain, address, name: clean(t.name, 40) || symbol, symbol: symbol.toUpperCase(),

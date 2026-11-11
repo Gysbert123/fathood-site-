@@ -1,5 +1,5 @@
 import { sql, toCoin, VISIBLE, LIVE_EXTRAS, liveAds, liveSide } from "./db.mjs";
-import { db, cleanUrl, INDEX_MIN_LIQUIDITY } from "./coinlist.mjs";
+import { db, cleanUrl, INDEX_MIN_LIQUIDITY, fakeVolume } from "./coinlist.mjs";
 
 const same = (a, b) => String(a || "").toLowerCase() === String(b || "").toLowerCase();
 
@@ -16,7 +16,7 @@ export async function refreshMarket({ budgetMs = 22000 } = {}) {
   for (const c of coins) (byChain[c.chain] ||= []).push(c);
   for (const list of Object.values(byChain)) for (let i = 0; i < list.length; i += 30) chunks.push(list.slice(i, i + 30));
 
-  const updates = [];
+  const updates = [], fakes = [];
   let next = 0;
   async function worker() {
     while (next < chunks.length && Date.now() - t0 < budgetMs) {
@@ -32,6 +32,7 @@ export async function refreshMarket({ budgetMs = 22000 } = {}) {
             p.pairCreatedAt ? new Date(p.pairCreatedAt).toISOString() : null, p.pairAddress || null, p.url || null, cleanUrl(p.info?.imageUrl) || null]
             : [c.id, null, null, null, null, null, null, null, null, null]);
           if (!p) updates[updates.length - 1].push("missing");
+          else if (fakeVolume(p.volume?.h24, (p.txns?.h24?.buys || 0) + (p.txns?.h24?.sells || 0))) fakes.push(c.id);
         }
       } catch {}
     }
@@ -47,7 +48,9 @@ export async function refreshMarket({ budgetMs = 22000 } = {}) {
       from (values ${sql()(found)}) as u(id, price, change24, mcap, liquidity, volume24, pca, pair, url, img) where coins.id = u.id`;
   }
   if (missing.length) await sql()`update coins set market_at = now() where id in ${sql()(missing)}`;
-  return { checked: coins.length, updated: found.length, missing: missing.length, ms: Date.now() - t0 };
+  // Only auto-listed coins are hidden this way; coins the team approved are left alone.
+  if (fakes.length) await sql()`update coins set status = 'rejected' where id in ${sql()(fakes)} and status = 'indexed'`;
+  return { checked: coins.length, updated: found.length, missing: missing.length, fake: fakes.length, ms: Date.now() - t0 };
 }
 const num = (v) => (v == null || v === "" || isNaN(Number(v)) ? null : Number(v));
 

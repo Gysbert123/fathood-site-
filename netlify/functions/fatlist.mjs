@@ -2,7 +2,7 @@ import { sql, hit, toCoin, VISIBLE, LIVE_EXTRAS, liveAds, dayNumber } from "../l
 import { getSnapshot } from "../lib/market.mjs";
 import { lookup } from "../lib/lookup.mjs";
 import { parseLogo, saveLogo, json, newId, ID_RE, ipOf, clean, cleanUrl, addrOk, chainName, testPrices, prices,
-  CHAIN_NAMES, PAY_CHAINS, DISCOUNTS, AUTO_LIST_MIN_LIQUIDITY, INDEX_MIN_LIQUIDITY, INDEX_CHAINS } from "../lib/coinlist.mjs";
+  CHAIN_NAMES, PAY_CHAINS, DISCOUNTS, AUTO_LIST_MIN_LIQUIDITY, INDEX_MIN_LIQUIDITY, INDEX_CHAINS, fakeVolume } from "../lib/coinlist.mjs";
 
 export const config = { path: "/api/fatlist" };
 
@@ -118,6 +118,7 @@ async function searchDex(q) {
   const best = new Map();
   for (const p of j.pairs || []) {
     if (!INDEX_CHAINS[p.chainId]) continue;
+    if (fakeVolume(p.volume?.h24, (p.txns?.h24?.buys || 0) + (p.txns?.h24?.sells || 0))) continue;
     const a = String(p.baseToken?.address || "");
     if (!/^0x[a-fA-F0-9]{40}$/.test(a)) continue;
     const k = p.chainId + ":" + a.toLowerCase(), cur = best.get(k);

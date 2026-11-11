@@ -24,7 +24,17 @@ export const CLAIM_USD = 1.99;                 // claim an auto-listed coin and 
 export const DISCOUNTS = { 1: 0, 3: 0, 7: 0.10, 14: 0.15 };
 export const ORDER_MINUTES = 30;               // how long a price quote is valid
 export const AUTO_LIST_MIN_LIQUIDITY = 5000;   // submitted coins with at least this much liquidity go live straight away
-export const INDEX_MIN_LIQUIDITY = 3000;       // auto-indexed coins show on the board once they reach this much liquidity
+export const INDEX_MIN_LIQUIDITY = 3000;
+// Fake volume: copycat coins that show millions of "volume" from a handful of trades between a few wallets.
+// Real coins with big volume have many trades. True = don't trust these numbers.
+export function fakeVolume(volume, trades, traders = null) {
+  const v = Number(volume) || 0, t = Number(trades) || 0;
+  if (v < 100000) return false;
+  if (t < 30) return true;                          // $100k+ volume from under 30 trades
+  if (v / t > 25000) return true;                    // average trade above $25k
+  if (traders != null && Number(traders) < 10) return true; // only a few wallets
+  return false;
+}       // auto-indexed coins show on the board once they reach this much liquidity
 
 // Chains whose new coins are pulled in automatically (DexScreener id: GeckoTerminal network id).
 export const INDEX_CHAINS = { robinhood: "robinhood" };
