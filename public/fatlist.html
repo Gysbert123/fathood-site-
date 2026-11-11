@@ -82,7 +82,7 @@ tr.promo td:first-child{box-shadow:inset 6px 0 0 var(--lime)}
 .badge{display:inline-block;font-size:11px;font-weight:700;background:var(--lime);border:2px solid var(--ink);padding:0 7px;border-radius:99px;margin-left:6px;vertical-align:2px}
 .up{color:var(--up);font-weight:700}.down{color:var(--down);font-weight:700}
 .vote{border:2px solid var(--ink);background:var(--paper);border-radius:10px;padding:4px 10px;font-weight:700;cursor:pointer;min-width:64px}
-.vote[aria-pressed="true"]{background:var(--lime)}
+.vote[aria-pressed="true"]{background:var(--lime);cursor:default}
 .empty{padding:40px 20px;text-align:center;font-weight:700}
 .fine{font-size:13.5px;color:var(--mute);margin-top:14px;max-width:70ch}
 
@@ -200,6 +200,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 .linkbtn{background:none;border:0;padding:0;font-weight:700;text-decoration:underline;cursor:pointer;font-size:14px}
 .picked{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .picked button{cursor:pointer}
+.picked{display:flex;align-items:center;gap:10px;border:3px solid var(--ink);border-radius:12px;padding:10px 12px;background:var(--lime);font-weight:700;margin-top:8px}
+.picked .av{flex:none}.picked span.t{flex:1;min-width:0;overflow-wrap:anywhere}
 .suggest{border:2px solid var(--ink);border-radius:10px;margin-top:6px;max-height:200px;overflow:auto;background:var(--paper)}
 .suggest button{display:flex;gap:8px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:8px 10px;cursor:pointer;font-weight:700}
 .suggest button:hover,.suggest button:focus{background:var(--cream)}
@@ -343,7 +345,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
       <button role="tab" data-g="advertise" aria-selected="false">Advertise</button>
     </div>
     <form class="box" id="growForm" style="padding:22px;max-width:760px" novalidate>
-      <div class="f"><label for="g-coin">Coin</label><select id="g-coin"></select><div class="err">Pick a coin.</div>
+      <div class="f"><label for="g-q">Which coin?</label><input id="g-q" autocomplete="off" placeholder="Search by name, $ticker or contract address"><div class="err">Search for your coin and pick it from the list.</div>
+        <div class="suggest" id="g-sug" hidden></div><div class="picked" id="g-picked" hidden></div>
         <div class="hint">Only coins live on the Fat List can be grown. Not on it yet? <a href="#add">Add it</a>.</div></div>
       <p id="g-blurb" style="margin:0 0 16px"></p>
       <div class="pkgs" id="g-pkgs"></div>
@@ -462,6 +465,7 @@ let DEMO_POSTS=[
 async function load(){
   try{const j=await api("/api/fatlist");if(!j.ok)throw 0;coins=j.coins;ads=j.ads||[];S=j.settings;total=j.total||coins.length}
   catch(e){DEMO=true;coins=DEMO_COINS;S=DEMO_SETTINGS;ads=[{coinId:DEMO_COINS[8].id,text:"The crispiest meme on Robinhood Chain",name:"Fry Guy",symbol:"FRY"}];$("#demo").hidden=false}
+  if(!DEMO){const m=await api("/api/fatlist?mine=1").catch(()=>({}));if(Array.isArray(m.voted)){voted.clear();m.voted.forEach(x=>voted.add(x));store.set("fatlist-votes",[...voted])}}
   if(session&&!DEMO){const j=await api("/api/talk?me=1").catch(()=>({}));if(!j.me){session=null;store.del("hoodtalk-session")}else session.me=j.me}
   renderAd();buildChips();renderSpots();renderRows();buildGrow();buildAdd();route();
 }
@@ -513,17 +517,22 @@ function renderRows(){
     <td><div class="cn">${av(c)}<span><b>${esc(c.name)}${vb(c)}${c.promo?'<span class="badge">Promoted</span>':""}${c.boosts?`<span class="boost">⚡${c.boosts}</span>`:""}</b><small>$${esc(c.symbol)}${c.unclaimed?" · auto-listed":""}</small></span></div></td>
     <td>${esc(chainName(c.chain))}</td><td class="num">${fP(c.price)}</td><td class="num ${(c.change||0)>=0?"up":"down"}">${fC(c.change)}</td>
     <td class="num">${fM(c.mcap)}</td><td class="num">${fM(c.liquidity)}</td><td>${fA(ageOf(c))}</td>
-    <td><button class="vote num" data-v="${esc(c.id)}" aria-pressed="${voted.has(c.id)}" aria-label="Vote for ${esc(c.name)}, ${c.votes||0} votes">▲ ${c.votes||0}</button></td></tr>`).join("");
+    <td><button class="vote num" data-v="${esc(c.id)}" aria-pressed="${voted.has(c.id)}" title="${voted.has(c.id)?"You voted. Right-click (or press and hold) to take your vote back.":"Vote"}" aria-label="${voted.has(c.id)?"You voted for":"Vote for"} ${esc(c.name)}, ${c.votes||0} votes">▲ ${c.votes||0}</button></td></tr>`).join("");
 }
-async function vote(id,after){
-  const c=coins.find(x=>x.id===id);if(!c||voted.has(id))return;
-  voted.add(id);store.set("fatlist-votes",[...voted]);c.votes=(c.votes||0)+1;after();
-  if(!DEMO){try{const j=await api("/api/fatlist",{body:{action:"vote",id}});if(j.votes!=null){c.votes=j.votes;after()}}catch(_){}}
+// One vote per coin. Clicking again does nothing; right-click (or press and hold on a phone) takes the vote back.
+async function vote(id,after,undo){
+  const c=coins.find(x=>x.id===id);if(!c||voted.has(id)===!undo)return;
+  if(undo){voted.delete(id);c.votes=Math.max(0,(c.votes||0)-1)}else{voted.add(id);c.votes=(c.votes||0)+1}
+  store.set("fatlist-votes",[...voted]);after();
+  if(!DEMO){try{const j=await api("/api/fatlist",{body:{action:undo?"unvote":"vote",id}});
+    if(j.ok&&j.votes!=null){c.votes=j.votes;after()}
+    else if(!j.ok){if(undo){voted.add(id);c.votes++}else{voted.delete(id);c.votes=Math.max(0,c.votes-1)}store.set("fatlist-votes",[...voted]);after();if(j.error)alert(j.error)}}catch(_){}}
 }
 $("#rows").addEventListener("click",e=>{
   const v=e.target.closest("[data-v]");if(v){e.stopPropagation();vote(v.dataset.v,renderRows);return}
   const tr=e.target.closest("tr[data-id]");if(tr)location.hash="#coin/"+tr.dataset.id;
 });
+$("#rows").addEventListener("contextmenu",e=>{const v=e.target.closest("[data-v]");if(v&&voted.has(v.dataset.v)){e.preventDefault();vote(v.dataset.v,renderRows,true)}});
 $("#rows").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("tr[data-id]"))location.hash="#coin/"+e.target.dataset.id});
 
 // ---------- coin page
@@ -537,7 +546,7 @@ async function showCoin(id){
   const chart=c.pairAddress&&!DEMO?`<iframe class="chart" title="${esc(c.name)} price chart" loading="lazy" src="https://dexscreener.com/${esc(c.chain)}/${esc(c.pairAddress)}?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=60"></iframe>`:`<div class="chart" style="display:grid;place-items:center;font-weight:700">${DEMO?"Live DexScreener chart shows here":"No trading pair found yet"}</div>`;
   el.innerHTML=`<a class="back" href="#coins">← The Fat List</a>
     <div class="coinhead">${av(c)}<div><h1>${esc(c.name)}${vb(c)}</h1><div style="font-weight:700;margin-top:6px">$${esc(c.symbol)} on ${esc(chainName(c.chain))}${c.promo?' <span class="badge">Promoted</span>':""}${c.boosts?` <span class="boost">⚡${c.boosts} boosts</span>`:""}${!live?' <span class="badge" style="background:var(--soft)">In review</span>':""}</div></div>
-      ${live?`<button class="vote num" id="cv" aria-pressed="${voted.has(c.id)}" style="margin-left:auto;font-size:18px;padding:8px 14px">▲ ${c.votes||0}</button>`:""}</div>
+      ${live?`<button class="vote num" id="cv" aria-pressed="${voted.has(c.id)}" title="${voted.has(c.id)?"You voted. Right-click (or press and hold) to take your vote back.":"Vote"}" style="margin-left:auto;font-size:18px;padding:8px 14px">▲ ${c.votes||0}</button>`:""}</div>
     ${c.unclaimed?`<p class="note wait" style="margin-top:16px">${c.claimPending?"Someone has asked to claim this coin. The Fathood team is reviewing it.":`This coin was added automatically. Is it yours? <a href="#add/${esc(c.address)}">Claim it</a> to add your logo, description and links.`}</p>`:""}
     <div class="grid5 num"><div class="stat"><span>Price</span><b>${fP(c.price)}</b></div><div class="stat"><span>24h</span><b class="${(c.change||0)>=0?"up":"down"}">${fC(c.change)}</b></div>
       <div class="stat"><span>Market cap</span><b>${fM(c.mcap)}</b></div><div class="stat"><span>Liquidity</span><b>${fM(c.liquidity)}</b></div><div class="stat"><span>24h volume</span><b>${fM(c.volume)}</b></div></div>
@@ -549,17 +558,13 @@ async function showCoin(id){
         <p class="warn">Anyone can add a coin, and promoted spots are paid. Check the contract and liquidity yourself before buying.</p></div>
       <div class="box panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Hood Talk on $${esc(c.symbol)}</h2><a class="btn white" href="#write" id="wc">Write about it</a></div><div class="feed" id="coinFeed" style="margin-top:14px"><p class="small">Loading posts…</p></div></div>
     </div><div>
-      <div class="box panel"><h2>Grow ${esc(c.name)}</h2>
-        ${live?`<div class="growbtns">
-          <button class="btn" data-g="boost">⚡ Boost <small>from $${Math.min(...Object.values(S.boosts).map(b=>b.usd))}</small></button>
-          <button class="btn white" data-g="promote">Promote <small>from $${Math.min(...Object.values(S.packages).filter(p=>p.group==="promote").map(p=>p.perDay))}/day</small></button>
-          <button class="btn white" data-g="advertise">Advertise <small>$${S.packages.banner.perDay}/day</small></button></div>`:`<p style="margin:0">Boosts, promotion and ads open once the coin is live.</p>`}
-        ${c.verified?`<p class="small" style="margin:14px 0 0"><span class="vbadge">✓</span> Verified by the Fathood team.</p>`:`<button class="btn dark" id="vf" style="width:100%;margin-top:10px">Get the blue tick · $${S.verifyUsd}</button><p class="small" style="margin:8px 0 0">The team checks the contract, liquidity and links, then adds the tick${live?"":" and puts the coin live"}.</p>`}
+      <div class="box panel"><h2>Blue tick</h2>
+        ${c.verified?`<p class="small" style="margin:0"><span class="vbadge">✓</span> Verified by the Fathood team.</p>`:`<button class="btn dark" id="vf" style="width:100%">Get the blue tick · $${S.verifyUsd}</button><p class="small" style="margin:8px 0 0">The team checks the contract, liquidity and links, then adds the tick${live?"":" and puts the coin live"}.</p>`}
       </div>
     </div></div>`;
   $("#cp").onclick=async e=>{try{await navigator.clipboard.writeText(c.address);e.target.textContent="Copied"}catch(_){e.target.textContent="Press and hold to copy"}};
-  const cv=$("#cv");if(cv)cv.onclick=()=>vote(c.id,()=>{cv.textContent="▲ "+c.votes;cv.setAttribute("aria-pressed","true")});
-  $$("#coinPage [data-g]").forEach(b=>b.onclick=()=>{growCoin=c.id;growTab=b.dataset.g;location.hash="#grow"});
+  const cv=$("#cv"),cvr=()=>{cv.textContent="▲ "+c.votes;cv.setAttribute("aria-pressed",String(voted.has(c.id)));cv.title=voted.has(c.id)?"You voted. Right-click (or press and hold) to take your vote back.":"Vote"};
+  if(cv){cv.onclick=()=>vote(c.id,cvr);cv.oncontextmenu=e=>{if(voted.has(c.id)){e.preventDefault();vote(c.id,cvr,true)}}}
   const vf=$("#vf");if(vf)vf.onclick=()=>openPay({kind:"verify",listingId:c.id,title:`Blue tick check for ${c.name}`,usd:S.verifyUsd});
   $("#wc").onclick=()=>{writeCoins=[{id:c.id,name:c.name,symbol:c.symbol,image:c.image}]};
   loadFeed($("#coinFeed"),{coin:c.id},true);
@@ -670,14 +675,28 @@ const GROW_BLURB={boost:"Boosts push your coin up the Trending list straight awa
 function buildGrow(){
   const today=new Date().toISOString().slice(0,10);$("#g-start").min=today;$("#g-start").value=today;
   $("#g-adtext").oninput=e=>{$("#g-adcount").textContent=e.target.value.length;adPreview()};
-  $("#g-coin").onchange=()=>{growCoin=$("#g-coin").value;adPreview()};
+  let gt=null;
+  $("#g-q").oninput=e=>{const q=e.target.value.trim().replace(/^\$/,"");clearTimeout(gt);
+    if(q.length<2){$("#g-sug").hidden=true;return}
+    const ql=q.toLowerCase(),local=coins.filter(c=>String(c.address).toLowerCase()===ql||c.name.toLowerCase().includes(ql)||c.symbol.toLowerCase().includes(ql));
+    showSug(local);
+    if(!DEMO)gt=setTimeout(async()=>{try{const j=await api("/api/fatlist?q="+encodeURIComponent(q));if(j.coins&&$("#g-q").value.trim().replace(/^\$/,"")===q){j.coins.forEach(x=>{if(!coins.some(c=>c.id===x.id))coins.push(x)});
+      const ids=new Set(local.map(c=>c.id));showSug(local.concat(j.coins.filter(x=>!ids.has(x.id))))}}catch(_){}},300)};
+  $("#g-sug").onclick=e=>{const b=e.target.closest("[data-c]");if(!b)return;growCoin=b.dataset.c;$("#g-q").value="";$("#g-sug").hidden=true;showPicked()};
+  $("#g-picked").onclick=e=>{if(e.target.closest("button")){growCoin="";showPicked();$("#g-q").focus()}};
   $("#g-days").onchange=updGrow;
 }
+function showSug(list){const el=$("#g-sug");
+  el.innerHTML=list.length?list.slice(0,12).map(c=>`<button type="button" data-c="${esc(c.id)}">${av(c)}<span>${esc(c.name)} <small>$${esc(c.symbol)} · ${esc(chainName(c.chain))} · ${esc(short(String(c.address)))}</small></span></button>`).join(""):`<p class="small" style="margin:8px 10px">No coin found. <a href="#add">Add it to the Fat List</a> first.</p>`;
+  el.hidden=false}
+function showPicked(){const c=coins.find(x=>x.id===growCoin),el=$("#g-picked");
+  $("#g-q").hidden=!!c;el.hidden=!c;
+  el.innerHTML=c?`${av(c)}<span class="t">${esc(c.name)} ($${esc(c.symbol)}) <small style="font-weight:500">· ${esc(chainName(c.chain))} · ${esc(short(String(c.address)))}</small></span><button type="button" class="mini">Change</button>`:"";
+  if(c)$("#g-q").closest(".f").classList.remove("bad");adPreview()}
 async function ensureCoin(id){if(!id||DEMO||coins.some(c=>c.id===id))return;const x=await api("/api/fatlist?coin="+encodeURIComponent(id)).catch(()=>({}));if(x.coin&&["approved","indexed"].includes(x.coin.status))coins.push(x.coin)}
 async function renderGrowAsync(){await ensureCoin(growCoin);renderGrow()}
 function renderGrow(){
-  $("#g-coin").innerHTML=`<option value="">Pick a coin…</option>`+coins.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} ($${esc(c.symbol)})</option>`).join("");
-  $("#g-coin").value=growCoin&&coins.some(c=>c.id===growCoin)?growCoin:"";
+  if(growCoin&&!coins.some(c=>c.id===growCoin))growCoin="";showPicked();
   $$("#growTabs button").forEach(x=>x.setAttribute("aria-selected",String(x.dataset.g===growTab)));
   $("#g-blurb").textContent=GROW_BLURB[growTab];
   let cards;
@@ -692,7 +711,7 @@ function renderGrow(){
 $("#growTabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;growTab=b.dataset.g;renderGrow()};
 $("#g-pkgs").onclick=e=>{const b=e.target.closest("[data-p]");if(!b)return;growPick[growTab]=b.dataset.p;renderGrow()};
 function adPreview(){
-  const c=coins.find(x=>x.id===$("#g-coin").value)||{name:"Your Coin",symbol:"COIN"};
+  const c=coins.find(x=>x.id===growCoin)||{name:"Your Coin",symbol:"COIN"};
   $("#g-adprev").innerHTML=`<div class="adbar" style="border:0"><a href="#" onclick="return false" style="padding:0 12px"><span class="adtag">Ad</span>${av(c)}<span class="adtxt"><b>$${esc(c.symbol)}</b> · ${esc($("#g-adtext").value||"Your message here")}</span><span class="go">View</span></a></div>`;
 }
 function growPrice(){
@@ -704,8 +723,8 @@ function growPrice(){
 function updGrow(){const g=growPrice();$("#g-total").textContent="$"+g.usd.toLocaleString();$("#g-line").textContent=g.line}
 $("#growForm").onsubmit=e=>{
   e.preventDefault();const f=e.target;f.querySelectorAll(".f").forEach(x=>x.classList.remove("bad"));
-  const coin=coins.find(x=>x.id===$("#g-coin").value),today=new Date().toISOString().slice(0,10),bad=[];
-  if(!coin)bad.push($("#g-coin"));
+  const coin=coins.find(x=>x.id===growCoin),today=new Date().toISOString().slice(0,10),bad=[];
+  if(!coin)bad.push($("#g-q"));
   if(growTab!=="boost"&&(!$("#g-start").value||$("#g-start").value<today))bad.push($("#g-start"));
   const t=$("#g-adtext").value.trim();
   if(growTab==="advertise"&&(t.length<8||/(https?:|www\.|t\.me|\.com\b)/i.test(t)))bad.push($("#g-adtext"));

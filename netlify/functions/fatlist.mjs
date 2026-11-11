@@ -1,4 +1,4 @@
-import { sql, hit, toCoin, VISIBLE, LIVE_EXTRAS, liveAds, dayNumber } from "../lib/db.mjs";
+import { sql, hit, toCoin, VISIBLE, LIVE_EXTRAS, liveAds } from "../lib/db.mjs";
 import { getSnapshot } from "../lib/market.mjs";
 import { lookup } from "../lib/lookup.mjs";
 import { parseLogo, saveLogo, json, newId, ID_RE, ipOf, clean, cleanUrl, addrOk, chainName, testPrices, prices,
@@ -78,18 +78,30 @@ async function submit(b, context) {
   return json({ ok: true, id, status });
 }
 
+// One vote per person (by IP) per coin, for good. Voting again does nothing; "unvote" takes it back.
 async function vote(b, context) {
   const id = String(b.id || "");
   if (!ID_RE.test(id)) return json({ error: "Unknown coin." }, 400);
-  const ins = await sql()`insert into votes (coin_id, voter, day) select ${id}, ${ipOf(context)}, ${dayNumber()}
-    where exists (select 1 from coins c where c.id = ${id} and ${VISIBLE(INDEX_MIN_LIQUIDITY)}) on conflict do nothing returning 1`;
+  const ip = ipOf(context);
+  if (!(await hit("vote", ip, 120))) return json({ error: "Too many votes. Try again later." }, 429);
+  if (b.action === "unvote") {
+    const del = await sql()`delete from votes where coin_id = ${id} and voter = ${ip} returning 1`;
+    const [c] = del.length
+      ? await sql()`update coins set votes = greatest(votes - ${del.length}, 0) where id = ${id} returning votes`
+      : await sql()`select votes from coins where id = ${id}`;
+    if (!c) return json({ error: "Unknown coin." }, 404);
+    return json({ ok: true, voted: false, votes: c.votes });
+  }
+  const ins = await sql()`insert into votes (coin_id, voter, day) select ${id}, ${ip}, 0
+    where exists (select 1 from coins c where c.id = ${id} and ${VISIBLE(INDEX_MIN_LIQUIDITY)})
+      and not exists (select 1 from votes v where v.coin_id = ${id} and v.voter = ${ip}) on conflict do nothing returning 1`;
   if (!ins.length) {
     const [c] = await sql()`select votes from coins where id = ${id}`;
     if (!c) return json({ error: "Unknown coin." }, 404);
-    return json({ error: "You already voted for this coin today.", votes: c.votes }, 409);
+    return json({ ok: true, voted: true, already: true, votes: c.votes });
   }
   const [c] = await sql()`update coins set votes = votes + 1 where id = ${id} returning votes`;
-  return json({ ok: true, votes: c.votes });
+  return json({ ok: true, voted: true, votes: c.votes });
 }
 
 export default async (req, context) => {
@@ -123,14 +135,21 @@ export default async (req, context) => {
           order by (c.symbol ilike ${q}) desc, c.liquidity desc nulls last limit 40`;
         return json({ coins: rows.map(toCoin) }, 200, { "cache-control": "public, max-age=30" });
       }
+      if (u.searchParams.has("mine")) {
+        const rows = await sql()`select distinct coin_id from votes where voter = ${ipOf(context)}`;
+        return json({ voted: rows.map((r) => r.coin_id) }, 200, { "cache-control": "private, no-store" });
+      }
       const s = await getSnapshot();
+      // The board snapshot can be a few minutes old; vote counts are read fresh so a vote never seems to vanish.
+      const fresh = new Map((await sql()`select id, votes from coins where votes > 0`).map((r) => [r.id, r.votes]));
+      s.coins = s.coins.map((c) => ({ ...c, votes: fresh.get(c.id) || 0 }));
       return json({ coins: s.coins, ads: s.ads, total: s.total, settings: await settings() }, 200,
         { "cache-control": "public, max-age=15", "netlify-cdn-cache-control": "public, s-maxage=20, stale-while-revalidate=60" });
     }
     if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
     const b = await req.json().catch(() => ({}));
     if (b.action === "submit") return await submit(b, context);
-    if (b.action === "vote") return await vote(b, context);
+    if (b.action === "vote" || b.action === "unvote") return await vote(b, context);
     return json({ error: "Unknown action." }, 400);
   } catch (e) {
     console.error(e);
