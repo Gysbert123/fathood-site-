@@ -124,7 +124,7 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
           <button role="tab" data-t="claims" aria-selected="false">Claims</button>
           <button role="tab" data-t="approved" aria-selected="false">Live coins</button>
           <button role="tab" data-t="orders" aria-selected="false">Payments</button>
-          <button role="tab" data-t="ads" aria-selected="false">Ads running</button>
+          <button role="tab" data-t="ads" aria-selected="false">Ads &amp; spots</button>
           <button role="tab" data-t="talk" aria-selected="false">Hood Talk</button>
           <button role="tab" data-t="rejected" aria-selected="false">Rejected</button>
         </div>
@@ -367,11 +367,12 @@ function render(){
   }
   if(tab==="add"){el.innerHTML=ADD_HTML;wireAdd();return}
   if(tab==="orders"||tab==="ads"){
-    const o=tab==="ads"?data.orders.filter(x=>x.pkg==="banner"&&x.live):data.orders;
+    // "Ads & spots": every running paid placement (banner ads, left side banner, Spotlight cards, promoted rows)
+    const o=tab==="ads"?data.orders.filter(x=>x.kind==="promo"&&x.live):data.orders;
     el.innerHTML=o.length?o.map(x=>`<div class="card"><h3>${x.comped?"FREE":"$"+x.usd} · ${esc(x.label)}</h3><p>${esc(x.coin)}${x.start?` · ${day(x.start)} to ${day(x.end-1)}`:""}${x.live?'<span class="tag">LIVE</span>':""}${x.pulled?'<span class="tag" style="background:#eee">PULLED</span>':""}</p>
       ${x.adText?`<p><b>Banner:</b> ${esc(x.adText)}</p>`:""}
       ${x.comped?`<p class="meta">Given free by admin · ${ago(x.paidAt)}</p>`:`<p class="meta">Paid ${esc(x.amount)} ${esc(x.token)} on ${esc(x.chain)} · ${ago(x.paidAt)} · from ${esc(x.payer)}</p><p class="meta"><a href="${esc(x.explorer)}" target="_blank" rel="noopener">View transaction</a></p>`}
-      ${x.live&&!x.pulled?`<div class="row" style="margin-top:10px"><button class="no" data-a="pullAd" data-id="${x.id}">Take it down</button></div>`:""}</div>`).join(""):`<div class="empty">${tab==="ads"?"No banner ads running.":"No payments yet."}</div>`;
+      ${x.live&&!x.pulled?`<div class="row" style="margin-top:10px"><button class="no" data-a="pullAd" data-id="${x.id}">Take it down</button></div>`:""}</div>`).join(""):`<div class="empty">${tab==="ads"?"No ads or paid spots running.":"No payments yet."}</div>`;
     return;
   }
   if(tab==="talk"){

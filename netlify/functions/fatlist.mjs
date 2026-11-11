@@ -155,7 +155,7 @@ export default async (req, context) => {
       if (u.searchParams.has("coin")) {
         const id = u.searchParams.get("coin");
         if (!ID_RE.test(id)) return json({ error: "Unknown coin." }, 400);
-        const [r] = await sql()`select c.*, coalesce(b.boosts, 0) as boosts, p.promo from coins c ${LIVE_EXTRAS()} where c.id = ${id}`;
+        const [r] = await sql()`select c.*, coalesce(b.boosts, 0) as boosts, p.promo, p.spot from coins c ${LIVE_EXTRAS()} where c.id = ${id}`;
         if (!r || r.status === "rejected" || r.status === "removed") return json({ error: "That coin isn’t on the Fat List." }, 404);
         return json({ coin: { ...toCoin(r), status: r.status, claimPending: r.status === "indexed" && (await claimPending(id)) }, ads: await liveAds(), settings: await settings() });
       }
@@ -163,7 +163,7 @@ export default async (req, context) => {
         const q = clean(u.searchParams.get("q"), 90).replace(/^\$/, "");
         if (q.length < 2) return json({ coins: [] });
         const like = `%${q.replace(/[%_\\]/g, "\\$&")}%`;
-        const find = () => sql()`select c.*, coalesce(b.boosts, 0) as boosts, p.promo from coins c ${LIVE_EXTRAS()}
+        const find = () => sql()`select c.*, coalesce(b.boosts, 0) as boosts, p.promo, p.spot from coins c ${LIVE_EXTRAS()}
           where ${VISIBLE(INDEX_MIN_LIQUIDITY)} and (c.address_lc = ${q.toLowerCase()} or c.symbol ilike ${like} or c.name ilike ${like})
           order by (c.symbol ilike ${q}) desc, c.liquidity desc nulls last limit 40`;
         let rows = await find();
