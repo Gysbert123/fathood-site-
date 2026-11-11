@@ -2,7 +2,7 @@ import { sql, hit, toCoin, VISIBLE, LIVE_EXTRAS, liveAds, dayNumber } from "../l
 import { getSnapshot } from "../lib/market.mjs";
 import { lookup } from "../lib/lookup.mjs";
 import { parseLogo, saveLogo, json, newId, ID_RE, ipOf, clean, cleanUrl, addrOk, chainName, testPrices, prices,
-  CHAIN_NAMES, PAY_CHAINS, DISCOUNTS, AUTO_LIST_MIN_LIQUIDITY, INDEX_MIN_LIQUIDITY } from "../lib/coinlist.mjs";
+  CHAIN_NAMES, PAY_CHAINS, DISCOUNTS, AUTO_LIST_MIN_LIQUIDITY, INDEX_MIN_LIQUIDITY, INDEX_CHAINS } from "../lib/coinlist.mjs";
 
 export const config = { path: "/api/fatlist" };
 
@@ -65,8 +65,9 @@ async function submit(b, context) {
     const id = newId();
     const data = { ...f };
     if (logo) data.image = await saveLogo(id, logo);
-    await sql()`insert into claims (id, coin_id, data) values (${id}, ${existing.id}, ${sql().json(data)})`;
-    return json({ ok: true, id: existing.id, status: "claim" });
+    // Saved as "unpaid"; it goes to the team once the claim fee is paid (see fatpay.mjs).
+    await sql()`insert into claims (id, coin_id, data, status) values (${id}, ${existing.id}, ${sql().json(data)}, 'unpaid')`;
+    return json({ ok: true, id: existing.id, status: "claim", claimId: id });
   }
   const id = newId();
   const status = found.found && found.liquidity >= AUTO_LIST_MIN_LIQUIDITY ? "approved" : "pending";
@@ -107,6 +108,34 @@ async function vote(b, context) {
   return json({ ok: true, voted: true, votes: c.votes });
 }
 
+// Search fallback: coins on the indexed chains that aren't on the Fat List yet are looked up on DexScreener and added
+// (as auto-listed coins; they show once they have enough liquidity, like every other auto-listed coin).
+const numv = (v) => (v == null || v === "" || isNaN(Number(v)) ? null : Number(v));
+async function searchDex(q) {
+  const r = await fetch(`https://api.dexscreener.com/latest/dex/search?q=${encodeURIComponent(q)}`, { signal: AbortSignal.timeout(6000) });
+  if (!r.ok) return 0;
+  const j = await r.json();
+  const best = new Map();
+  for (const p of j.pairs || []) {
+    if (!INDEX_CHAINS[p.chainId]) continue;
+    const a = String(p.baseToken?.address || "");
+    if (!/^0x[a-fA-F0-9]{40}$/.test(a)) continue;
+    const k = p.chainId + ":" + a.toLowerCase(), cur = best.get(k);
+    if (!cur || (p.liquidity?.usd || 0) > (cur.liquidity?.usd || 0)) best.set(k, p);
+  }
+  const rows = [...best.values()].slice(0, 20).map((p) => {
+    const symbol = clean(p.baseToken.symbol, 12).replace(/^\$/, "").toUpperCase();
+    return { id: newId(), chain: p.chainId, address: p.baseToken.address, name: clean(p.baseToken.name, 40) || symbol, symbol,
+      image: cleanUrl(p.info?.imageUrl) || null, status: "indexed", source: "indexed", pair_address: clean(p.pairAddress, 90) || null,
+      price: numv(p.priceUsd), mcap: numv(p.marketCap ?? p.fdv), liquidity: numv(p.liquidity?.usd), volume24: numv(p.volume?.h24),
+      change24: numv(p.priceChange?.h24), pair_created_at: p.pairCreatedAt ? new Date(p.pairCreatedAt) : null, dex_url: cleanUrl(p.url) || null, market_at: new Date() };
+  }).filter((r) => r.symbol);
+  if (!rows.length) return 0;
+  const cols = ["id", "chain", "address", "name", "symbol", "image", "status", "source", "pair_address", "price", "mcap", "liquidity", "volume24", "change24", "pair_created_at", "dex_url", "market_at"];
+  await sql()`insert into coins ${sql()(rows, cols)} on conflict (chain, address_lc) do nothing`;
+  return rows.length;
+}
+
 export default async (req, context) => {
   try {
     const u = new URL(req.url);
@@ -133,9 +162,13 @@ export default async (req, context) => {
         const q = clean(u.searchParams.get("q"), 90).replace(/^\$/, "");
         if (q.length < 2) return json({ coins: [] });
         const like = `%${q.replace(/[%_\\]/g, "\\$&")}%`;
-        const rows = await sql()`select c.*, coalesce(b.boosts, 0) as boosts, p.promo from coins c ${LIVE_EXTRAS()}
+        const find = () => sql()`select c.*, coalesce(b.boosts, 0) as boosts, p.promo from coins c ${LIVE_EXTRAS()}
           where ${VISIBLE(INDEX_MIN_LIQUIDITY)} and (c.address_lc = ${q.toLowerCase()} or c.symbol ilike ${like} or c.name ilike ${like})
           order by (c.symbol ilike ${q}) desc, c.liquidity desc nulls last limit 40`;
+        let rows = await find();
+        if (rows.length < 5 && q.length >= 3 && (await hit("dexsearch", ipOf(context), 60))) {
+          try { if (await searchDex(q)) rows = await find(); } catch (e) { console.error("dex search", e.message); }
+        }
         return json({ coins: rows.map(toCoin) }, 200, { "cache-control": "public, max-age=30" });
       }
       if (u.searchParams.has("mine")) {
@@ -146,7 +179,7 @@ export default async (req, context) => {
       // The board snapshot can be a few minutes old; vote counts are read fresh so a vote never seems to vanish.
       const fresh = new Map((await sql()`select id, votes from coins where votes > 0`).map((r) => [r.id, r.votes]));
       s.coins = s.coins.map((c) => ({ ...c, votes: fresh.get(c.id) || 0 }));
-      return json({ coins: s.coins, ads: s.ads, total: s.total, settings: await settings() }, 200,
+      return json({ coins: s.coins, ads: s.ads, side: s.side || null, total: s.total, settings: await settings() }, 200,
         { "cache-control": "public, max-age=15", "netlify-cdn-cache-control": "public, s-maxage=20, stale-while-revalidate=60" });
     }
     if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);

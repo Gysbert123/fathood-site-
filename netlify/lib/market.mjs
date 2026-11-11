@@ -1,4 +1,4 @@
-import { sql, toCoin, VISIBLE, LIVE_EXTRAS, liveAds } from "./db.mjs";
+import { sql, toCoin, VISIBLE, LIVE_EXTRAS, liveAds, liveSide } from "./db.mjs";
 import { db, cleanUrl, INDEX_MIN_LIQUIDITY } from "./coinlist.mjs";
 
 const same = (a, b) => String(a || "").toLowerCase() === String(b || "").toLowerCase();
@@ -56,13 +56,17 @@ export async function buildSnapshot() {
   const v = sql()`select c.*, coalesce(b.boosts, 0) as boosts, p.promo from coins c ${LIVE_EXTRAS()} where ${VISIBLE(INDEX_MIN_LIQUIDITY)}`;
   const rows = await sql()`with v as (${v})
     (select * from v order by (promo is not null) desc,
-       (votes * 0.5 + boosts * 25 + coalesce(change24, 0) * 6 + ln(coalesce(volume24, liquidity, 0) + 1) * 8.686
-        + greatest(0, 30 - extract(epoch from now() - coalesce(pair_created_at, created_at)) / 86400) * 8) desc limit 400)
+       boosts desc,
+       (votes * 3 + ln(coalesce(volume24, 0) + 1) * 8.686 + ln(coalesce(liquidity, 0) + 1) * 3.474
+        + greatest(0, 2 - extract(epoch from now() - coalesce(pair_created_at, created_at)) / 86400) * 5) desc limit 400)
     union (select * from v order by change24 desc nulls last limit 100)
     union (select * from v order by coalesce(pair_created_at, created_at) desc limit 100)
-    union (select * from v order by votes desc limit 100)`;
+    union (select * from v order by votes desc limit 100)
+    union (select * from v order by mcap desc nulls last limit 150)
+    union (select * from v order by volume24 desc nulls last limit 150)
+    union (select * from v order by price desc nulls last limit 50)`;
   const [{ n }] = await sql()`select count(*)::int as n from coins c where ${VISIBLE(INDEX_MIN_LIQUIDITY)}`;
-  const snap = { at: Date.now(), total: n, coins: rows.map(toCoin), ads: await liveAds() };
+  const snap = { at: Date.now(), total: n, coins: rows.map(toCoin), ads: await liveAds(), side: await liveSide() };
   await db().set("snapshot/board", JSON.stringify(snap));
   return snap;
 }

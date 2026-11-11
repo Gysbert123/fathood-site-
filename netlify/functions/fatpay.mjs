@@ -1,10 +1,14 @@
 import { sql, hit, slotsTaken } from "../lib/db.mjs";
-import { db, json, newId, ID_RE, DAY, ipOf, clean, priceFor, prices, testPrices, PACKAGES, PAY_CHAINS, ORDER_MINUTES } from "../lib/coinlist.mjs";
+import { db, json, newId, ID_RE, DAY, ipOf, clean, priceFor, prices, testPrices, parseLogo, saveLogo, PACKAGES, PAY_CHAINS, ORDER_MINUTES } from "../lib/coinlist.mjs";
 
 export const config = { path: "/api/fatpay" };
 const TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const pad = (a) => "0x" + a.toLowerCase().replace(/^0x/, "").padStart(64, "0");
 const LIVE = ["approved", "indexed"];
+// orders.claim_id and orders.ad_image were added after launch; make sure the columns exist (cheap, once per warm function).
+let extraCols = null;
+const ensureCols = () => (extraCols ||= sql()`alter table orders add column if not exists claim_id text, add column if not exists ad_image text`
+  .catch((e) => { extraCols = null; throw e; }));
 
 async function rpc(chain, method, params) {
   const r = await fetch(PAY_CHAINS[chain].rpc(), { method: "POST", headers: { "content-type": "application/json" },
@@ -54,7 +58,14 @@ async function quote(b, context) {
   const test = !!(await testPrices()), P = prices(test);
   const o = { id: newId(), kind: b.kind, coin_id: coin.id, coin_label: `${coin.name} (${coin.symbol})`, chain, token, payer,
     pay_to: wallet.toLowerCase(), expires_at: new Date(now + ORDER_MINUTES * 60000), status: "awaiting" };
-  if (b.kind === "verify") {
+  if (b.kind === "claim") {
+    if (!ID_RE.test(String(b.claimId || ""))) return json({ error: "Fill in your coin’s details first." }, 400);
+    const [cl] = await sql()`select id, status from claims where id = ${b.claimId} and coin_id = ${coin.id}`;
+    if (!cl) return json({ error: "Fill in your coin’s details first." }, 400);
+    if (cl.status !== "unpaid") return json({ error: "This claim is already paid for. The team is reviewing it." }, 409);
+    await ensureCols();
+    Object.assign(o, { usd: P.claimUsd, claim_id: cl.id, label: "Claim: your logo, description and links" });
+  } else if (b.kind === "verify") {
     if (coin.status === "rejected" || coin.status === "removed") return json({ error: "This coin was taken off the Fat List." }, 409);
     if (coin.verified || coin.verify_paid) return json({ error: "A blue tick check is already paid for this coin." }, 409);
     Object.assign(o, { usd: P.verifyUsd, label: "Blue tick check" });
@@ -65,13 +76,25 @@ async function quote(b, context) {
     Object.assign(o, { pack: b.pack, boosts: pack.boosts, hours: pack.hours, usd: pack.usd, label: `${pack.name} for ${pack.hours} hours` });
   } else if (b.kind === "promo") {
     if (!LIVE.includes(coin.status)) return json({ error: "This coin needs to be live on the Fat List before it can be promoted." }, 409);
-    const days = Number(b.days), usd = priceFor(b.pkg, days, test);
+    const days = PACKAGES[b.pkg]?.fixedDays || Number(b.days), usd = priceFor(b.pkg, days, test);
     if (!usd) return json({ error: "Pick a placement and duration." }, 400);
     if (b.pkg === "banner") {
       const t = clean(b.adText, 70);
       if (t.length < 8) return json({ error: "Write a banner message of 8 to 70 characters." }, 400);
       if (/(https?:|www\.|t\.me|\.com\b)/i.test(t)) return json({ error: "Leave links out of the banner message. The ad already links to your coin page." }, 400);
       o.ad_text = t;
+    }
+    if (b.pkg === "side") {
+      const t = clean(b.adText, 70);
+      if (/(https?:|www\.|t\.me|\.com\b)/i.test(t)) return json({ error: "Leave links out of the banner message. The banner already links to your coin page." }, 400);
+      if (t) o.ad_text = t;
+      if (b.adImage) {
+        const img = parseLogo(b.adImage);
+        if (!img) return json({ error: "The banner image must be a PNG, JPG or WebP under 300 KB." }, 400);
+        await ensureCols();
+        o.ad_image = await saveLogo(o.id, img);
+      }
+      o.boosts = PACKAGES.side.boosts;
     }
     const start = Date.parse(String(b.start || "") + "T00:00:00Z"), today = Math.floor(now / DAY) * DAY;
     if (!(start >= today) || start > today + 90 * DAY) return json({ error: "Pick a start date between today and 90 days from now." }, 400);
@@ -138,8 +161,11 @@ async function verify(b, context) {
     if (String(e.code) === "23505") return json({ error: "That transaction was already used for another order." }, 409);
     throw e;
   }
+  const justPaid = !!row; // only the request that flipped the order to paid adds the package's votes
   if (!row) [row] = await sql()`select * from orders where id = ${o.id}`;
   if (row.kind === "verify") await sql()`update coins set verify_paid = true where id = ${row.coin_id}`;
+  if (justPaid && row.kind === "promo" && row.pkg === "side") await sql()`update coins set votes = votes + ${PACKAGES.side.votes} where id = ${row.coin_id}`;
+  if (row.kind === "claim" && row.claim_id) await sql()`update claims set status = 'pending' where id = ${row.claim_id} and status = 'unpaid'`;
   await db().delete("snapshot/board");
   return json({ ok: true, paid: true, order: publicOrder(row) });
 }

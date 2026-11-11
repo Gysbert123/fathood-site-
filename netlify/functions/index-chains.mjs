@@ -1,4 +1,4 @@
-// Runs every 30 minutes (kept slow to save Netlify credits): pulls brand-new and trending coins on the chains in INDEX_CHAINS from GeckoTerminal,
+// Runs every 30 minutes (kept slow to save Netlify credits): pulls brand-new, trending and the biggest (by 24h volume) coins on the chains in INDEX_CHAINS from GeckoTerminal,
 // so the Fat List has every coin, not only the ones people add. Also tidies up old rows.
 import { sql } from "../lib/db.mjs";
 import { INDEX_CHAINS, newId, clean, cleanUrl } from "../lib/coinlist.mjs";
@@ -46,7 +46,8 @@ export async function indexChain(chain, network, pages) {
 export default async () => {
   const minute = new Date().getUTCMinutes();
   for (const [chain, network] of Object.entries(INDEX_CHAINS)) {
-    const pages = ["new_pools?page=1&include=base_token", "new_pools?page=2&include=base_token", "new_pools?page=3&include=base_token"];
+    const pages = ["new_pools?page=1&include=base_token", "new_pools?page=2&include=base_token", "new_pools?page=3&include=base_token",
+      "pools?page=1&sort=h24_volume_usd_desc&include=base_token", "pools?page=2&sort=h24_volume_usd_desc&include=base_token"];
     if (minute % 10 === 0) pages.push("trending_pools?page=1&include=base_token");
     try { console.log("indexed", chain, await indexChain(chain, network, pages)); } catch (e) { console.error("index failed", chain, e); }
   }
@@ -55,6 +56,7 @@ export default async () => {
     await sql()`delete from nonces where exp < now()`;
     await sql()`delete from sessions where exp < now()`;
     await sql()`delete from orders where status = 'awaiting' and expires_at < now() - interval '1 day'`;
+    await sql()`delete from claims where status = 'unpaid' and created_at < now() - interval '2 days'`;
   } catch (e) { console.error("cleanup failed", e); }
   return new Response("ok");
 };

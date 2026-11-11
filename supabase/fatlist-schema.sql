@@ -39,19 +39,20 @@ create table if not exists claims (
   id text primary key,
   coin_id text not null references coins(id) on delete cascade,
   data jsonb not null,
-  status text not null default 'pending',      -- pending | approved | rejected
+  status text not null default 'pending',      -- unpaid | pending | approved | rejected
   created_at timestamptz not null default now()
 );
 
 create table if not exists orders (
   id text primary key,
-  kind text not null,                          -- promo | boost | verify
+  kind text not null,                          -- promo | boost | verify | claim
   coin_id text not null references coins(id) on delete cascade,
   coin_label text not null,
   label text not null,
   pkg text, pack text, boosts integer, hours integer, days integer,
   start_at timestamptz, end_at timestamptz,
   ad_text text,
+  claim_id text,                               -- for kind = 'claim'
   usd numeric not null default 0,
   chain text not null, token text not null, token_address text,
   decimals integer, amount_raw text, amount text, eth_price double precision,
@@ -66,6 +67,7 @@ create table if not exists orders (
 );
 create unique index if not exists orders_tx on orders (chain, tx_hash) where tx_hash is not null;
 create index if not exists orders_live on orders (status, end_at);
+alter table orders add column if not exists claim_id text;   -- for databases made before claims were paid
 
 create table if not exists votes (
   coin_id text not null references coins(id) on delete cascade,

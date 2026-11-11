@@ -43,7 +43,7 @@ export const VISIBLE = (min) => sql()`(c.status = 'approved' or (c.status = 'ind
 // Live boosts and promotions joined onto coins
 export const LIVE_EXTRAS = () => sql()`
   left join (select coin_id, sum(boosts) as boosts from orders
-             where kind = 'boost' and status = 'paid' and not pulled and start_at <= now() and end_at > now() group by coin_id) b on b.coin_id = c.id
+             where (kind = 'boost' or (kind = 'promo' and pkg = 'side')) and status = 'paid' and not pulled and start_at <= now() and end_at > now() group by coin_id) b on b.coin_id = c.id
   left join (select coin_id, case when bool_or(pkg = 'spotlight') then 'spotlight' else 'row' end as promo from orders
              where kind = 'promo' and pkg in ('spotlight', 'row') and status = 'paid' and not pulled and start_at <= now() and end_at > now() group by coin_id) p on p.coin_id = c.id`;
 
@@ -52,6 +52,17 @@ export async function liveAds() {
     where o.kind = 'promo' and o.pkg = 'banner' and o.status = 'paid' and not o.pulled and o.start_at <= now() and o.end_at > now()
       and c.status in ('approved', 'indexed') order by o.paid_at`)
     .map((r) => ({ coinId: r.coin_id, text: r.ad_text, name: r.name, symbol: r.symbol, image: r.image }));
+}
+
+// The left side banner that's running right now (one at a time). ad_image is read through to_jsonb so this works
+// even before the column exists.
+export async function liveSide() {
+  const [r] = await sql()`select o.coin_id, o.ad_text, to_jsonb(o) ->> 'ad_image' as ad_image, c.name, c.symbol, c.image, c.price, c.change24
+    from orders o join coins c on c.id = o.coin_id
+    where o.kind = 'promo' and o.pkg = 'side' and o.status = 'paid' and not o.pulled and o.start_at <= now() and o.end_at > now()
+      and c.status in ('approved', 'indexed') order by o.paid_at limit 1`;
+  return r ? { coinId: r.coin_id, text: r.ad_text || "", image: r.ad_image || null, name: r.name, symbol: r.symbol, logo: r.image,
+    price: r.price == null ? null : Number(r.price), change: r.change24 == null ? null : Number(r.change24) } : null;
 }
 
 export async function slotsTaken(pkg, start, end) {

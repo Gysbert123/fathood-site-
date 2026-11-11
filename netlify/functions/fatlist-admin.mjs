@@ -97,12 +97,13 @@ export default async (req, context) => {
         const p = BOOSTS[b.what];
         Object.assign(o, { kind: "boost", pack: b.what, boosts: p.boosts, hours: p.hours, start_at: new Date(now), end_at: new Date(now + p.hours * 3600000), label: `${p.name} for ${p.hours} hours (free)` });
       } else if (PACKAGES[b.what]) {
-        const days = Number(b.days); if (!(days >= 1 && days <= 90)) return json({ error: "Pick 1 to 90 days." }, 400);
+        const days = PACKAGES[b.what].fixedDays || Number(b.days); if (!(days >= 1 && days <= 90)) return json({ error: "Pick 1 to 90 days." }, 400);
         const start = Date.parse(String(b.start || "") + "T00:00:00Z"); if (!(start >= Math.floor(now / DAY) * DAY)) return json({ error: "Pick a start date from today onwards." }, 400);
         const end = start + days * DAY;
         if (await slotsTaken(b.what, start, end) >= PACKAGES[b.what].maxAtOnce) return json({ error: `All ${PACKAGES[b.what].name.toLowerCase()} slots are taken on those dates.` }, 409);
         Object.assign(o, { kind: "promo", pkg: b.what, days, start_at: new Date(start), end_at: new Date(end), label: `${PACKAGES[b.what].name}, ${days} day${days > 1 ? "s" : ""} (free)` });
         if (b.what === "banner") { o.ad_text = clean(b.adText, 70); if (o.ad_text.length < 8) return json({ error: "Write a banner message of 8 to 70 characters." }, 400); }
+        if (b.what === "side") { o.ad_text = clean(b.adText, 70) || null; o.boosts = PACKAGES.side.boosts; await sql()`update coins set votes = votes + ${PACKAGES.side.votes} where id = ${c.id}`; }
       } else return json({ error: "Pick what to give." }, 400);
       await sql()`insert into orders ${sql()(o)}`; await bust();
       return json({ ok: true });

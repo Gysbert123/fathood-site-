@@ -7,6 +7,9 @@ export const PACKAGES = {
   spotlight: { group: "promote",   name: "Spotlight card", perDay: 349, maxAtOnce: 3,  blurb: "One of three big cards at the top of the Fat List." },
   row:       { group: "promote",   name: "Promoted row",   perDay: 149, maxAtOnce: 10, blurb: "Pinned above the rankings with a lime highlight." },
   banner:    { group: "advertise", name: "Banner ad",      perDay: 199, maxAtOnce: 2,  blurb: "Your coin and a one-line message across the top of every page, including Hood Talk." },
+  // A fixed package: one coin at a time gets the whole left side of every Fat List page for 3 days, plus boosts and votes.
+  side:      { group: "advertise", name: "Left side banner", fixedUsd: 250, fixedDays: 3, perDay: 250, boosts: 100, votes: 50, maxAtOnce: 1,
+               blurb: "Your banner down the whole left side of every Fat List and Hood Talk page for 3 days. Includes 100 boosts and 50 votes." },
 };
 // BOOST: instant push up the Trending ranking for 24 hours. Boosts stack.
 export const BOOSTS = {
@@ -15,6 +18,7 @@ export const BOOSTS = {
   b100: { name: "100 boosts", boosts: 100, hours: 24, usd: 199 },
 };
 export const VERIFY_USD = 49;                  // verified badge check by the team
+export const CLAIM_USD = 1.99;                 // claim an auto-listed coin and put your own logo, description and links on it
 export const DISCOUNTS = { 1: 0, 3: 0, 7: 0.10, 14: 0.15 };
 export const ORDER_MINUTES = 30;               // how long a price quote is valid
 export const AUTO_LIST_MIN_LIQUIDITY = 5000;   // submitted coins with at least this much liquidity go live straight away
@@ -76,7 +80,9 @@ export async function getJSON(key) { const v = await db().get(key); return v ? J
 export async function setJSON(key, val) { await db().set(key, JSON.stringify(val)); }
 
 export function priceFor(pkg, days, test = false) {
-  const p = PACKAGES[pkg]; if (!p || !(days in DISCOUNTS)) return null;
+  const p = PACKAGES[pkg]; if (!p) return null;
+  if (p.fixedDays) return days === p.fixedDays ? (test ? TEST_PRICE_USD : p.fixedUsd) : null;
+  if (!(days in DISCOUNTS)) return null;
   if (test) return TEST_PRICE_USD;
   return Math.round(p.perDay * days * (1 - DISCOUNTS[days]));
 }
@@ -95,9 +101,9 @@ export async function setTestPrices(on) {
 }
 // The prices to show and charge right now.
 export function prices(test) {
-  if (!test) return { packages: PACKAGES, boosts: BOOSTS, verifyUsd: VERIFY_USD, testPrices: false };
+  if (!test) return { packages: PACKAGES, boosts: BOOSTS, verifyUsd: VERIFY_USD, claimUsd: CLAIM_USD, testPrices: false };
   const one = (o, k) => Object.fromEntries(Object.entries(o).map(([id, v]) => [id, { ...v, [k]: TEST_PRICE_USD }]));
-  return { packages: one(PACKAGES, "perDay"), boosts: one(BOOSTS, "usd"), verifyUsd: TEST_PRICE_USD, testPrices: true };
+  return { packages: one(PACKAGES, "perDay"), boosts: one(BOOSTS, "usd"), verifyUsd: TEST_PRICE_USD, claimUsd: TEST_PRICE_USD, testPrices: true };
 }
 
 export const clean = (s, n) => String(s ?? "").replace(/[\u0000-\u0008\u000b-\u001f<>]/g, "").trim().slice(0, n);
