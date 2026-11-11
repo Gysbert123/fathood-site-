@@ -1,4 +1,4 @@
-import { sql, hit, toCoin, VISIBLE, LIVE_EXTRAS, liveAds } from "../lib/db.mjs";
+import { sql, hit, toCoin, VISIBLE, LIVE_EXTRAS, liveAds, dayNumber } from "../lib/db.mjs";
 import { getSnapshot } from "../lib/market.mjs";
 import { lookup } from "../lib/lookup.mjs";
 import { parseLogo, saveLogo, json, newId, ID_RE, ipOf, clean, cleanUrl, addrOk, chainName, testPrices, prices,
@@ -78,27 +78,30 @@ async function submit(b, context) {
   return json({ ok: true, id, status });
 }
 
-// One vote per person (by IP) per coin, for good. Voting again does nothing; "unvote" takes it back.
+// One vote per person (by IP) per day, for any one coin. Votes add up on the coin over the days.
+// "unvote" takes back today's vote, so it can go to another coin.
 async function vote(b, context) {
   const id = String(b.id || "");
   if (!ID_RE.test(id)) return json({ error: "Unknown coin." }, 400);
-  const ip = ipOf(context);
-  if (!(await hit("vote", ip, 120))) return json({ error: "Too many votes. Try again later." }, 429);
+  const ip = ipOf(context), day = dayNumber();
+  if (!(await hit("vote", ip, 120))) return json({ error: "Too many tries. Try again later." }, 429);
   if (b.action === "unvote") {
-    const del = await sql()`delete from votes where coin_id = ${id} and voter = ${ip} returning 1`;
+    const del = await sql()`delete from votes where coin_id = ${id} and voter = ${ip} and day = ${day} returning 1`;
     const [c] = del.length
       ? await sql()`update coins set votes = greatest(votes - ${del.length}, 0) where id = ${id} returning votes`
       : await sql()`select votes from coins where id = ${id}`;
     if (!c) return json({ error: "Unknown coin." }, 404);
     return json({ ok: true, voted: false, votes: c.votes });
   }
-  const ins = await sql()`insert into votes (coin_id, voter, day) select ${id}, ${ip}, 0
+  const ins = await sql()`insert into votes (coin_id, voter, day) select ${id}, ${ip}, ${day}
     where exists (select 1 from coins c where c.id = ${id} and ${VISIBLE(INDEX_MIN_LIQUIDITY)})
-      and not exists (select 1 from votes v where v.coin_id = ${id} and v.voter = ${ip}) on conflict do nothing returning 1`;
+      and not exists (select 1 from votes v where v.voter = ${ip} and v.day = ${day}) on conflict do nothing returning 1`;
   if (!ins.length) {
     const [c] = await sql()`select votes from coins where id = ${id}`;
     if (!c) return json({ error: "Unknown coin." }, 404);
-    return json({ ok: true, voted: true, already: true, votes: c.votes });
+    const [mine] = await sql()`select coin_id from votes where voter = ${ip} and day = ${day} limit 1`;
+    if (mine && mine.coin_id === id) return json({ ok: true, voted: true, votes: c.votes });
+    return json({ error: "You’ve already used today’s vote. Right-click that vote to take it back, or vote again tomorrow.", used: mine?.coin_id || null, votes: c.votes }, 409);
   }
   const [c] = await sql()`update coins set votes = votes + 1 where id = ${id} returning votes`;
   return json({ ok: true, voted: true, votes: c.votes });
@@ -136,7 +139,7 @@ export default async (req, context) => {
         return json({ coins: rows.map(toCoin) }, 200, { "cache-control": "public, max-age=30" });
       }
       if (u.searchParams.has("mine")) {
-        const rows = await sql()`select distinct coin_id from votes where voter = ${ipOf(context)}`;
+        const rows = await sql()`select distinct coin_id from votes where voter = ${ipOf(context)} and day = ${dayNumber()}`;
         return json({ voted: rows.map((r) => r.coin_id) }, 200, { "cache-control": "private, no-store" });
       }
       const s = await getSnapshot();

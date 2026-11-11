@@ -145,6 +145,17 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 /* ---- additions ---- */
 .adbar{background:var(--lime);border-bottom:3px solid var(--ink)}
+.tick{display:flex;align-items:stretch;background:var(--ink);color:var(--paper);overflow:hidden}
+.tick-lab{flex:none;background:var(--lime);color:var(--ink);font-weight:700;font-size:13px;padding:0 12px;display:flex;align-items:center;border-right:3px solid var(--ink);white-space:nowrap}
+.tick-win{flex:1;min-width:0;overflow:hidden}
+.tick-track{display:flex;width:max-content;animation:tick var(--dur,40s) linear infinite}
+.tick:hover .tick-track,.tick:focus-within .tick-track{animation-play-state:paused}
+.tick a{display:flex;align-items:center;gap:8px;padding:8px 18px;color:var(--paper);text-decoration:none;font-weight:700;font-size:14px;white-space:nowrap;border-right:1px solid #3a3a3a}
+.tick .av{width:26px;height:26px;font-size:9px;border-color:var(--paper);color:var(--ink)}
+.tick .up{color:#8FEA9F}.tick .down{color:#FF8A84}.tick .bz{color:var(--lime)}
+@keyframes tick{to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.tick-track{animation:none}.tick-win{overflow-x:auto}}
+.toast{position:fixed;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);transform:translateX(-50%);z-index:90;max-width:min(92vw,460px);background:var(--ink);color:var(--paper);border:3px solid var(--lime);border-radius:14px;padding:12px 16px;font-weight:700;box-shadow:0 6px 0 rgba(0,0,0,.25)}
 .adbar a{display:flex;align-items:center;gap:10px;min-height:44px;text-decoration:none;font-weight:700;font-size:15px}
 .adbar .adtag{font-size:11px;background:var(--ink);color:var(--lime);border-radius:6px;padding:1px 6px;flex:none}
 .adbar .av{width:26px;height:26px;font-size:10px}
@@ -246,6 +257,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
     <a class="sn-cta sn-top" href="https://t.me/fathood">Join Telegram</a>
   </div>
 </header>
+<div class="tick" id="tick" hidden><span class="tick-lab">⚡ Boosted · paid</span><div class="tick-win"><div class="tick-track" id="tickTrack"></div></div></div>
 <div class="flbar">
   <div class="wrap bar">
     <span class="fltitle">The Fat List</span>
@@ -406,6 +418,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 
 <footer><div class="wrap"><span>© 2026 $FATHOOD. Crypto is risky. Nothing here is financial advice.</span><span><a href="/">Home</a> &nbsp; <a href="#talk">Hood Talk</a> &nbsp; <a href="#grow">Grow</a> &nbsp; <a href="#add">Add coin</a></span></div></footer>
 
+<div class="toast" id="toast" role="status" hidden></div>
 <dialog id="payDlg"><div class="md" id="payMd"></div></dialog>
 
 <script>
@@ -416,7 +429,11 @@ const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&
 const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
 const DAY=864e5;
 let S=null, coins=[], ads=[], DEMO=false, total=0, searchHits=[];
-const voted=new Set(store.get("fatlist-votes",[]));
+const today=()=>Math.floor(Date.now()/864e5);
+const voted=new Set((v=>v&&v.day===today()?v.ids:[])(store.get("fatlist-votes2",null)));
+const saveVotes=()=>store.set("fatlist-votes2",{day:today(),ids:[...voted]});
+let toastT=null;
+function toast(t){const el=$("#toast");el.textContent=t;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>{el.hidden=true},4500)}
 let session=store.get("hoodtalk-session",null);
 
 // ---------- formatting
@@ -465,13 +482,21 @@ let DEMO_POSTS=[
 async function load(){
   try{const j=await api("/api/fatlist");if(!j.ok)throw 0;coins=j.coins;ads=j.ads||[];S=j.settings;total=j.total||coins.length}
   catch(e){DEMO=true;coins=DEMO_COINS;S=DEMO_SETTINGS;ads=[{coinId:DEMO_COINS[8].id,text:"The crispiest meme on Robinhood Chain",name:"Fry Guy",symbol:"FRY"}];$("#demo").hidden=false}
-  if(!DEMO){const m=await api("/api/fatlist?mine=1").catch(()=>({}));if(Array.isArray(m.voted)){voted.clear();m.voted.forEach(x=>voted.add(x));store.set("fatlist-votes",[...voted])}}
+  if(!DEMO){const m=await api("/api/fatlist?mine=1").catch(()=>({}));if(Array.isArray(m.voted)){voted.clear();m.voted.forEach(x=>voted.add(x));saveVotes()}}
   if(session&&!DEMO){const j=await api("/api/talk?me=1").catch(()=>({}));if(!j.me){session=null;store.del("hoodtalk-session")}else session.me=j.me}
-  renderAd();buildChips();renderSpots();renderRows();buildGrow();buildAdd();route();
+  renderTick();renderAd();buildChips();renderSpots();renderRows();buildGrow();buildAdd();route();
 }
 
 // ---------- banner ads
 let adIdx=0;
+function renderTick(){
+  const l=coins.filter(c=>c.boosts>0).sort((a,b)=>b.boosts-a.boosts),el=$("#tick");
+  if(!l.length){el.hidden=true;return}
+  const item=(c,hide)=>`<a href="#coin/${esc(c.id)}"${hide?' tabindex="-1" aria-hidden="true"':""}>${av(c)}<span>$${esc(c.symbol)}</span><span class="num">${fP(c.price)}</span><span class="num ${(c.change||0)>=0?"up":"down"}">${fC(c.change)}</span><span class="bz">⚡${c.boosts}</span></a>`;
+  let row=[];while(row.length<8)row=row.concat(l);
+  $("#tickTrack").innerHTML=row.map((c,i)=>item(c,i>=l.length)).join("")+row.map(c=>item(c,true)).join("");
+  $("#tickTrack").style.setProperty("--dur",row.length*4+"s");el.hidden=false;
+}
 function renderAd(){
   if(!ads.length){$("#adbar").hidden=true;return}
   const a=ads[adIdx%ads.length];$("#adbar").hidden=false;
@@ -505,7 +530,7 @@ function sorted(){
   const pool=[...coins,...searchHits.filter(h=>!coins.some(c=>c.id===h.id))];
   let l=pool.filter(c=>(chain==="all"||c.chain===chain)&&(!qq||c.name.toLowerCase().includes(qq)||c.symbol.toLowerCase().includes(qq)||c.address.toLowerCase()===qq));
   const score=c=>(c.votes||0)*0.5+(c.boosts||0)*25+(c.change||0)*6+Math.log10((c.volume||c.liquidity||1)+1)*20+Math.max(0,30-(ageOf(c)??30))*8;
-  const so={trending:(a,b)=>score(b)-score(a),gainers:(a,b)=>(b.change??-1e9)-(a.change??-1e9),new:(a,b)=>(ageOf(a)??1e9)-(ageOf(b)??1e9),votes:(a,b)=>(b.votes||0)-(a.votes||0)};
+  const so={trending:(a,b)=>((b.boosts||0)-(a.boosts||0))||score(b)-score(a),gainers:(a,b)=>(b.change??-1e9)-(a.change??-1e9),new:(a,b)=>(ageOf(a)??1e9)-(ageOf(b)??1e9),votes:(a,b)=>(b.votes||0)-(a.votes||0)};
   l.sort(so[tab]);return [...l.filter(c=>c.promo),...l.filter(c=>!c.promo)];
 }
 function renderRows(){
@@ -522,11 +547,12 @@ function renderRows(){
 // One vote per coin. Clicking again does nothing; right-click (or press and hold on a phone) takes the vote back.
 async function vote(id,after,undo){
   const c=coins.find(x=>x.id===id);if(!c||voted.has(id)===!undo)return;
+  if(!undo&&voted.size){toast("You’ve used today’s vote. Right-click it (or press and hold) to take it back, or vote again tomorrow.");return}
   if(undo){voted.delete(id);c.votes=Math.max(0,(c.votes||0)-1)}else{voted.add(id);c.votes=(c.votes||0)+1}
-  store.set("fatlist-votes",[...voted]);after();
+  saveVotes();after();
   if(!DEMO){try{const j=await api("/api/fatlist",{body:{action:undo?"unvote":"vote",id}});
     if(j.ok&&j.votes!=null){c.votes=j.votes;after()}
-    else if(!j.ok){if(undo){voted.add(id);c.votes++}else{voted.delete(id);c.votes=Math.max(0,c.votes-1)}store.set("fatlist-votes",[...voted]);after();if(j.error)alert(j.error)}}catch(_){}}
+    else if(!j.ok){if(undo){voted.add(id);c.votes++}else{voted.delete(id);c.votes=Math.max(0,c.votes-1)}saveVotes();after();if(j.error)toast(j.error)}}catch(_){}}
 }
 $("#rows").addEventListener("click",e=>{
   const v=e.target.closest("[data-v]");if(v){e.stopPropagation();vote(v.dataset.v,renderRows);return}
@@ -823,7 +849,7 @@ async function poll(hash){
   }
   P.polling=false;if(!P.closed)renderPay({bad:1,msg:`Still not confirmed. Your payment is safe. Message the team on Telegram with this hash: <code style="word-break:break-all">${esc(hash)}</code>`});
 }
-async function refresh(){if(DEMO)return;try{const j=await api("/api/fatlist");coins=j.coins;ads=j.ads||[];total=j.total||coins.length;renderAd();buildChips();renderSpots();renderRows()}catch(_){}}
+async function refresh(){if(DEMO)return;try{const j=await api("/api/fatlist");coins=j.coins;ads=j.ads||[];total=j.total||coins.length;renderTick();renderAd();buildChips();renderSpots();renderRows()}catch(_){}}
 
 // ---------- Hood Talk
 let talkSort="latest",talkNext=null;

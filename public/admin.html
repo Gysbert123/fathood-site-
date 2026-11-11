@@ -84,7 +84,7 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
     <div class="sections" role="tablist" id="sections">
       <button type="button" role="tab" data-sec="wall" aria-selected="true">Wall of Fat<small>Memes</small></button>
       <button type="button" role="tab" data-sec="fat" aria-selected="false">Fat List<small>Coins, payments, Hood Talk</small></button>
-      <button type="button" role="tab" data-sec="test" aria-selected="false">Test prices<small>$1 test mode</small></button>
+      <button type="button" role="tab" data-sec="test" aria-selected="false">Test &amp; tools<small>$1 test, reset votes</small></button>
     </div>
 
     <!-- WALL OF FAT -->
@@ -145,11 +145,17 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
         <p class="msg" id="tp-msg" role="status" style="margin-top:10px"></p>
       </div>
       <div class="card">
+        <h2>Votes</h2>
+        <p>Everyone gets one vote a day. Use this to wipe test votes: every coin goes back to 0 votes.</p>
+        <div class="row" style="margin-top:14px"><button type="button" class="no big" id="rv-go">Reset all votes to 0</button></div>
+        <p class="msg" id="rv-msg" role="status" style="margin-top:10px"></p>
+      </div>
+      <div class="card">
         <h2>How to run the $1 test</h2>
         <ol class="steps">
           <li>Press <b>Turn test prices ON</b> above. The red bar appears at the top.</li>
           <li>Go to the <b>Fat List</b> section here, open <b>Add a coin</b>, paste the $FATHOOD contract address, press <b>Find details</b>, then <b>Add to the Fat List</b>.</li>
-          <li>On your phone, open fathood.org/fatlist.html <b>inside your wallet app’s browser</b> (MetaMask, Rabby or OKX). Find $FATHOOD, open it and press <b>Boost</b>. The 10-boost pack shows <b>$1</b>.</li>
+          <li>On your phone, open fathood.org/fatlist.html <b>inside your wallet app’s browser</b> (MetaMask, Rabby or OKX). Open the <b>Grow</b> tab, search “fathood” and pick it. The 10-boost pack shows <b>$1</b>.</li>
           <li>Pick Robinhood Chain and ETH (or USDG/USDC), connect your wallet and confirm the $1 payment in your wallet. Wait for “Paid. You’re in.”</li>
           <li>Check that $FATHOOD shows the ⚡10 boost badge on the board (it can take a minute), and that the payment is listed under <b>Fat List → Payments</b>, marked “TEST PRICE”.</li>
           <li>Come back here and press <b>Turn test prices OFF</b>. The red bar disappears and normal prices are back.</li>
@@ -189,6 +195,11 @@ window.FH=(function(){
     try{var j=await FH.flApi("POST",{action:"testPrices",on:on});FH.setTest(j.testPrices);$("#tp-msg").textContent=on?"Test prices are on. Everything costs $1 now (the public page can take up to a minute to update).":"Normal prices are back."}
     catch(err){$("#tp-msg").textContent=err.message}}
   $("#tp-on").addEventListener("click",function(){setTest(true)});
+  $("#rv-go").addEventListener("click",async function(){
+    if(!confirm("Set every coin back to 0 votes? This can’t be undone."))return;
+    $("#rv-msg").textContent="Resetting…";
+    try{await FH.flApi("POST",{action:"resetVotes"});$("#rv-msg").textContent="Done. All votes are back to 0 (the public page can take a minute to update)."}
+    catch(err){$("#rv-msg").textContent=err.message}});
   $("#tp-off").addEventListener("click",function(){setTest(false)});
   $("#tb-off").addEventListener("click",function(){setTest(false)});
   return FH;

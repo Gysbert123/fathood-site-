@@ -53,6 +53,12 @@ export default async (req, context) => {
       const v = await setTestPrices(!!b.on);
       return json({ ok: true, testPrices: v ? { on: true, until: v.until } : { on: false } });
     }
+    if (b.action === "resetVotes") {
+      await sql()`delete from votes`;
+      await sql()`update coins set votes = 0 where votes <> 0`;
+      await bust();
+      return json({ ok: true });
+    }
     if (b.action === "lookup") {
       const a = clean(b.address, 90);
       if (!addrOk(a)) return json({ error: "That doesn’t look like a contract address." }, 400);
