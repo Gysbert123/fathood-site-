@@ -22,3 +22,9 @@
   from = "/play"
   to = "/beta-78c91828/"
   status = 301
+
+# the Fat List admin now lives inside the one admin page
+[[redirects]]
+  from = "/fatlist-admin.html"
+  to = "/admin.html"
+  status = 301

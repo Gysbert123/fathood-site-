@@ -58,6 +58,16 @@ export default async (req, context) => {
     return json({ ids: await listIds(state) }, 200, { "cache-control": "no-store" });
   }
 
+  if (req.method === "POST" && url.searchParams.has("add")) {
+    // The admin uploads a finished meme (JPEG made in the browser): it goes straight onto the wall.
+    const buf = await req.arrayBuffer(), b = new Uint8Array(buf);
+    if (buf.byteLength < 2000 || buf.byteLength > 2.5 * 1024 * 1024) return json({ error: "That image is the wrong size (max 2.5 MB)." }, 413);
+    if (!(b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff)) return json({ error: "That isn’t a JPEG image." }, 415);
+    const id = newId();
+    await memes().set(`approved/${id}`, buf, { metadata: { created: Date.now(), approved: Date.now(), byAdmin: true } });
+    return json({ ok: true, id });
+  }
+
   if (req.method === "POST") {
     const { action, id, from } = await req.json().catch(() => ({}));
     if (!ID_RE.test(id || "")) return json({ error: "Bad id" }, 400);

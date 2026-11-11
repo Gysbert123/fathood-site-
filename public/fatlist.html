@@ -1,0 +1,960 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Fat List — new coins, ranked by the hood | $FATHOOD</title>
+<meta name="description" content="Add your coin by contract address, boost, promote and advertise it, and read Hood Talk write-ups from the Fathood community.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site-nav.css">
+<style>
+:root{color-scheme:light;--lime:#D4F53C;--cream:#FFF8E7;--ink:#111111;--paper:#FFFFFF;--soft:#F3EBD6;--mute:#5A5548;--up:#1E7B34;--down:#C8221C;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--cream)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--cream);color:var(--ink);font:400 16px/1.5 'Space Grotesk',system-ui,-apple-system,sans-serif}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--ink)}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+.wrap{max-width:1100px;margin:0 auto;padding:0 18px}
+.num{font-variant-numeric:tabular-nums}
+h1,h2,h3,.disp{font-family:'Bowlby One',Impact,sans-serif;font-weight:400;letter-spacing:.01em}
+
+.flbar{position:sticky;top:calc(env(safe-area-inset-top,0px) + 64px);z-index:5;background:var(--cream);border-bottom:3px solid var(--ink)}
+@media (max-width:900px){.flbar{top:calc(env(safe-area-inset-top,0px) + 60px)}}
+.bar{display:flex;align-items:center;gap:14px;min-height:58px}
+.fltitle{font:400 20px/1 'Bowlby One',Impact,sans-serif;white-space:nowrap}
+.fltabs{margin-left:auto;display:flex;gap:6px;overflow-x:auto;padding:8px 4px 10px;scrollbar-width:none}
+.fltabs::-webkit-scrollbar{display:none}
+.fltabs a{display:inline-flex;align-items:center;min-height:40px;padding:6px 14px;border:3px solid var(--ink);border-radius:999px;background:var(--paper);text-decoration:none;font-weight:700;font-size:15px;white-space:nowrap;box-shadow:3px 3px 0 var(--ink)}
+.fltabs a[aria-current="page"]{background:var(--lime)}
+@media (max-width:640px){.fltitle{display:none}.fltabs{margin:0 -4px;flex:1;justify-content:space-between}.fltabs a{padding:6px 11px;font-size:14px;box-shadow:2px 2px 0 var(--ink)}}
+@media (max-width:370px){.fltabs a{padding:5px 8px;font-size:13px}}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 18px;border:3px solid var(--ink);border-radius:12px;background:var(--lime);color:var(--ink);font-weight:700;cursor:pointer;text-decoration:none;box-shadow:4px 4px 0 var(--ink)}
+.btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.btn.dark{background:var(--ink);color:var(--cream)}
+.btn.white{background:var(--paper)}
+.btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
+.box{background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:6px 6px 0 var(--ink)}
+
+.hero{padding-top:30px;padding-bottom:10px}
+.hero h1{font-size:clamp(34px,7vw,64px);line-height:.95;margin:0 0 10px}
+.hero p{max-width:50ch;margin:0 0 22px;font-size:17px}
+.demo{background:var(--ink);color:var(--lime);font-weight:700;text-align:center;padding:8px 14px;font-size:14px}
+
+.spots{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;margin:8px 0 6px}
+@media (max-width:760px){.spots{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:82%;overflow-x:auto;scroll-snap-type:x mandatory;padding:16px 8px 12px 2px}.spots>*{scroll-snap-align:start}}
+.spot{position:relative;text-align:left;cursor:pointer;padding:16px;background:var(--lime);border:3px solid var(--ink);border-radius:16px;box-shadow:6px 6px 0 var(--ink);width:100%}
+.spot .tag{position:absolute;top:-12px;right:14px;background:var(--ink);color:var(--lime);font-size:12px;font-weight:700;padding:3px 10px;border-radius:99px}
+.spot .who{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.spot .nm{font:400 20px/1.1 'Bowlby One',Impact,sans-serif}
+.spot .row{display:flex;justify-content:space-between;font-weight:700;font-size:15px}
+.spot-empty{border:3px dashed var(--ink);border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:center;gap:6px;text-decoration:none;font-weight:700}
+
+.av{flex:none;width:40px;height:40px;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center;font:400 14px/1 'Bowlby One',Impact,sans-serif;background:var(--soft);overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover}
+
+.board{padding-top:30px;padding-bottom:70px}
+.tools{display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin-bottom:12px}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button,.chip{border:3px solid var(--ink);background:var(--paper);border-radius:99px;padding:6px 14px;font-weight:700;cursor:pointer;font-size:14px}
+.tabs button[aria-selected="true"],.chip[aria-pressed="true"]{background:var(--ink);color:var(--lime)}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:14px}
+.chip{white-space:nowrap;border-width:2px;padding:4px 12px}
+.search{flex:1 1 200px;max-width:300px;border:3px solid var(--ink);border-radius:12px;padding:8px 12px;background:var(--paper)}
+
+.tbl{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:760px}
+th{font-size:13px;text-align:right;padding:12px 14px;border-bottom:3px solid var(--ink);white-space:nowrap}
+th:nth-child(-n+2){text-align:left}
+td{padding:12px 14px;border-bottom:2px solid var(--soft);text-align:right;white-space:nowrap}
+td:nth-child(-n+2){text-align:left}
+tbody tr{cursor:pointer}
+tbody tr:hover td{background:var(--cream)}
+tr.promo td{background:#F3FCC6}
+tr.promo td:first-child{box-shadow:inset 6px 0 0 var(--lime)}
+.cn{display:flex;gap:12px;align-items:center}
+.cn b{display:block}.cn small{color:var(--mute)}
+.badge{display:inline-block;font-size:11px;font-weight:700;background:var(--lime);border:2px solid var(--ink);padding:0 7px;border-radius:99px;margin-left:6px;vertical-align:2px}
+.up{color:var(--up);font-weight:700}.down{color:var(--down);font-weight:700}
+.vote{border:2px solid var(--ink);background:var(--paper);border-radius:10px;padding:4px 10px;font-weight:700;cursor:pointer;min-width:64px}
+.vote[aria-pressed="true"]{background:var(--lime)}
+.empty{padding:40px 20px;text-align:center;font-weight:700}
+.fine{font-size:13.5px;color:var(--mute);margin-top:14px;max-width:70ch}
+
+.page{padding-top:30px;padding-bottom:70px}
+.page h1{font-size:clamp(30px,6vw,52px);line-height:1;margin:0 0 10px}
+.page .lede{max-width:56ch;margin:0 0 26px;font-size:17px}
+.pkgs{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;margin-bottom:28px}
+.pkg{text-align:left;cursor:pointer;padding:20px;display:flex;flex-direction:column;gap:6px}
+.pkg[aria-pressed="true"]{background:var(--lime)}
+.pkg h3{margin:0;font-size:22px}
+.pkg .price{font:400 34px/1 'Bowlby One',Impact,sans-serif;margin:6px 0}
+.pkg .price small{font:700 15px 'Space Grotesk',sans-serif}
+.pkg p{margin:0}
+.pkg .left{font-size:13.5px;font-weight:700;margin-top:4px}
+
+form.box{padding:22px;max-width:700px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:560px){.g2{grid-template-columns:1fr}}
+label{display:block;font-weight:700;margin-bottom:5px;font-size:15px}
+.f{margin-bottom:16px}
+.f input,.f select,.f textarea{width:100%;min-height:48px;border:3px solid var(--ink);border-radius:12px;padding:10px 12px;background:var(--cream)}
+.f textarea{min-height:100px;resize:vertical}
+.hint{font-size:13.5px;color:var(--mute);margin-top:5px}
+.err{font-size:13.5px;color:var(--down);font-weight:700;margin-top:5px;display:none}
+.f.bad input,.f.bad select,.f.bad textarea{border-color:var(--down)}
+.f.bad .err{display:block}
+.sum{display:flex;flex-wrap:wrap;gap:14px;align-items:center;justify-content:space-between;border-top:3px solid var(--ink);padding-top:18px}
+.total{font:400 30px/1 'Bowlby One',Impact,sans-serif}
+.msg{font-weight:700;margin:12px 0 0}
+.msg.bad{color:var(--down)}
+.done{padding:22px;max-width:700px;background:var(--lime)}
+.done h2{margin:0 0 8px;font-size:26px}
+
+dialog{border:3px solid var(--ink);border-radius:18px;padding:0;background:var(--paper);color:var(--ink);width:min(520px,calc(100% - 28px));box-shadow:8px 8px 0 var(--ink);max-height:calc(100% - 40px)}
+dialog::backdrop{background:rgba(17,17,17,.6)}
+.md{padding:22px}
+.md h2{margin:0;font-size:26px;line-height:1.05}
+.md-top{display:flex;gap:14px;align-items:center;margin-bottom:14px}
+.md-top .av{width:54px;height:54px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.stat{background:var(--cream);border:2px solid var(--ink);border-radius:12px;padding:10px 12px}
+.stat span{display:block;font-size:13px;color:var(--mute)}.stat b{font-size:18px}
+.addr{display:flex;gap:8px;align-items:center;border:2px solid var(--ink);border-radius:10px;padding:6px 6px 6px 12px;font-size:13px}
+.addr code{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mini{border:2px solid var(--ink);background:var(--paper);border-radius:8px;padding:5px 10px;font-weight:700;cursor:pointer}
+.links{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
+.links a{border:2px solid var(--ink);border-radius:99px;padding:4px 12px;font-weight:700;text-decoration:none;font-size:14px}
+.warn{font-size:13.5px;background:var(--cream);border-radius:10px;padding:10px 12px;margin-top:14px}
+.foot{display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.opt{border:3px solid var(--ink);background:var(--paper);border-radius:12px;padding:8px 14px;font-weight:700;cursor:pointer}
+.opt[aria-pressed="true"]{background:var(--lime)}
+.payamt{font:400 30px/1.1 'Bowlby One',Impact,sans-serif;margin:4px 0}
+.step{font-weight:700;margin:16px 0 8px}
+.small{font-size:13.5px}
+footer{background:var(--ink);color:var(--cream);padding:24px 0 34px;font-size:14px}
+footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-between}
+[hidden]{display:none!important}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+/* ---- additions ---- */
+.adbar{background:var(--lime);border-bottom:3px solid var(--ink)}
+.adbar a{display:flex;align-items:center;gap:10px;min-height:44px;text-decoration:none;font-weight:700;font-size:15px}
+.adbar .adtag{font-size:11px;background:var(--ink);color:var(--lime);border-radius:6px;padding:1px 6px;flex:none}
+.adbar .av{width:26px;height:26px;font-size:10px}
+.adbar .adtxt{overflow:hidden;flex:1;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;line-height:1.25;padding:6px 0}
+.adbar .go{flex:none;text-decoration:underline}
+.signin{margin-left:6px;border:2px solid var(--lime);color:var(--lime);background:none;border-radius:10px;padding:6px 10px;font-weight:700;cursor:pointer;white-space:nowrap;font-size:14px}
+.vbadge{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#1D6FE0;color:#fff;font-size:11px;margin-left:5px;vertical-align:2px}
+.boost{display:inline-block;font-size:11px;font-weight:700;background:var(--ink);color:var(--lime);padding:1px 7px;border-radius:99px;margin-left:6px;vertical-align:2px}
+.back{display:inline-block;font-weight:700;margin:0 0 14px;text-decoration:none}
+.coinhead{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.coinhead .av{width:72px;height:72px;font-size:22px;border-width:3px}
+.coinhead h1{margin:0;font-size:clamp(28px,6vw,46px);line-height:1}
+.grid5{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:18px 0}
+.two{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:22px;align-items:start}
+@media (max-width:860px){.two{grid-template-columns:1fr}}
+.panel{padding:18px;margin-bottom:22px}
+.panel h2{margin:0 0 10px;font-size:22px}
+.chart{width:100%;height:420px;border:0;border-radius:12px;display:block;background:var(--soft)}
+.growbtns{display:grid;gap:10px}
+.growbtns .btn{justify-content:space-between;width:100%}
+.growbtns .btn small{font-weight:500}
+.find{display:flex;gap:10px;flex-wrap:wrap}
+.find input{flex:1 1 260px;min-height:54px;border:3px solid var(--ink);border-radius:12px;padding:10px 14px;background:var(--paper);font-size:16px}
+.preview{display:flex;gap:14px;align-items:center;padding:14px;margin:18px 0;background:var(--cream);border:3px solid var(--ink);border-radius:14px}
+.preview .av{width:56px;height:56px}
+.note{font-weight:700;padding:10px 14px;border-radius:12px;border:2px solid var(--ink);background:var(--lime);margin:0 0 16px}
+.note.wait{background:var(--soft)}
+.tabs2{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:20px}
+.tabs2 button{border:3px solid var(--ink);background:var(--paper);border-radius:12px;padding:10px 18px;font:400 18px 'Bowlby One',Impact,sans-serif;cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
+.tabs2 button[aria-selected="true"]{background:var(--lime)}
+.adpreview{border:3px solid var(--ink);border-radius:12px;overflow:hidden;margin:4px 0 16px}
+.feed{display:grid;gap:16px}
+.post{padding:18px;text-decoration:none;display:block;color:inherit}
+.post h3{margin:6px 0 6px;font-size:21px;line-height:1.15}
+.post p{margin:0 0 10px;color:var(--mute)}
+.by{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700}
+.by time{font-weight:400;color:var(--mute)}
+.pav{width:28px;height:28px;border-radius:50%;border:2px solid var(--ink);flex:none}
+.meta{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:14px;font-weight:700}
+.cchip{display:inline-flex;align-items:center;gap:6px;border:2px solid var(--ink);border-radius:99px;padding:2px 10px 2px 3px;font-weight:700;font-size:13px;text-decoration:none;background:var(--paper)}
+.cchip .av{width:20px;height:20px;font-size:8px;border-width:1px}
+.disc{font-size:12px;font-weight:700;border:2px dashed var(--ink);border-radius:99px;padding:1px 8px}
+.article{padding:22px}
+.article h1{font-size:clamp(28px,5.5vw,44px);line-height:1.05;margin:10px 0 12px}
+.article .body{font-size:17.5px;line-height:1.7;max-width:68ch}
+.article .body h3{font-size:22px;margin:26px 0 8px}
+.article .body p{margin:0 0 16px}
+.article .body a{word-break:break-all}
+.actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.like[aria-pressed="true"]{background:var(--lime)}
+.comment{padding:12px 0;border-top:2px solid var(--soft)}
+.comment p{margin:6px 0 0;white-space:pre-wrap;word-break:break-word}
+.linkbtn{background:none;border:0;padding:0;font-weight:700;text-decoration:underline;cursor:pointer;font-size:14px}
+.picked{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.picked button{cursor:pointer}
+.suggest{border:2px solid var(--ink);border-radius:10px;margin-top:6px;max-height:200px;overflow:auto;background:var(--paper)}
+.suggest button{display:flex;gap:8px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:8px 10px;cursor:pointer;font-weight:700}
+.suggest button:hover,.suggest button:focus{background:var(--cream)}
+.check{display:flex;gap:10px;align-items:flex-start;font-weight:500}
+.check input{width:22px;height:22px;flex:none;margin-top:2px}
+@media (max-width:440px){.signin{padding:5px 8px;font-size:13px}}
+.logoup{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.logoup .av{width:64px;height:64px;font-size:20px;border-width:3px}
+.sr{position:absolute;width:1px;height:1px;opacity:0;overflow:hidden}
+.logoup:focus-within label.btn{outline:3px solid var(--ink);outline-offset:3px}
+</style>
+</head>
+<body>
+<!-- NAV (same menu on every page: site-nav.css + site-nav.js) -->
+<header class="sn">
+  <div class="sn-in">
+    <a class="sn-logo" href="/"><img src="/fathood-logo.jpg" alt="" width="42" height="42"><span>$FATHOOD</span></a>
+    <button type="button" class="sn-menu" aria-expanded="false" aria-controls="sn-panel"><i aria-hidden="true"></i>Menu</button>
+    <nav class="sn-panel" id="sn-panel" aria-label="Main">
+      <ul class="sn-links">
+        <li><a class="sn-a sn-play" href="/#play">Play the game</a></li>
+        <li><button type="button" class="sn-g" aria-expanded="false">Memes</button>
+          <ul class="sn-sub">
+            <li><a href="/#booth">Meme Booth<small>Make your own Fathood meme</small></a></li>
+            <li><a href="/#wall">Wall of Fat<small>Memes from the hood</small></a></li>
+          </ul></li>
+        <li><a class="sn-a" href="/fatlist.html" data-sn="fatlist">Fat List</a></li>
+        <li><a class="sn-a" href="/fatlist.html#talk" data-sn="talk">Hood Talk</a></li>
+        <li><button type="button" class="sn-g" aria-expanded="false">More</button>
+          <ul class="sn-sub">
+            <li><a href="/#buy">How to buy</a></li>
+            <li><a href="/#tokenomics">Tokenomics</a></li>
+            <li><a href="/#roadmap">Roadmap</a></li>
+            <li><a href="/#torchpad">Launch</a></li>
+            <li><a href="/#lore">Lore</a></li>
+            <li><a href="/#rules">The rules</a></li>
+            <li><a href="/#safe">Stay safe</a></li>
+          </ul></li>
+      </ul>
+      <a class="sn-cta" href="https://t.me/fathood">Join Telegram</a>
+    </nav>
+    <a class="sn-cta sn-top" href="https://t.me/fathood">Join Telegram</a>
+  </div>
+</header>
+<div class="flbar">
+  <div class="wrap bar">
+    <span class="fltitle">The Fat List</span>
+    <nav class="fltabs" aria-label="Fat List">
+      <a href="#coins" data-r="coins">Coins</a>
+      <a href="#talk" data-r="talk">Hood Talk</a>
+      <a href="#grow" data-r="grow">Grow</a>
+      <a href="#add" data-r="add">Add coin</a>
+    </nav>
+  </div>
+</div>
+<div class="adbar" id="adbar" hidden><div class="wrap"><a id="adlink" href="#coins"></a></div></div>
+<div class="demo" id="demo" hidden>Preview with sample data. Live coins, posts and payments switch on at fathood.org/fatlist.html</div>
+
+<main>
+<!-- COINS -->
+<section id="v-coins" hidden>
+  <div class="wrap hero">
+    <h1>The Fat List</h1>
+    <p>Every new coin on Robinhood Chain, plus coins from any chain their teams add. Ranked by the hood. Vote for the ones you rate. Fathood eats the rest.</p>
+    <div class="spots" id="spots" aria-label="Spotlight coins"></div>
+  </div>
+  <div class="wrap board">
+    <div class="tools">
+      <div class="tabs" role="tablist" id="tabs">
+        <button role="tab" data-t="trending" aria-selected="true">Trending</button>
+        <button role="tab" data-t="gainers" aria-selected="false">Gainers</button>
+        <button role="tab" data-t="new" aria-selected="false">New</button>
+        <button role="tab" data-t="votes" aria-selected="false">Most votes</button>
+      </div>
+      <input class="search" id="q" type="search" placeholder="Search name, symbol or address" aria-label="Search coins">
+    </div>
+    <div class="chips" id="chips"></div>
+    <div class="box tbl">
+      <table>
+        <thead><tr><th>#</th><th>Coin</th><th>Chain</th><th>Price</th><th>24h</th><th>Market cap</th><th>Liquidity</th><th>Age</th><th>Votes</th></tr></thead>
+        <tbody id="rows"><tr><td colspan="9" class="empty">Loading the Fat List…</td></tr></tbody>
+      </table>
+    </div>
+    <p class="fine" id="totalNote" style="font-weight:700;color:var(--ink)"></p>
+    <p class="fine">Spotlight cards, promoted rows, boosts and banner ads are paid. A blue tick means the Fathood team checked the contract and team links; it isn’t a guarantee. Nothing here is financial advice. Prices from DexScreener.</p>
+  </div>
+</section>
+
+<!-- COIN PAGE -->
+<section id="v-coin" hidden><div class="wrap page" id="coinPage"></div></section>
+
+<!-- ADD COIN -->
+<section id="v-add" hidden>
+  <div class="wrap page">
+    <h1>Add your coin</h1>
+    <p class="lede">Paste the contract address. We pull the name, logo, website, socials and description for you, and you can edit anything before it goes live.</p>
+    <form class="box" id="findForm" style="padding:18px;max-width:700px" novalidate>
+      <label for="f-addr">Contract address</label>
+      <div class="find"><input id="f-addr" placeholder="0x… or Solana address" autocomplete="off" spellcheck="false"><button class="btn" type="submit">Find my coin</button></div>
+      <p class="msg bad" id="f-msg" hidden></p>
+    </form>
+    <form class="box" id="addForm" style="margin-top:22px" hidden novalidate>
+      <div id="a-found"></div>
+      <div id="a-manual" hidden>
+        <div class="g2">
+          <div class="f" data-k="name"><label for="a-name">Coin name</label><input id="a-name" maxlength="40"><div class="err"></div></div>
+          <div class="f" data-k="symbol"><label for="a-symbol">Symbol</label><input id="a-symbol" maxlength="12" placeholder="FATHOOD"><div class="err"></div></div>
+        </div>
+        <div class="f" data-k="chain"><label for="a-chain">Chain</label><select id="a-chain"></select><div class="err"></div></div>
+      </div>
+      <div class="f" data-k="logo"><label for="a-logo">Logo</label>
+        <div class="logoup"><span class="av" id="a-logoprev" aria-hidden="true"></span>
+          <label class="btn white" for="a-logo" style="box-shadow:3px 3px 0 var(--ink)">Upload logo</label>
+          <input id="a-logo" type="file" accept="image/png,image/jpeg,image/webp" class="sr"></div>
+        <div class="err"></div><div class="hint" id="a-logohint">A square PNG, JPG or WebP works best. We shrink it for you.</div></div>
+      <div class="f" data-k="description"><label for="a-description">Description</label><textarea id="a-description" maxlength="1000"></textarea><div class="err"></div><div class="hint"><span id="a-count">0</span>/1000</div></div>
+      <div class="g2">
+        <div class="f" data-k="website"><label for="a-website">Website</label><input id="a-website" type="url" placeholder="https://"><div class="err"></div></div>
+        <div class="f" data-k="x"><label for="a-x">X (Twitter)</label><input id="a-x" type="url" placeholder="https://x.com/…"><div class="err"></div></div>
+      </div>
+      <div class="g2">
+        <div class="f" data-k="telegram"><label for="a-telegram">Telegram</label><input id="a-telegram" type="url" placeholder="https://t.me/…"><div class="err"></div></div>
+        <div class="f" data-k="discord"><label for="a-discord">Discord</label><input id="a-discord" type="url" placeholder="https://discord.gg/…"><div class="err"></div></div>
+      </div>
+      <div class="f" data-k="contact"><label for="a-contact">Your Telegram handle</label><input id="a-contact" placeholder="@you"><div class="err"></div><div class="hint">So the team can reach you. Never shown publicly.</div></div>
+      <div class="sum"><div class="hint">By adding a coin you confirm the links belong to the project.</div><button class="btn" type="submit">Add to the Fat List</button></div>
+      <p class="msg bad" id="a-msg" hidden></p>
+    </form>
+    <div id="addDone" hidden></div>
+  </div>
+</section>
+
+<!-- GROW -->
+<section id="v-grow" hidden>
+  <div class="wrap page">
+    <h1>Grow your coin</h1>
+    <p class="lede">Pay from your wallet in ETH, USDG, USDC or USDT on Robinhood Chain or Ethereum. Everything switches on automatically once the payment confirms.</p>
+    <div class="tabs2" role="tablist" id="growTabs">
+      <button role="tab" data-g="boost" aria-selected="true">Boost</button>
+      <button role="tab" data-g="promote" aria-selected="false">Promote</button>
+      <button role="tab" data-g="advertise" aria-selected="false">Advertise</button>
+    </div>
+    <form class="box" id="growForm" style="padding:22px;max-width:760px" novalidate>
+      <div class="f"><label for="g-coin">Coin</label><select id="g-coin"></select><div class="err">Pick a coin.</div>
+        <div class="hint">Only coins live on the Fat List can be grown. Not on it yet? <a href="#add">Add it</a>.</div></div>
+      <p id="g-blurb" style="margin:0 0 16px"></p>
+      <div class="pkgs" id="g-pkgs"></div>
+      <div id="g-ad" hidden>
+        <div class="f"><label for="g-adtext">Banner message</label><input id="g-adtext" maxlength="70" placeholder="The crispiest meme on Robinhood Chain"><div class="err">Write 8 to 70 characters, without links.</div><div class="hint"><span id="g-adcount">0</span>/70. The banner links to your coin page.</div></div>
+        <label>How it looks</label><div class="adpreview" id="g-adprev"></div>
+      </div>
+      <div class="g2" id="g-dates">
+        <div class="f"><label for="g-start">Start date (UTC)</label><input id="g-start" type="date"><div class="err">Pick a start date from today onwards.</div></div>
+        <div class="f"><label for="g-days">How long</label><select id="g-days"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days (10% off)</option><option value="14">14 days (15% off)</option></select></div>
+      </div>
+      <div class="sum"><div><div class="hint" id="g-line"></div><div class="total num" id="g-total">$0</div></div><button class="btn" type="submit" id="g-go">Continue to payment</button></div>
+    </form>
+  </div>
+</section>
+
+<!-- TALK -->
+<section id="v-talk" hidden>
+  <div class="wrap page">
+    <div style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;justify-content:space-between;margin-bottom:8px">
+      <div><h1 style="margin:0">Hood Talk</h1><p class="lede" style="margin:8px 0 0">Write-ups, alpha and hot takes on the coins in the hood.</p></div>
+      <a class="btn" href="#write">Write a post</a>
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:22px 0 16px">
+      <div class="tabs" role="tablist" id="talkTabs">
+        <button role="tab" data-s="latest" aria-selected="true">Latest</button>
+        <button role="tab" data-s="top" aria-selected="false">Popular</button>
+      </div>
+      <div id="whoami" class="small"></div>
+    </div>
+    <div class="feed" id="feed"></div>
+    <div style="text-align:center;margin-top:20px"><button class="btn white" id="more" hidden>Load more</button></div>
+    <p class="fine">Posts are written by the community, not by $FATHOOD. Authors who hold a coin or were paid to write about it must say so. Nothing here is financial advice.</p>
+  </div>
+</section>
+
+<section id="v-post" hidden><div class="wrap page" id="postPage"></div></section>
+
+<section id="v-write" hidden>
+  <div class="wrap page">
+    <a class="back" href="#talk">← Hood Talk</a>
+    <h1>Write a post</h1>
+    <div id="writeGate"></div>
+    <form class="box" id="writeForm" style="padding:22px;max-width:760px" hidden novalidate>
+      <div class="f" id="w-namebox" hidden><label for="w-name">Your display name</label><input id="w-name" maxlength="24" placeholder="Fry Lord"><div class="err"></div><div class="hint">Shown on your posts instead of your wallet address.</div></div>
+      <div class="f" data-k="title"><label for="w-title">Title</label><input id="w-title" maxlength="120"><div class="err"></div></div>
+      <div class="f" data-k="body"><label for="w-body">Post</label><textarea id="w-body" maxlength="10000" style="min-height:260px"></textarea><div class="err"></div>
+        <div class="hint">Leave an empty line between paragraphs. Start a line with ## for a heading. Links work as they are.</div></div>
+      <div class="f"><label for="w-coin">Tag up to 3 coins</label><input id="w-coin" placeholder="Search the Fat List" autocomplete="off"><div class="suggest" id="w-sug" hidden></div><div class="picked" id="w-picked"></div></div>
+      <div class="f"><label class="check"><input type="checkbox" id="w-disc"><span>I hold a coin I’m writing about, or I was paid to write this. Readers will see a disclosure tag.</span></label></div>
+      <div class="sum"><div class="hint">Posts that are scams, spam or impersonation get removed.</div><button class="btn" type="submit">Publish</button></div>
+      <p class="msg bad" id="w-msg" hidden></p>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer><div class="wrap"><span>© 2026 $FATHOOD. Crypto is risky. Nothing here is financial advice.</span><span><a href="/">Home</a> &nbsp; <a href="#talk">Hood Talk</a> &nbsp; <a href="#grow">Grow</a> &nbsp; <a href="#add">Add coin</a></span></div></footer>
+
+<dialog id="payDlg"><div class="md" id="payMd"></div></dialog>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+const DAY=864e5;
+let S=null, coins=[], ads=[], DEMO=false, total=0, searchHits=[];
+const voted=new Set(store.get("fatlist-votes",[]));
+let session=store.get("hoodtalk-session",null);
+
+// ---------- formatting
+const fP=p=>p==null?"—":p>=1?"$"+p.toLocaleString(undefined,{maximumFractionDigits:2}):p>=0.01?"$"+p.toFixed(4):"$"+Number(p).toPrecision(3);
+const fM=m=>!m?"—":m>=1e9?"$"+(m/1e9).toFixed(2)+"B":m>=1e6?"$"+(m/1e6).toFixed(2)+"M":m>=1e3?"$"+Math.round(m/1e3)+"K":"$"+Math.round(m);
+const fC=c=>c==null?"—":(c>=0?"+":"")+Number(c).toFixed(1)+"%";
+const ageOf=c=>{const t=c.pairCreatedAt||c.launchedAt;return t?Math.max(0,(Date.now()-t)/DAY):null};
+const fA=d=>d==null?"—":d<1?Math.max(1,Math.round(d*24))+"h":d<60?Math.round(d)+"d":Math.round(d/30)+"mo";
+const ago=t=>{const m=(Date.now()-t)/6e4;return m<1?"just now":m<60?Math.round(m)+"m ago":m<1440?Math.round(m/60)+"h ago":m<43200?Math.round(m/1440)+"d ago":new Date(t).toLocaleDateString()};
+const ini=n=>String(n).replace(/\$/g,"").split(/\s+/).map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
+const av=c=>`<span class="av" aria-hidden="true">${c.image?`<img src="${esc(c.image)}" alt="" loading="lazy" data-i="${esc(ini(c.name))}" onerror="this.parentNode.textContent=this.dataset.i">`:esc(ini(c.name))}</span>`;
+const pav=a=>{const h=parseInt(String(a).slice(2,8),16)%360||0;return `<span class="pav" style="background:conic-gradient(hsl(${h} 80% 60%),hsl(${(h+120)%360} 80% 60%),hsl(${(h+240)%360} 80% 60%),hsl(${h} 80% 60%))" aria-hidden="true"></span>`};
+const chainName=k=>(S&&S.chains[k])||(k?k[0].toUpperCase()+k.slice(1):"");
+const vb=c=>c.verified?'<span class="vbadge" title="Checked by the Fathood team" aria-label="Verified">✓</span>':"";
+const short=a=>a.slice(0,6)+"…"+a.slice(-4);
+
+async function api(path,opt={}){
+  const h={"content-type":"application/json"};if(session)h.authorization="Bearer "+session.token;
+  const r=await fetch(path,{method:opt.body?"POST":"GET",headers:h,body:opt.body?JSON.stringify(opt.body):undefined});
+  const ct=r.headers.get("content-type")||"";if(!ct.includes("json"))throw new Error("offline");
+  const j=await r.json();if(r.status===401&&session&&path.startsWith("/api/talk")&&opt.body&&opt.body.action!=="login"){session=null;store.del("hoodtalk-session");renderWho()}
+  return {ok:r.ok,status:r.status,...j};
+}
+
+// ---------- demo data (preview only)
+const DEMO_COINS=[["Fathood","FATHOOD","robinhood",0.000412,38.2,4.1e6,310e3,3,1240,"spotlight",40,true],["Hood Rat","HRAT","robinhood",0.00871,12.6,9.8e6,520e3,9,980,"spotlight",0,true],
+ ["Burger Bank","BURG","base",0.000231,64.9,1.2e6,96e3,1,1510,"row",10,false],["Gravy Train","GRVY","solana",1.284,-4.2,22.5e6,1.4e6,41,760,null,0,false],
+ ["Snack Pack","SNAK","robinhood",0.0000183,21.7,0.64e6,41e3,2,890,null,30,false],["Dough Boy","DOUGH","ethereum",0.0342,-11.3,3.1e6,210e3,14,302,null,0,false],
+ ["Thicc Coin","THICC","solana",0.412,5.8,15.7e6,880e3,27,640,null,0,false],["Seconds Please","MORE","bsc",0.00791,9.1,2.4e6,150e3,6,455,null,0,false],
+ ["Fry Guy","FRY","robinhood",0.000912,112.4,0.88e6,60e3,1,1720,null,100,false],["Buffet","BUFF","base",0.0193,-2.7,1.9e6,120e3,11,214,null,0,false]]
+ .map((d,i)=>({id:"1700000000000-0000000"+i,name:d[0],symbol:d[1],chain:d[2],address:"0x"+(i+1).toString(16).padStart(40,"a"),price:d[3],change:d[4],mcap:d[5],liquidity:d[6],volume:d[6]*1.7,
+  pairCreatedAt:Date.now()-d[7]*DAY-3600e3,votes:d[8],promo:d[9],boosts:d[10],verified:d[11],unclaimed:i===7,description:`${d[0]} is a sample coin used in this preview. On the real site this text comes from the project’s own description.`,website:"https://example.com",x:"https://x.com/example",telegram:"https://t.me/example",discord:""}));
+const DEMO_SETTINGS={packages:{spotlight:{group:"promote",name:"Spotlight card",perDay:349,maxAtOnce:3,blurb:"One of three big cards at the top of the Fat List."},row:{group:"promote",name:"Promoted row",perDay:149,maxAtOnce:10,blurb:"Pinned above the rankings with a lime highlight."},banner:{group:"advertise",name:"Banner ad",perDay:199,maxAtOnce:2,blurb:"Your coin and a one-line message across the top of every page, including Hood Talk."}},
+ boosts:{b10:{name:"10 boosts",boosts:10,hours:24,usd:29},b30:{name:"30 boosts",boosts:30,hours:24,usd:79},b100:{name:"100 boosts",boosts:100,hours:24,usd:199}},
+ discounts:{1:0,3:0,7:.1,14:.15},verifyUsd:49,autoListMin:5000,chains:{robinhood:"Robinhood Chain",solana:"Solana",ethereum:"Ethereum",base:"Base",bsc:"BNB Chain",arbitrum:"Arbitrum",polygon:"Polygon",avalanche:"Avalanche",sui:"Sui",ton:"TON",tron:"Tron",hyperevm:"HyperEVM"},
+ payChains:{robinhood:{name:"Robinhood Chain",chainId:4663,tokens:["ETH","USDG","USDC"]},ethereum:{name:"Ethereum",chainId:1,tokens:["ETH","USDG","USDT","USDC"]}},paymentsOn:false};
+const DEMO_ADDR="0x7a1e9b0c2f3d4e5a6b7c8d9e0f1a2b3c4d5e6f70";
+let DEMO_POSTS=[
+ {id:"1700000000002-aaaaaaa2",title:"Why Fry Guy might be the next Robinhood Chain runner",author:DEMO_ADDR,authorName:"Fry Lord",coins:[{id:DEMO_COINS[8].id,name:"Fry Guy",symbol:"FRY"}],disclosure:true,likes:42,comments:2,createdAt:Date.now()-2*3600e3,
+  body:"Fry Guy launched three days ago and already has more holders than most coins from last week.\n\n## What I like\nLiquidity is locked in a Uniswap v3 position, the team is active in the Telegram, and the meme is simple. Check $FRY on the Fat List.\n\n## What worries me\nIt’s early and thin. Size your bets for that."},
+ {id:"1700000000001-aaaaaaa1",title:"How to check a Robinhood Chain contract before you ape",author:"0x91b2c3d4e5f60718293a4b5c6d7e8f9012345678",authorName:"0x91b2…5678",coins:[],disclosure:false,likes:88,comments:5,createdAt:Date.now()-26*3600e3,
+  body:"Most rugs on new chains share the same tells. Here’s the five-minute checklist I run on every coin.\n\n## 1. Is liquidity locked?\nLook at the pool on the explorer. If the team wallet can pull it, walk away.\n\n## 2. Can they mint more?\nSearch the contract for mint functions owned by a single wallet."},
+ {id:"1700000000000-aaaaaaa0",title:"Fathood eats again: a week on the Fat List",author:"0xabc1230000000000000000000000000000def456",authorName:"hoodwatcher",coins:[{id:DEMO_COINS[0].id,name:"Fathood",symbol:"FATHOOD"}],disclosure:true,likes:61,comments:9,createdAt:Date.now()-3*DAY,
+  body:"A week in and the Fat List has 10 coins, 3 of them on Robinhood Chain. $FATHOOD is still holding the top spot on votes."}];
+
+async function load(){
+  try{const j=await api("/api/fatlist");if(!j.ok)throw 0;coins=j.coins;ads=j.ads||[];S=j.settings;total=j.total||coins.length}
+  catch(e){DEMO=true;coins=DEMO_COINS;S=DEMO_SETTINGS;ads=[{coinId:DEMO_COINS[8].id,text:"The crispiest meme on Robinhood Chain",name:"Fry Guy",symbol:"FRY"}];$("#demo").hidden=false}
+  if(session&&!DEMO){const j=await api("/api/talk?me=1").catch(()=>({}));if(!j.me){session=null;store.del("hoodtalk-session")}else session.me=j.me}
+  renderAd();buildChips();renderSpots();renderRows();buildGrow();buildAdd();route();
+}
+
+// ---------- banner ads
+let adIdx=0;
+function renderAd(){
+  if(!ads.length){$("#adbar").hidden=true;return}
+  const a=ads[adIdx%ads.length];$("#adbar").hidden=false;
+  const l=$("#adlink");l.href="#coin/"+a.coinId;
+  l.innerHTML=`<span class="adtag">Ad</span>${av({name:a.name,image:a.image})}<span class="adtxt"><b>$${esc(a.symbol)}</b> · ${esc(a.text)}</span><span class="go">View</span>`;
+}
+setInterval(()=>{if(ads.length>1&&!document.hidden){adIdx++;renderAd()}},8000);
+
+// ---------- coin board
+let tab="trending",chain="all",q="";
+function buildChips(){
+  const present=[...new Set(coins.map(c=>c.chain))],el=$("#chips");el.innerHTML="";
+  ["all",...present].forEach(k=>{const b=document.createElement("button");b.className="chip";b.textContent=k==="all"?"All chains":chainName(k);
+    b.setAttribute("aria-pressed",String(k===chain));b.onclick=()=>{chain=k;[...el.children].forEach(x=>x.setAttribute("aria-pressed",String(x===b)));renderRows()};el.appendChild(b)});
+}
+$("#tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.t;$$("#tabs button").forEach(x=>x.setAttribute("aria-selected",String(x===b)));renderRows()};
+let qTimer=null;
+$("#q").oninput=e=>{q=e.target.value.trim().toLowerCase();searchHits=[];renderRows();clearTimeout(qTimer);
+  if(DEMO||q.replace(/^\$/,"").length<2)return;
+  qTimer=setTimeout(async()=>{const mine=q;try{const j=await api("/api/fatlist?q="+encodeURIComponent(mine));if(mine===q&&j.coins){searchHits=j.coins;renderRows()}}catch(_){}},300)};
+function renderSpots(){
+  const sp=coins.filter(c=>c.promo==="spotlight").slice(0,3);
+  let h=sp.map(c=>`<a class="spot" href="#coin/${esc(c.id)}" style="text-decoration:none"><span class="tag">Spotlight · paid</span>
+    <div class="who">${av(c)}<div><div class="nm">${esc(c.name)}${vb(c)}</div><div class="small">$${esc(c.symbol)} on ${esc(chainName(c.chain))}</div></div></div>
+    <div class="row num"><span>${fP(c.price)}</span><span class="${(c.change||0)>=0?"up":"down"}">${fC(c.change)}</span><span>${fM(c.mcap)}</span></div></a>`).join("");
+  for(let i=sp.length;i<3;i++)h+=`<a class="spot-empty" href="#grow" data-grow="promote"><span class="disp" style="font-size:20px">Your coin here</span><span>Spotlight spot open. Book it.</span></a>`;
+  $("#spots").innerHTML=h;
+}
+function sorted(){
+  const qq=q.replace(/^\$/,"");
+  const pool=[...coins,...searchHits.filter(h=>!coins.some(c=>c.id===h.id))];
+  let l=pool.filter(c=>(chain==="all"||c.chain===chain)&&(!qq||c.name.toLowerCase().includes(qq)||c.symbol.toLowerCase().includes(qq)||c.address.toLowerCase()===qq));
+  const score=c=>(c.votes||0)*0.5+(c.boosts||0)*25+(c.change||0)*6+Math.log10((c.volume||c.liquidity||1)+1)*20+Math.max(0,30-(ageOf(c)??30))*8;
+  const so={trending:(a,b)=>score(b)-score(a),gainers:(a,b)=>(b.change??-1e9)-(a.change??-1e9),new:(a,b)=>(ageOf(a)??1e9)-(ageOf(b)??1e9),votes:(a,b)=>(b.votes||0)-(a.votes||0)};
+  l.sort(so[tab]);return [...l.filter(c=>c.promo),...l.filter(c=>!c.promo)];
+}
+function renderRows(){
+  const l=sorted();let n=0;
+  const tn=$("#totalNote");if(tn)tn.textContent=total>coins.length?`Showing the top ${coins.length} of ${total.toLocaleString()} coins. Search by name, symbol or contract address to find any of them.`:"";
+  if(!l.length){$("#rows").innerHTML=`<tr><td colspan="9" class="empty">${coins.length?"No coins match that. Clear the search or pick another chain.":'No coins on the Fat List yet. <a href="#add">Add the first one</a>.'}</td></tr>`;return}
+  $("#rows").innerHTML=l.map(c=>`<tr class="${c.promo?"promo":""}" data-id="${esc(c.id)}" tabindex="0">
+    <td class="num">${c.promo?"★":++n}</td>
+    <td><div class="cn">${av(c)}<span><b>${esc(c.name)}${vb(c)}${c.promo?'<span class="badge">Promoted</span>':""}${c.boosts?`<span class="boost">⚡${c.boosts}</span>`:""}</b><small>$${esc(c.symbol)}${c.unclaimed?" · auto-listed":""}</small></span></div></td>
+    <td>${esc(chainName(c.chain))}</td><td class="num">${fP(c.price)}</td><td class="num ${(c.change||0)>=0?"up":"down"}">${fC(c.change)}</td>
+    <td class="num">${fM(c.mcap)}</td><td class="num">${fM(c.liquidity)}</td><td>${fA(ageOf(c))}</td>
+    <td><button class="vote num" data-v="${esc(c.id)}" aria-pressed="${voted.has(c.id)}" aria-label="Vote for ${esc(c.name)}, ${c.votes||0} votes">▲ ${c.votes||0}</button></td></tr>`).join("");
+}
+async function vote(id,after){
+  const c=coins.find(x=>x.id===id);if(!c||voted.has(id))return;
+  voted.add(id);store.set("fatlist-votes",[...voted]);c.votes=(c.votes||0)+1;after();
+  if(!DEMO){try{const j=await api("/api/fatlist",{body:{action:"vote",id}});if(j.votes!=null){c.votes=j.votes;after()}}catch(_){}}
+}
+$("#rows").addEventListener("click",e=>{
+  const v=e.target.closest("[data-v]");if(v){e.stopPropagation();vote(v.dataset.v,renderRows);return}
+  const tr=e.target.closest("tr[data-id]");if(tr)location.hash="#coin/"+tr.dataset.id;
+});
+$("#rows").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("tr[data-id]"))location.hash="#coin/"+e.target.dataset.id});
+
+// ---------- coin page
+const link=(u,label)=>u?`<a href="${esc(u)}" target="_blank" rel="noopener nofollow">${label}</a>`:"";
+async function showCoin(id){
+  const el=$("#coinPage");
+  let c=coins.find(x=>x.id===id),status="approved";
+  if(!c&&!DEMO){el.innerHTML=`<p class="empty">Loading…</p>`;const j=await api("/api/fatlist?coin="+encodeURIComponent(id)).catch(()=>({}));if(j.coin){c=j.coin;status=j.coin.status}}
+  if(!c){el.innerHTML=`<a class="back" href="#coins">← The Fat List</a><div class="empty box">That coin isn’t on the Fat List.</div>`;return}
+  const live=status==="approved";
+  const chart=c.pairAddress&&!DEMO?`<iframe class="chart" title="${esc(c.name)} price chart" loading="lazy" src="https://dexscreener.com/${esc(c.chain)}/${esc(c.pairAddress)}?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=60"></iframe>`:`<div class="chart" style="display:grid;place-items:center;font-weight:700">${DEMO?"Live DexScreener chart shows here":"No trading pair found yet"}</div>`;
+  el.innerHTML=`<a class="back" href="#coins">← The Fat List</a>
+    <div class="coinhead">${av(c)}<div><h1>${esc(c.name)}${vb(c)}</h1><div style="font-weight:700;margin-top:6px">$${esc(c.symbol)} on ${esc(chainName(c.chain))}${c.promo?' <span class="badge">Promoted</span>':""}${c.boosts?` <span class="boost">⚡${c.boosts} boosts</span>`:""}${!live?' <span class="badge" style="background:var(--soft)">In review</span>':""}</div></div>
+      ${live?`<button class="vote num" id="cv" aria-pressed="${voted.has(c.id)}" style="margin-left:auto;font-size:18px;padding:8px 14px">▲ ${c.votes||0}</button>`:""}</div>
+    ${c.unclaimed?`<p class="note wait" style="margin-top:16px">${c.claimPending?"Someone has asked to claim this coin. The Fathood team is reviewing it.":`This coin was added automatically. Is it yours? <a href="#add/${esc(c.address)}">Claim it</a> to add your logo, description and links.`}</p>`:""}
+    <div class="grid5 num"><div class="stat"><span>Price</span><b>${fP(c.price)}</b></div><div class="stat"><span>24h</span><b class="${(c.change||0)>=0?"up":"down"}">${fC(c.change)}</b></div>
+      <div class="stat"><span>Market cap</span><b>${fM(c.mcap)}</b></div><div class="stat"><span>Liquidity</span><b>${fM(c.liquidity)}</b></div><div class="stat"><span>24h volume</span><b>${fM(c.volume)}</b></div></div>
+    <div class="two"><div>
+      <div class="box panel">${chart}</div>
+      <div class="box panel"><h2>About ${esc(c.name)}</h2><p style="white-space:pre-line;margin:0 0 14px">${esc(c.description||"No description yet.")}</p>
+        <label>Contract address</label><div class="addr"><code>${esc(c.address)}</code><button class="mini" id="cp">Copy</button></div>
+        <div class="links">${link(c.url,"DexScreener")}${link(c.website,"Website")}${link(c.x,"X")}${link(c.telegram,"Telegram")}${link(c.discord,"Discord")}</div>
+        <p class="warn">Anyone can add a coin, and promoted spots are paid. Check the contract and liquidity yourself before buying.</p></div>
+      <div class="box panel"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><h2 style="margin:0">Hood Talk on $${esc(c.symbol)}</h2><a class="btn white" href="#write" id="wc">Write about it</a></div><div class="feed" id="coinFeed" style="margin-top:14px"><p class="small">Loading posts…</p></div></div>
+    </div><div>
+      <div class="box panel"><h2>Grow ${esc(c.name)}</h2>
+        ${live?`<div class="growbtns">
+          <button class="btn" data-g="boost">⚡ Boost <small>from $${Math.min(...Object.values(S.boosts).map(b=>b.usd))}</small></button>
+          <button class="btn white" data-g="promote">Promote <small>from $${Math.min(...Object.values(S.packages).filter(p=>p.group==="promote").map(p=>p.perDay))}/day</small></button>
+          <button class="btn white" data-g="advertise">Advertise <small>$${S.packages.banner.perDay}/day</small></button></div>`:`<p style="margin:0">Boosts, promotion and ads open once the coin is live.</p>`}
+        ${c.verified?`<p class="small" style="margin:14px 0 0"><span class="vbadge">✓</span> Verified by the Fathood team.</p>`:`<button class="btn dark" id="vf" style="width:100%;margin-top:10px">Get the blue tick · $${S.verifyUsd}</button><p class="small" style="margin:8px 0 0">The team checks the contract, liquidity and links, then adds the tick${live?"":" and puts the coin live"}.</p>`}
+      </div>
+    </div></div>`;
+  $("#cp").onclick=async e=>{try{await navigator.clipboard.writeText(c.address);e.target.textContent="Copied"}catch(_){e.target.textContent="Press and hold to copy"}};
+  const cv=$("#cv");if(cv)cv.onclick=()=>vote(c.id,()=>{cv.textContent="▲ "+c.votes;cv.setAttribute("aria-pressed","true")});
+  $$("#coinPage [data-g]").forEach(b=>b.onclick=()=>{growCoin=c.id;growTab=b.dataset.g;location.hash="#grow"});
+  const vf=$("#vf");if(vf)vf.onclick=()=>openPay({kind:"verify",listingId:c.id,title:`Blue tick check for ${c.name}`,usd:S.verifyUsd});
+  $("#wc").onclick=()=>{writeCoins=[{id:c.id,name:c.name,symbol:c.symbol,image:c.image}]};
+  loadFeed($("#coinFeed"),{coin:c.id},true);
+}
+
+// ---------- logo upload (shrinks to 256x256 in the browser)
+async function shrinkLogo(file){
+  if(!/^image\/(png|jpeg|webp)$/.test(file.type))throw new Error("Upload a PNG, JPG or WebP image.");
+  if(file.size>8e6)throw new Error("That image is over 8 MB. Pick a smaller one.");
+  const url=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(new Error("Couldn’t read that image. Try another file."));i.src=url});
+    const S=256,c=document.createElement("canvas");c.width=c.height=S;const x=c.getContext("2d");
+    const side=Math.min(img.naturalWidth,img.naturalHeight),sx=(img.naturalWidth-side)/2,sy=(img.naturalHeight-side)/2;
+    x.drawImage(img,sx,sy,side,side,0,0,S,S);
+    let d=c.toDataURL("image/webp",0.85);if(!d.startsWith("data:image/webp"))d=c.toDataURL("image/png");
+    return d;
+  }finally{URL.revokeObjectURL(url)}
+}
+let addLogo=null;
+function showLogoPrev(src,name){$("#a-logoprev").innerHTML=src?`<img src="${esc(src)}" alt="">`:esc(ini(name||"?"))}
+$("#a-logo").onchange=async e=>{
+  const f=e.target.files[0],box=e.target.closest(".f");box.classList.remove("bad");if(!f)return;
+  try{addLogo=await shrinkLogo(f);showLogoPrev(addLogo);$("#a-logohint").textContent="Looks good. This logo shows on the Fat List."}
+  catch(err){addLogo=null;box.classList.add("bad");box.querySelector(".err").textContent=err.message}
+  e.target.value="";
+};
+
+// ---------- add coin
+let found=null;
+function buildAdd(){
+  $("#a-chain").innerHTML=`<option value="">Pick a chain…</option>`+Object.entries(S.chains).map(([k,v])=>`<option value="${k}">${esc(v)}</option>`).join("");
+  $("#a-description").oninput=e=>$("#a-count").textContent=e.target.value.length;
+}
+function resetAdd(){$("#findForm").hidden=false;$("#addForm").hidden=true;$("#addDone").hidden=true;$("#f-msg").hidden=true;found=null}
+$("#findForm").onsubmit=async e=>{
+  e.preventDefault();const addr=$("#f-addr").value.trim(),msg=$("#f-msg");msg.hidden=true;$("#addForm").hidden=true;
+  if(addr.length<26){msg.textContent="Paste the full contract address.";msg.hidden=false;return}
+  const btn=e.target.querySelector("button");btn.disabled=true;btn.textContent="Looking…";
+  try{
+    let j;
+    if(DEMO)j={found:true,chain:"robinhood",chainName:"Robinhood Chain",address:addr,name:"Grease Monkey",symbol:"GREASE",image:"",liquidity:18400,description:"Grease Monkey keeps the Robinhood Chain fryers running. Community-owned, liquidity locked, no team tokens.",website:"https://example.com",x:"https://x.com/example",telegram:"https://t.me/example",discord:""};
+    else{j=await api("/api/fatlist?lookup="+encodeURIComponent(addr));if(!j.ok){msg.textContent=j.error||"Couldn’t look that up. Try again.";msg.hidden=false;return}}
+    if(j.existing&&!j.claimable){msg.innerHTML=j.claimPending?`Someone already asked to claim this coin. The team is reviewing it. <a href="#coin/${esc(j.existing)}">See its page</a>.`:`That coin is already on the Fat List. <a href="#coin/${esc(j.existing)}">Go to its page</a>.`;msg.hidden=false;return}
+    found=j;fillAdd(j,addr);
+  }catch(_){msg.textContent="Couldn’t reach the server. Check your connection and try again.";msg.hidden=false}
+  finally{btn.disabled=false;btn.textContent="Find my coin"}
+};
+function fillAdd(j,addr){
+  const f=$("#addForm");f.hidden=false;f.querySelectorAll(".f").forEach(x=>x.classList.remove("bad"));$("#a-msg").hidden=true;
+  if(j.found&&j.claimable){
+    $("#a-found").innerHTML=`<div class="preview">${av(j)}<div><div class="disp" style="font-size:22px">${esc(j.name)}</div><div style="font-weight:700">$${esc(j.symbol)} on ${esc(j.chainName)} · ${fM(j.liquidity)} liquidity</div></div></div>
+      <p class="note wait">This coin is already on the Fat List because we add new coins automatically. If it’s yours, fill in the details to claim it. The team checks claims, usually within 24 hours, then your logo, description and links go live.</p>`;
+    $("#a-manual").hidden=true;
+  }else if(j.found){
+    const instant=j.liquidity>=S.autoListMin;
+    $("#a-found").innerHTML=`<div class="preview">${av(j)}<div><div class="disp" style="font-size:22px">${esc(j.name)}</div><div style="font-weight:700">$${esc(j.symbol)} on ${esc(j.chainName)} · ${fM(j.liquidity)} liquidity</div></div></div>
+      <p class="note ${instant?"":"wait"}">${instant?"Found it. Check the details below. It goes live as soon as you add it.":`Found it. It has under ${fM(S.autoListMin)} liquidity, so the team reviews it before it goes live, usually within 24 hours.`}</p>`;
+    $("#a-manual").hidden=true;
+  }else{
+    $("#a-found").innerHTML=`<p class="note wait">We couldn’t find a trading pair for that address yet. Fill in the details and the team reviews it before it goes live.</p>`;
+    $("#a-manual").hidden=false;
+  }
+  addLogo=null;showLogoPrev(j.image,j.name);
+  $("#a-logohint").textContent=j.image?"We found this logo. Upload a different one if you like.":"No logo found. Upload one so your coin doesn’t show as plain initials.";
+  for(const k of ["description","website","x","telegram","discord"])$("#a-"+k).value=j[k]||"";
+  $("#a-count").textContent=$("#a-description").value.length;
+  f.scrollIntoView({behavior:"smooth",block:"start"});
+  f.dataset.addr=addr;
+}
+$("#addForm").onsubmit=async e=>{
+  e.preventDefault();const f=e.target,msg=$("#a-msg");msg.hidden=true;f.querySelectorAll(".f").forEach(x=>x.classList.remove("bad"));
+  const v=k=>$("#a-"+k).value.trim();
+  const body={action:"submit",address:found&&found.found?found.address:f.dataset.addr,chain:v("chain"),name:v("name"),symbol:v("symbol").replace(/^\$/,""),description:v("description"),website:v("website"),x:v("x"),telegram:v("telegram"),discord:v("discord"),contact:v("contact"),logo:addLogo||undefined};
+  const errs={};
+  if(!found.found){if(!body.chain)errs.chain="Pick the chain your coin is on.";if(body.name.length<2)errs.name="Enter the coin’s name.";if(!/^[A-Za-z0-9]{2,12}$/.test(body.symbol))errs.symbol="Enter a symbol of 2–12 letters or numbers."}
+  if(body.description.length<30)errs.description="Describe the coin in at least 30 characters.";
+  if(!/^@\w{4,}$/.test(body.contact))errs.contact="Enter your Telegram handle, starting with @.";
+  for(const k of ["website","x","telegram","discord"])if(body[k]&&!/^https:\/\/\S+\.\S+/.test(body[k]))errs[k]="Enter a full link starting with https://";
+  if(Object.keys(errs).length)return fieldErrs(f,errs);
+  const btn=f.querySelector("button[type=submit]");btn.disabled=true;btn.textContent="Adding…";
+  try{
+    let j;
+    if(DEMO){j={ok:true,id:"demo-new",status:found.found&&found.liquidity>=S.autoListMin?"approved":"pending"}}
+    else{j=await api("/api/fatlist",{body});if(!j.ok){if(j.fields)fieldErrs(f,j.fields);msg.innerHTML=j.existing?`That coin is already on the Fat List. <a href="#coin/${esc(j.existing)}">Go to its page</a>.`:esc(j.error||"Couldn’t add it. Try again.");msg.hidden=false;return}}
+    const name=found.found?found.name:body.name,live=j.status==="approved",claim=j.status==="claim";
+    $("#findForm").hidden=true;f.hidden=true;const d=$("#addDone");d.hidden=false;window.scrollTo(0,0);
+    d.innerHTML=`<div class="box done"><h2>${claim?`Claim sent for ${esc(name)}`:live?`${esc(name)} is live on the Fat List`:`${esc(name)} is in the review queue`}</h2>
+      <p>${claim?`The team checks that it’s really your coin, usually within 24 hours, and may message ${esc(body.contact)} on Telegram. You can already boost, promote or advertise it.`:live?`Share its page with your community so they can vote it up.`:`The team usually reviews new coins within 24 hours and will message ${esc(body.contact)} on Telegram if anything’s missing.`}</p>
+      <div class="foot" style="justify-content:flex-start">${(live||claim)&&!DEMO?`<a class="btn white" href="#coin/${esc(j.id)}">See its page</a>`:""}<button class="btn dark" id="dv">Get the blue tick · $${S.verifyUsd}</button></div></div>
+      ${live||claim?`<h2 style="margin:30px 0 12px;font-size:26px">Now grow it</h2><div class="pkgs">
+        <button class="box pkg" data-g="boost"><h3>⚡ Boost</h3><p>Jump up Trending for 24 hours. From $${Math.min(...Object.values(S.boosts).map(b=>b.usd))}.</p></button>
+        <button class="box pkg" data-g="promote"><h3>Promote</h3><p>A Spotlight card or pinned row on the Fat List. From $${S.packages.row.perDay}/day.</p></button>
+        <button class="box pkg" data-g="advertise"><h3>Advertise</h3><p>A banner across every page, including Hood Talk. $${S.packages.banner.perDay}/day.</p></button></div>`:""}`;
+    $("#dv").onclick=()=>openPay({kind:"verify",listingId:j.id,title:`Blue tick check for ${name}`,usd:S.verifyUsd});
+    $$("#addDone [data-g]").forEach(b=>b.onclick=()=>{growCoin=j.id;growTab=b.dataset.g;location.hash="#grow"});
+    if((live||claim)&&!DEMO){await refresh();if(claim&&!coins.some(c=>c.id===j.id)){const x=await api("/api/fatlist?coin="+j.id).catch(()=>({}));if(x.coin)coins.push(x.coin)}}
+  }catch(_){msg.textContent="Couldn’t reach the server. Check your connection and try again.";msg.hidden=false}
+  finally{btn.disabled=false;btn.textContent="Add to the Fat List"}
+};
+function fieldErrs(form,errs){let first=null;for(const[k,m]of Object.entries(errs)){const f=form.querySelector(`.f[data-k="${k}"]`);if(!f)continue;f.classList.add("bad");f.querySelector(".err").textContent=m;first=first||f}if(first)first.querySelector("input,select,textarea").focus()}
+
+// ---------- grow
+let growTab="boost",growCoin="",growPick={boost:"b30",promote:"spotlight",advertise:"banner"};
+const GROW_BLURB={boost:"Boosts push your coin up the Trending list straight away and show a ⚡ badge for 24 hours. Boosts from different buyers stack.",
+  promote:"Book a Spotlight card at the top of the Fat List or a pinned, highlighted row above the rankings.",
+  advertise:"Run a banner with your coin and a one-line message across the top of every Fat List and Hood Talk page."};
+function buildGrow(){
+  const today=new Date().toISOString().slice(0,10);$("#g-start").min=today;$("#g-start").value=today;
+  $("#g-adtext").oninput=e=>{$("#g-adcount").textContent=e.target.value.length;adPreview()};
+  $("#g-coin").onchange=()=>{growCoin=$("#g-coin").value;adPreview()};
+  $("#g-days").onchange=updGrow;
+}
+async function ensureCoin(id){if(!id||DEMO||coins.some(c=>c.id===id))return;const x=await api("/api/fatlist?coin="+encodeURIComponent(id)).catch(()=>({}));if(x.coin&&["approved","indexed"].includes(x.coin.status))coins.push(x.coin)}
+async function renderGrowAsync(){await ensureCoin(growCoin);renderGrow()}
+function renderGrow(){
+  $("#g-coin").innerHTML=`<option value="">Pick a coin…</option>`+coins.map(c=>`<option value="${esc(c.id)}">${esc(c.name)} ($${esc(c.symbol)})</option>`).join("");
+  $("#g-coin").value=growCoin&&coins.some(c=>c.id===growCoin)?growCoin:"";
+  $$("#growTabs button").forEach(x=>x.setAttribute("aria-selected",String(x.dataset.g===growTab)));
+  $("#g-blurb").textContent=GROW_BLURB[growTab];
+  let cards;
+  if(growTab==="boost")cards=Object.entries(S.boosts).map(([k,b])=>[k,`<h3>⚡ ${esc(b.name)}</h3><div class="price num">$${b.usd}</div><p>Lasts ${b.hours} hours from payment.</p>`]);
+  else cards=Object.entries(S.packages).filter(([,p])=>p.group===growTab).map(([k,p])=>[k,`<h3>${esc(p.name)}</h3><div class="price num">$${p.perDay}<small> / day</small></div><p>${esc(p.blurb)}</p><div class="left">${p.maxAtOnce} at a time</div>`]);
+  if(!cards.some(([k])=>k===growPick[growTab]))growPick[growTab]=cards[0][0];
+  $("#g-pkgs").innerHTML=cards.map(([k,h])=>`<button type="button" class="box pkg" data-p="${k}" aria-pressed="${k===growPick[growTab]}">${h}</button>`).join("");
+  $("#g-pkgs").style.display=cards.length>1?"":"none";
+  $("#g-ad").hidden=growTab!=="advertise";$("#g-dates").hidden=growTab==="boost";
+  adPreview();updGrow();
+}
+$("#growTabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;growTab=b.dataset.g;renderGrow()};
+$("#g-pkgs").onclick=e=>{const b=e.target.closest("[data-p]");if(!b)return;growPick[growTab]=b.dataset.p;renderGrow()};
+function adPreview(){
+  const c=coins.find(x=>x.id===$("#g-coin").value)||{name:"Your Coin",symbol:"COIN"};
+  $("#g-adprev").innerHTML=`<div class="adbar" style="border:0"><a href="#" onclick="return false" style="padding:0 12px"><span class="adtag">Ad</span>${av(c)}<span class="adtxt"><b>$${esc(c.symbol)}</b> · ${esc($("#g-adtext").value||"Your message here")}</span><span class="go">View</span></a></div>`;
+}
+function growPrice(){
+  if(growTab==="boost"){const b=S.boosts[growPick.boost];return {usd:b.usd,line:`${b.name} for ${b.hours} hours`}}
+  const p=S.packages[growPick[growTab]],d=+$("#g-days").value;
+  if(S.testPrices)return {usd:p.perDay,line:`${p.name}, ${d} day${d>1?"s":""} (test price)`};
+  return {usd:Math.round(p.perDay*d*(1-(S.discounts[d]||0))),line:`${p.name}, ${d} day${d>1?"s":""}${S.discounts[d]?` (${S.discounts[d]*100}% off)`:""}`};
+}
+function updGrow(){const g=growPrice();$("#g-total").textContent="$"+g.usd.toLocaleString();$("#g-line").textContent=g.line}
+$("#growForm").onsubmit=e=>{
+  e.preventDefault();const f=e.target;f.querySelectorAll(".f").forEach(x=>x.classList.remove("bad"));
+  const coin=coins.find(x=>x.id===$("#g-coin").value),today=new Date().toISOString().slice(0,10),bad=[];
+  if(!coin)bad.push($("#g-coin"));
+  if(growTab!=="boost"&&(!$("#g-start").value||$("#g-start").value<today))bad.push($("#g-start"));
+  const t=$("#g-adtext").value.trim();
+  if(growTab==="advertise"&&(t.length<8||/(https?:|www\.|t\.me|\.com\b)/i.test(t)))bad.push($("#g-adtext"));
+  if(bad.length){bad.forEach(x=>x.closest(".f").classList.add("bad"));bad[0].focus();return}
+  const g=growPrice();
+  if(growTab==="boost")openPay({kind:"boost",listingId:coin.id,pack:growPick.boost,title:`${g.line} · ${coin.name}`,usd:g.usd});
+  else openPay({kind:"promo",listingId:coin.id,pkg:growPick[growTab],days:+$("#g-days").value,start:$("#g-start").value,adText:t,title:`${g.line} · ${coin.name}`,usd:g.usd});
+};
+
+// ---------- wallet
+const eth=()=>window.ethereum;
+function noWalletMsg(hash){const here=location.host+location.pathname;return `No wallet found in this browser. On a phone, open this page inside your wallet app: <a href="https://metamask.app.link/dapp/${esc(here)}${hash}">open in MetaMask</a>, or paste fathood.org/fatlist.html into Rabby or OKX Wallet’s browser.`}
+const toHex=s=>"0x"+[...new TextEncoder().encode(s)].map(b=>b.toString(16).padStart(2,"0")).join("");
+
+// ---------- payments
+const payDlg=$("#payDlg"),HEX=n=>"0x"+BigInt(n).toString(16);
+const RH={chainId:"0x1237",chainName:"Robinhood Chain",nativeCurrency:{name:"Ether",symbol:"ETH",decimals:18},rpcUrls:["https://rpc.mainnet.chain.robinhood.com"],blockExplorerUrls:["https://robinhoodchain.blockscout.com"]};
+let P=null;
+function openPay(o){P={...o,chain:"robinhood",token:"ETH",account:null,order:null,polling:false,closed:false};renderPay();payDlg.showModal()}
+payDlg.addEventListener("close",()=>{if(P)P.closed=true});
+payDlg.addEventListener("click",e=>{if(e.target===payDlg&&!(P&&P.polling))payDlg.close()});
+function renderPay(state){
+  const pc=S.payChains,c=pc[P.chain];
+  let h=`<h2>${esc(P.title)}</h2><p class="small" style="margin:6px 0 0">Total <b class="num">$${P.usd.toLocaleString()}</b></p>`;
+  if(!S.paymentsOn&&!DEMO){h+=`<p class="msg bad">Payments aren’t switched on yet. Message the team on Telegram to book this.</p><div class="foot"><button class="btn white" data-x>Close</button></div>`;$("#payMd").innerHTML=h;wireClose();return}
+  if(!P.order){
+    h+=`<p class="step">1. Pay on</p><div class="opts" role="group" aria-label="Network">${Object.entries(pc).map(([k,v])=>`<button class="opt" data-ch="${k}" aria-pressed="${k===P.chain}">${esc(v.name)}</button>`).join("")}</div>
+      <p class="step">2. Pay with</p><div class="opts" role="group" aria-label="Coin">${c.tokens.map(t=>`<button class="opt" data-tk="${t}" aria-pressed="${t===P.token}">${t}</button>`).join("")}</div>
+      <p class="step">3. Wallet</p>${P.account?`<p class="small" style="margin:0">Connected <b>${short(P.account)}</b></p>`:`<p class="small" style="margin:0">Use the wallet that will send the payment. MetaMask, Rabby and OKX Wallet all work.</p>`}
+      ${state?`<p class="msg ${state.bad?"bad":""}">${state.msg}</p>`:""}
+      <div class="foot"><button class="btn white" data-x>Cancel</button>${P.account?`<button class="btn" id="getq">Get exact amount</button>`:`<button class="btn" id="cn">Connect wallet</button>`}</div>`;
+  }else if(P.order.status==="paid"){
+    const o=P.order,what={promo:" It goes live on your start date and shows automatically.",boost:" Your boosts are live now for 24 hours.",verify:" The team checks your coin and adds the blue tick, usually within a few hours."}[P.kind]||"";
+    h+=`<p class="payamt">Paid. You’re in.</p><p>${esc(o.label)} for ${esc(o.coin)} is confirmed.${what}</p>
+      ${o.explorer?`<p class="small"><a href="${esc(o.explorer)}" target="_blank" rel="noopener">See the payment on the explorer</a>. Order ${esc(o.id)}</p>`:""}<div class="foot"><button class="btn" data-x>Done</button></div>`;
+  }else{
+    const o=P.order,left=Math.max(0,Math.round((o.expiresAt-Date.now())/6e4));
+    h+=`<p class="step">Send exactly</p><div class="payamt num">${esc(o.amount)} ${esc(o.token)}</div>
+      <p class="small" style="margin:0">on ${esc(S.payChains[o.chain].name)} to <code>${o.to.slice(0,8)}…${o.to.slice(-6)}</code>. This price holds for ${left} more minute${left===1?"":"s"}.</p>
+      ${state?`<p class="msg ${state.bad?"bad":""}">${state.msg}</p>`:""}
+      <div class="foot"><button class="btn white" data-x>Cancel</button><button class="btn" id="pay" ${P.polling?"disabled":""}>${P.polling?"Checking payment…":`Pay ${esc(o.amount)} ${esc(o.token)}`}</button></div>
+      <details style="margin-top:16px"><summary class="small" style="cursor:pointer;font-weight:700">Already sent it? Paste the transaction hash</summary>
+        <div class="addr" style="margin-top:8px"><input id="txh" placeholder="0x…" style="flex:1;border:0;min-width:0;background:none" spellcheck="false"><button class="mini" id="chk">Check</button></div></details>`;
+  }
+  $("#payMd").innerHTML=h;wireClose();
+  $$("[data-ch]").forEach(b=>b.onclick=()=>{P.chain=b.dataset.ch;if(!S.payChains[P.chain].tokens.includes(P.token))P.token="ETH";renderPay()});
+  $$("[data-tk]").forEach(b=>b.onclick=()=>{P.token=b.dataset.tk;renderPay()});
+  const cn=$("#cn");if(cn)cn.onclick=connectPay;
+  const qb=$("#getq");if(qb)qb.onclick=getQuote;
+  const pb=$("#pay");if(pb)pb.onclick=pay;
+  const ck=$("#chk");if(ck)ck.onclick=()=>{const x=$("#txh").value.trim();if(!/^0x[a-fA-F0-9]{64}$/.test(x)){renderPay({bad:1,msg:"That isn’t a transaction hash. It starts with 0x and is 66 characters long."});return}poll(x)};
+}
+function wireClose(){$$("#payMd [data-x]").forEach(b=>b.onclick=()=>payDlg.close())}
+async function connectPay(){
+  if(DEMO){P.account=DEMO_ADDR;renderPay();return}
+  if(!eth()){renderPay({bad:1,msg:noWalletMsg("#grow")});return}
+  try{const a=await eth().request({method:"eth_requestAccounts"});P.account=a[0];renderPay()}
+  catch(e){renderPay({bad:1,msg:e&&e.code===4001?"You declined the connection. Tap Connect wallet to try again.":"Couldn’t connect to your wallet. Unlock it and try again."})}
+}
+async function getQuote(){
+  if(DEMO){renderPay({msg:"This is the preview, so payments stop here. On fathood.org your wallet opens with the exact amount."});return}
+  renderPay({msg:"Getting today’s price…"});
+  try{
+    const j=await api("/api/fatpay",{body:{action:"quote",kind:P.kind,listingId:P.listingId,pkg:P.pkg,pack:P.pack,days:P.days,start:P.start,adText:P.adText,chain:P.chain,token:P.token,payer:P.account}});
+    if(!j.ok){renderPay({bad:1,msg:esc(j.error||"Couldn’t get a price. Try again.")});return}
+    P.order=j.order;renderPay();
+  }catch(_){renderPay({bad:1,msg:"Couldn’t reach the server. Check your connection and try again."})}
+}
+async function pay(){
+  const o=P.order,w=eth();
+  if(Date.now()>o.expiresAt){P.order=null;renderPay({bad:1,msg:"That price expired. Get a fresh amount and pay again."});return}
+  try{
+    const want="0x"+o.chainId.toString(16),cur=await w.request({method:"eth_chainId"});
+    if(cur.toLowerCase()!==want){
+      try{await w.request({method:"wallet_switchEthereumChain",params:[{chainId:want}]})}
+      catch(e){if(e&&(e.code===4902||e?.data?.originalError?.code===4902)&&o.chain==="robinhood")await w.request({method:"wallet_addEthereumChain",params:[RH]});else throw e}
+    }
+    const [acct]=await w.request({method:"eth_requestAccounts"});
+    if(acct.toLowerCase()!==P.account.toLowerCase()){renderPay({bad:1,msg:"Your wallet switched to a different account. Switch back to the one you connected, or cancel and start again."});return}
+    const tx=!o.tokenAddress?{from:acct,to:o.to,value:HEX(o.amountRaw)}:{from:acct,to:o.tokenAddress,data:"0xa9059cbb"+o.to.slice(2).padStart(64,"0")+BigInt(o.amountRaw).toString(16).padStart(64,"0")};
+    renderPay({msg:"Confirm the payment in your wallet…"});
+    poll(await w.request({method:"eth_sendTransaction",params:[tx]}));
+  }catch(e){renderPay({bad:1,msg:e&&e.code===4001?"You cancelled in your wallet. Nothing was sent.":"Your wallet couldn’t send the payment. Check you have enough "+esc(o.token)+" plus a little ETH for gas."})}
+}
+async function poll(hash){
+  P.polling=true;renderPay({msg:"Payment sent. Waiting for the network to confirm it…"});
+  const until=Date.now()+8*6e4;
+  while(!P.closed&&Date.now()<until){
+    try{
+      const j=await api("/api/fatpay",{body:{action:"verify",orderId:P.order.id,txHash:hash}});
+      if(j.paid){P.order=j.order;P.polling=false;renderPay();refresh();return}
+      if(!j.ok&&j.status!==502){P.polling=false;renderPay({bad:1,msg:esc(j.error)});return}
+      renderPay({msg:esc(j.waiting||j.error||"Still waiting for confirmation…")});
+    }catch(_){}
+    await new Promise(r=>setTimeout(r,4000));
+  }
+  P.polling=false;if(!P.closed)renderPay({bad:1,msg:`Still not confirmed. Your payment is safe. Message the team on Telegram with this hash: <code style="word-break:break-all">${esc(hash)}</code>`});
+}
+async function refresh(){if(DEMO)return;try{const j=await api("/api/fatlist");coins=j.coins;ads=j.ads||[];total=j.total||coins.length;renderAd();buildChips();renderSpots();renderRows()}catch(_){}}
+
+// ---------- Hood Talk
+let talkSort="latest",talkNext=null;
+function renderWho(){
+  const el=$("#whoami");if(!el)return;
+  el.innerHTML=session?`Signed in as <b>${esc(session.me.name||short(session.me.address))}</b> · <button class="linkbtn" id="so">Sign out</button>`:`<button class="linkbtn" id="si">Sign in with wallet</button> to like and comment`;
+  const so=$("#so");if(so)so.onclick=async()=>{if(!DEMO)api("/api/talk",{body:{action:"logout"}}).catch(()=>{});session=null;store.del("hoodtalk-session");renderWho();route()};
+  const si=$("#si");if(si)si.onclick=()=>signIn().then(ok=>{if(ok)route()}).catch(()=>{});
+}
+async function signIn(msgEl){
+  const say=t=>{if(msgEl){msgEl.innerHTML=t;msgEl.hidden=false}else alert(t.replace(/<[^>]+>/g,""))};
+  if(DEMO){session={token:"demo",me:{address:DEMO_ADDR,name:""}};renderWho();return true}
+  if(!eth()){say(noWalletMsg(location.hash));return false}
+  try{
+    const [address]=await eth().request({method:"eth_requestAccounts"});
+    const n=await api("/api/talk?nonce=1&address="+address);if(!n.ok){say(esc(n.error));return false}
+    const signature=await eth().request({method:"personal_sign",params:[toHex(n.message),address]});
+    const j=await api("/api/talk",{body:{action:"login",nonce:n.nonce,signature}});
+    if(!j.ok){say(esc(j.error));return false}
+    session={token:j.token,me:j.me};store.set("hoodtalk-session",{token:j.token});renderWho();return true;
+  }catch(e){say(e&&e.code===4001?"You cancelled the signature. Signing is free and doesn’t send anything.":"Couldn’t sign in. Unlock your wallet and try again.");return false}
+}
+function postCard(p){
+  return `<a class="box post" href="#post/${esc(p.id)}"><div class="by">${pav(p.author)}<span>${esc(p.authorName)}</span><time datetime="${new Date(p.createdAt).toISOString()}">${ago(p.createdAt)}</time></div>
+    <h3>${esc(p.title)}</h3><p>${esc(p.excerpt)}${p.excerpt.length>=220?"…":""}</p>
+    <div class="meta">${p.coins.map(c=>`<span class="cchip">${av(c)}$${esc(c.symbol)}</span>`).join("")}${p.disclosure?'<span class="disc">Author holds or was paid</span>':""}<span style="margin-left:auto">♥ ${p.likes} · 💬 ${p.comments}</span></div></a>`;
+}
+async function getFeed(params){
+  if(DEMO){let l=DEMO_POSTS.slice();if(params.coin)l=l.filter(p=>p.coins.some(c=>c.id===params.coin));if(params.sort==="top")l.sort((a,b)=>b.likes-a.likes);return {posts:l.map(p=>({...p,excerpt:p.body.replace(/^##.*$/gm,"").replace(/\s+/g," ").trim().slice(0,220)})),next:null}}
+  const qs=new URLSearchParams(Object.entries(params).filter(([,v])=>v));return api("/api/talk?"+qs);
+}
+async function loadFeed(el,params,compact,append){
+  try{
+    const j=await getFeed(params);
+    const h=j.posts.map(postCard).join("");
+    if(append)el.insertAdjacentHTML("beforeend",h);
+    else el.innerHTML=h||(compact?`<p class="small" style="margin:0">No posts yet. Be the first to write about it.</p>`:`<div class="empty box">No posts yet. <a href="#write">Write the first one</a>.</div>`);
+    return j.next;
+  }catch(_){el.innerHTML=`<p class="msg bad">Couldn’t load posts. Check your connection.</p>`;return null}
+}
+async function showTalk(){
+  renderWho();$$("#talkTabs button").forEach(x=>x.setAttribute("aria-selected",String(x.dataset.s===talkSort)));
+  $("#feed").innerHTML=`<p class="small">Loading posts…</p>`;
+  talkNext=await loadFeed($("#feed"),{sort:talkSort});$("#more").hidden=!talkNext;
+}
+$("#talkTabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;talkSort=b.dataset.s;showTalk()};
+$("#more").onclick=async()=>{talkNext=await loadFeed($("#feed"),{sort:"latest",before:talkNext},false,true);$("#more").hidden=!talkNext};
+
+function renderBody(body,tags){
+  const sym={};tags.forEach(c=>sym[c.symbol.toUpperCase()]=c.id);
+  const inline=t=>esc(t).replace(/https?:\/\/[^\s<]+[^\s<.,;:!?)\]'"]/g,u=>`<a href="${u}" target="_blank" rel="nofollow ugc noopener">${u}</a>`)
+    .replace(/(^|[\s(])\$([A-Za-z][A-Za-z0-9]{1,11})\b/g,(m,pre,s)=>sym[s.toUpperCase()]?`${pre}<a href="#coin/${esc(sym[s.toUpperCase()])}"><b>$${s}</b></a>`:`${pre}<b>$${s}</b>`);
+  return body.split(/\n{2,}/).map(block=>block.split("\n").map(line=>/^##\s+/.test(line)?`<h3>${inline(line.replace(/^##\s+/,""))}</h3>`:line).reduce((acc,l)=>{
+    if(l.startsWith("<h3>"))acc.push(l);else{const last=acc[acc.length-1];if(last&&last.startsWith("<p>"))acc[acc.length-1]=last.slice(0,-4)+"<br>"+inline(l)+"</p>";else acc.push(`<p>${inline(l)}</p>`)}return acc},[]).join("")).join("");
+}
+async function showPost(id){
+  const el=$("#postPage");el.innerHTML=`<p class="small">Loading…</p>`;
+  let p,comments=[];
+  if(DEMO){p=DEMO_POSTS.find(x=>x.id===id);if(p){p={...p,liked:!!p.liked,mine:session&&p.author===session.me.address};comments=p.cm||[{id:"c1",author:"0x5551110000000000000000000000000000000222",authorName:"crispyhands",text:"Been holding since launch. Good write-up.",createdAt:Date.now()-3600e3}]}}
+  else{const j=await api("/api/talk?post="+encodeURIComponent(id)).catch(()=>({}));if(j.post){p=j.post;comments=j.comments}}
+  if(!p){el.innerHTML=`<a class="back" href="#talk">← Hood Talk</a><div class="empty box">That post doesn’t exist or was removed.</div>`;return}
+  el.innerHTML=`<a class="back" href="#talk">← Hood Talk</a>
+    <article class="box article"><div class="by">${pav(p.author)}<span>${esc(p.authorName)}</span><time datetime="${new Date(p.createdAt).toISOString()}">${ago(p.createdAt)}</time></div>
+      <h1>${esc(p.title)}</h1>
+      <div class="meta" style="margin-bottom:18px">${p.coins.map(c=>`<a class="cchip" href="#coin/${esc(c.id)}">${av(c)}$${esc(c.symbol)}</a>`).join("")}${p.disclosure?'<span class="disc">Author holds a coin mentioned or was paid to write this</span>':""}</div>
+      <div class="body">${renderBody(p.body,p.coins)}</div>
+      <div class="actions"><button class="btn white like" id="lk" aria-pressed="${!!p.liked}">♥ ${p.likes}</button>
+        ${p.mine?`<button class="btn white" id="del">Delete post</button>`:`<button class="linkbtn" id="rp">Report post</button>`}</div>
+      <p class="msg" id="pmsg" hidden></p>
+    </article>
+    <section class="box panel" style="margin-top:22px"><h2>Comments (${comments.length})</h2>
+      <div id="cms">${comments.map(c=>`<div class="comment"><div class="by">${pav(c.author)}<span>${esc(c.authorName)}</span><time>${ago(c.createdAt)}</time>${c.mine?`<button class="linkbtn" data-dc="${esc(c.id)}" style="margin-left:auto">Delete</button>`:""}</div><p>${esc(c.text)}</p></div>`).join("")||`<p class="small">No comments yet.</p>`}</div>
+      <form id="cf" style="margin-top:14px" novalidate><div class="f" style="margin-bottom:10px"><label for="ct">Add a comment</label><textarea id="ct" maxlength="1000" style="min-height:80px"></textarea></div>
+        <button class="btn">${session?"Post comment":"Sign in and comment"}</button><p class="msg bad" id="cmsg" hidden></p></form>
+    </section>`;
+  const need=async m=>session||await signIn(m);
+  $("#lk").onclick=async()=>{const m=$("#pmsg");if(!await need(m))return;
+    if(DEMO){const d=DEMO_POSTS.find(x=>x.id===id);d.liked=!d.liked;d.likes+=d.liked?1:-1;return showPost(id)}
+    const j=await api("/api/talk",{body:{action:"like",id}});if(j.ok){$("#lk").textContent="♥ "+j.likes;$("#lk").setAttribute("aria-pressed",String(j.liked))}else{m.textContent=j.error;m.hidden=false}};
+  const rp=$("#rp");if(rp)rp.onclick=async()=>{const m=$("#pmsg");if(!await need(m))return;if(!confirm("Report this post to the Fathood team as a scam, spam or abuse?"))return;
+    if(!DEMO)await api("/api/talk",{body:{action:"report",id}});m.textContent="Reported. Thanks, the team will take a look.";m.hidden=false;rp.remove()};
+  const del=$("#del");if(del)del.onclick=async()=>{if(!confirm("Delete this post for good?"))return;if(DEMO){DEMO_POSTS=DEMO_POSTS.filter(x=>x.id!==id)}else await api("/api/talk",{body:{action:"delete",id}});location.hash="#talk"};
+  $$("[data-dc]").forEach(b=>b.onclick=async()=>{if(!confirm("Delete your comment?"))return;if(!DEMO)await api("/api/talk",{body:{action:"deleteComment",id,commentId:b.dataset.dc}});showPost(id)});
+  $("#cf").onsubmit=async e=>{e.preventDefault();const m=$("#cmsg");m.hidden=true;if(!await need(m))return;const text=$("#ct").value.trim();if(text.length<2){m.textContent="Write a comment first.";m.hidden=false;return}
+    if(DEMO){const d=DEMO_POSTS.find(x=>x.id===id);(d.cm||=[]).push({id:"c"+Date.now(),author:DEMO_ADDR,authorName:session.me.name||short(DEMO_ADDR),text,createdAt:Date.now(),mine:true});d.comments++;return showPost(id)}
+    const j=await api("/api/talk",{body:{action:"comment",id,text}});if(!j.ok){m.textContent=j.error;m.hidden=false;return}showPost(id)};
+}
+
+// ---------- write
+let writeCoins=[];
+function showWrite(){
+  const gate=$("#writeGate"),form=$("#writeForm");
+  if(!session){form.hidden=true;gate.innerHTML=`<div class="box panel" style="max-width:760px"><p style="margin:0 0 14px">Sign in with your wallet to write. Signing is free and doesn’t send a transaction.</p><button class="btn" id="wsi">Sign in with wallet</button><p class="msg bad" id="wsm" hidden></p></div>`;
+    $("#wsi").onclick=async()=>{if(await signIn($("#wsm")))showWrite()};return}
+  gate.innerHTML="";form.hidden=false;$("#w-namebox").hidden=!!session.me.name;renderPicked();
+}
+function renderPicked(){$("#w-picked").innerHTML=writeCoins.map(c=>`<button type="button" class="cchip" data-rm="${esc(c.id)}" aria-label="Remove ${esc(c.symbol)}">${av(c)}$${esc(c.symbol)} ✕</button>`).join("")}
+$("#w-picked").onclick=e=>{const b=e.target.closest("[data-rm]");if(!b)return;writeCoins=writeCoins.filter(c=>c.id!==b.dataset.rm);renderPicked()};
+$("#w-coin").oninput=e=>{
+  const t=e.target.value.trim().toLowerCase(),box=$("#w-sug");
+  if(!t){box.hidden=true;return}
+  const l=coins.filter(c=>!writeCoins.some(w=>w.id===c.id)&&(c.name.toLowerCase().includes(t)||c.symbol.toLowerCase().includes(t.replace(/^\$/,"")))).slice(0,6);
+  box.innerHTML=l.map(c=>`<button type="button" data-add="${esc(c.id)}">${av(c)}${esc(c.name)} <span class="small">$${esc(c.symbol)}</span></button>`).join("")||`<p class="small" style="margin:8px 10px">No coin on the Fat List matches that.</p>`;box.hidden=false;
+};
+$("#w-sug").onclick=e=>{const b=e.target.closest("[data-add]");if(!b)return;if(writeCoins.length>=3){alert("You can tag up to 3 coins.");return}
+  const c=coins.find(x=>x.id===b.dataset.add);writeCoins.push({id:c.id,name:c.name,symbol:c.symbol,image:c.image});renderPicked();$("#w-coin").value="";$("#w-sug").hidden=true};
+$("#writeForm").onsubmit=async e=>{
+  e.preventDefault();const f=e.target,m=$("#w-msg");m.hidden=true;f.querySelectorAll(".f").forEach(x=>x.classList.remove("bad"));
+  const title=$("#w-title").value.trim(),body=$("#w-body").value.trim(),errs={};
+  if(title.length<8)errs.title="Give the post a title of at least 8 characters.";
+  if(body.length<80)errs.body=`Write at least 80 characters (${body.length} so far).`;
+  if(Object.keys(errs).length)return fieldErrs(f,errs);
+  const btn=f.querySelector("button[type=submit]");btn.disabled=true;btn.textContent="Publishing…";
+  try{
+    const nm=$("#w-name").value.trim();
+    if(!session.me.name&&nm){
+      if(DEMO)session.me.name=nm;
+      else{const r=await api("/api/talk",{body:{action:"name",name:nm}});if(!r.ok){const nf=$("#w-namebox");nf.classList.add("bad");nf.querySelector(".err").textContent=r.error;return}session.me.name=r.name}
+    }
+    let id;
+    if(DEMO){id="1700000009999-demo"+Math.floor(Math.random()*999);DEMO_POSTS.unshift({id,title,body,author:DEMO_ADDR,authorName:session.me.name||short(DEMO_ADDR),coins:writeCoins.slice(),disclosure:$("#w-disc").checked,likes:0,comments:0,createdAt:Date.now()})}
+    else{const j=await api("/api/talk",{body:{action:"post",title,body,coins:writeCoins.map(c=>c.id),disclosure:$("#w-disc").checked}});
+      if(!j.ok){if(j.field)fieldErrs(f,{[j.field]:j.error});else{m.textContent=j.error;m.hidden=false}return}id=j.id}
+    f.reset();writeCoins=[];renderPicked();location.hash="#post/"+id;
+  }catch(_){m.textContent="Couldn’t reach the server. Your post is still here; try again.";m.hidden=false}
+  finally{btn.disabled=false;btn.textContent="Publish"}
+};
+
+// ---------- routing
+const VIEWS=["coins","coin","add","grow","talk","post","write"];
+function route(){
+  const [r,arg]=(location.hash.slice(1)||"coins").split("/");
+  const v=VIEWS.includes(r)?r:"coins";
+  VIEWS.forEach(x=>$("#v-"+x).hidden=x!==v);
+  const navKey={coin:"coins",post:"talk",write:"talk"}[v]||v;
+  $$(".fltabs a").forEach(a=>{if(a.dataset.r===navKey)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
+  window.scrollTo(0,0);
+  if(!S)return;
+  if(v==="coin")showCoin(arg);
+  if(v==="grow")renderGrowAsync();
+  if(v==="add"){resetAdd();if(arg){$("#f-addr").value=decodeURIComponent(arg);$("#findForm").requestSubmit()}}
+  if(v==="talk")showTalk();
+  if(v==="post")showPost(arg);
+  if(v==="write")showWrite();
+}
+document.addEventListener("click",e=>{const a=e.target.closest("a[data-grow]");if(a){growTab=a.dataset.grow}});
+addEventListener("hashchange",route);
+route();load();
+})();
+</script>
+<script src="/site-nav.js" defer></script>
+</body>
+</html>

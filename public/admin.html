@@ -4,101 +4,408 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow">
-<title>$FATHOOD — Wall of Fat admin</title>
+<title>$FATHOOD admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{color-scheme:light;--lime:#D4F53C;--cream:#FFF8E7;--ink:#111111;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--cream)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--cream:#FFF8E7}}
-*,*::before,*::after{box-sizing:border-box}
+:root{color-scheme:light;--lime:#D4F53C;--cream:#FFF8E7;--ink:#111111;--red:#C8221C;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--cream)}
+*,*::before,*::after{box-sizing:inherit}
 [hidden]{display:none!important}
-body{margin:0;background:var(--cream);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif}
-header{background:var(--ink);color:var(--cream);padding:16px 20px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px}
-h1{margin:0;font-family:'Bowlby One',Impact,sans-serif;font-weight:400;font-size:1.5rem}
-main{max-width:1100px;margin:0 auto;padding:24px 20px 60px;display:flex;flex-direction:column;gap:20px}
-.login{max-width:420px;display:flex;flex-direction:column;gap:12px;background:#fff;border:3px solid var(--ink);border-radius:16px;padding:22px;box-shadow:6px 6px 0 var(--ink)}
-input[type=password]{min-height:48px;border:3px solid var(--ink);border-radius:12px;padding:10px 14px;font:500 16px inherit;font-family:inherit}
-button{min-height:44px;padding:10px 18px;border-radius:12px;border:3px solid var(--ink);background:var(--ink);color:var(--cream);font:700 15px 'Space Grotesk',system-ui,sans-serif;cursor:pointer}
-button.ghost{background:#fff;color:var(--ink)}
-button.ok{background:var(--lime);color:var(--ink)}
-button.no{background:#C8221C;color:#fff}
+body{margin:0;background:var(--cream);color:var(--ink);font-family:'Space Grotesk',system-ui,sans-serif;font-size:16px}
+a{color:inherit}
+header.top{background:var(--ink);color:var(--cream);padding:12px 16px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px}
+header.top h1{margin:0;font-family:'Bowlby One',Impact,sans-serif;font-weight:400;font-size:1.4rem;display:flex;align-items:center;gap:10px}
+header.top h1 img{width:38px;height:38px;border-radius:50%;border:3px solid var(--lime)}
+header.top .links{display:flex;gap:14px;align-items:center}
+header.top a{color:var(--lime);font-weight:700}
+main{max-width:1000px;margin:0 auto;padding:20px 16px 70px;display:flex;flex-direction:column;gap:18px}
+h2{margin:0;font-family:'Bowlby One',Impact,sans-serif;font-weight:400;font-size:1.6rem}
+.login,.card{background:#fff;border:3px solid var(--ink);border-radius:16px;padding:18px;box-shadow:5px 5px 0 var(--ink)}
+.login{max-width:420px;display:flex;flex-direction:column;gap:12px}
+input,select,textarea{min-height:48px;border:3px solid var(--ink);border-radius:12px;padding:10px 14px;font:500 16px 'Space Grotesk',sans-serif;background:var(--cream);color:var(--ink)}
+button{min-height:46px;padding:8px 16px;border-radius:12px;border:3px solid var(--ink);background:var(--ink);color:var(--cream);font:700 15px 'Space Grotesk',sans-serif;cursor:pointer}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.ghost{background:#fff;color:var(--ink)}button.ok{background:var(--lime);color:var(--ink)}button.no{background:var(--red);color:#fff}
 button[aria-selected=true]{background:var(--lime);color:var(--ink)}
-.tabs,.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr));gap:18px}
-.card{background:#fff;border:3px solid var(--ink);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px;box-shadow:5px 5px 0 var(--ink)}
-.card img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#eee;display:block}
-.card .row{display:flex;gap:8px}.card .row button{flex:1}
-.card small{color:#555}
-.msg{margin:0;font-weight:700}
+button.big{min-height:58px;font-size:18px;padding:12px 22px;box-shadow:4px 4px 0 var(--ink)}
+button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+:focus-visible{outline:3px solid #1F4FD1;outline-offset:3px}
+.sections{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.sections button{min-height:76px;font:400 18px/1.15 'Bowlby One',Impact,sans-serif;background:#fff;color:var(--ink);box-shadow:4px 4px 0 var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.sections button small{font:700 13px 'Space Grotesk',sans-serif;opacity:.7}
+.sections button[aria-selected=true]{background:var(--lime)}
+@media (max-width:560px){.sections{gap:8px}.sections button{min-height:68px;font-size:15px;padding:8px 6px}.sections button small{display:none}}
+.testbar{position:sticky;top:0;z-index:20;background:var(--red);color:#fff;border-bottom:4px solid var(--ink);padding:12px 16px}
+.testbar .in{max-width:1000px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
+.testbar b{font:400 20px/1.1 'Bowlby One',Impact,sans-serif;display:block}
+.testbar button{background:#fff;color:var(--ink)}
+.tabs,.row,.bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.card h3{margin:0 0 4px;font-family:'Bowlby One',Impact,sans-serif;font-weight:400}
+.card p{margin:4px 0}
+.meta{font-size:14px;color:#555;overflow-wrap:anywhere}
+.tag{display:inline-block;background:var(--lime);border:2px solid var(--ink);border-radius:99px;padding:0 8px;font-size:12px;font-weight:700;margin-left:6px}
+.msg{font-weight:700;margin:0}
 .empty{padding:28px;border:3px dashed var(--ink);border-radius:14px;text-align:center;font-weight:700}
+.f{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+.f label{font-weight:700}
+.f textarea{min-height:90px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:560px){.g2{grid-template-columns:1fr}}
+.comp{margin-top:12px;padding-top:12px;border-top:2px dashed var(--ink)}
+.chk{display:flex;gap:10px;align-items:center;font-weight:700;margin-bottom:12px}.chk input{width:22px;height:22px;min-height:0}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:16px}
+.mcard{background:#fff;border:3px solid var(--ink);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:10px;box-shadow:5px 5px 0 var(--ink)}
+.mcard img{width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;background:#eee;display:block}
+.mcard .row button{flex:1}
+.mcard small{color:#555}
+.maker{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:18px;align-items:start}
+@media (max-width:700px){.maker{grid-template-columns:1fr}}
+.maker canvas{width:100%;height:auto;border:3px solid var(--ink);border-radius:12px;background:#eee;display:block}
+.pick{display:flex;align-items:center;justify-content:center;min-height:58px;border:3px dashed var(--ink);border-radius:12px;background:var(--cream);font-weight:700;cursor:pointer;text-align:center;padding:10px}
+.pick input{position:absolute;opacity:0;width:1px;height:1px}
+.pick:focus-within{outline:3px solid #1F4FD1;outline-offset:3px}
+.steps{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
+.state{display:inline-block;padding:4px 12px;border:3px solid var(--ink);border-radius:999px;font-weight:700}
+.state.on{background:var(--red);color:#fff}.state.off{background:var(--lime)}
 </style>
 </head>
 <body>
-<header><h1>Wall of Fat admin</h1><a href="/" style="color:var(--lime);font-weight:700">Back to the site</a></header>
+<div class="testbar" id="testbar" hidden role="alert"><div class="in"><span><b>TEST PRICES ON</b>Every boost, promotion, ad and blue tick costs $1 for anyone until <span id="tb-until"></span>.</span><button type="button" id="tb-off" class="big">Turn test prices off</button></div></div>
+<header class="top"><h1><img src="/fathood-logo.jpg" alt="">$FATHOOD admin</h1><div class="links"><a href="/">View the site</a><button type="button" class="ghost" id="logout" hidden>Log out</button></div></header>
 <main>
   <form class="login" id="login">
     <label for="pw" style="font-weight:700">Admin password</label>
     <input type="password" id="pw" autocomplete="current-password" required>
-    <button type="submit">Open the review queue</button>
+    <button type="submit" class="big">Log in</button>
     <p class="msg" id="loginmsg" role="alert"></p>
   </form>
-  <section id="app" hidden>
-    <div class="bar" style="justify-content:space-between">
-      <div class="tabs" role="tablist">
-        <button type="button" class="ghost" role="tab" data-s="pending" aria-selected="true">Waiting for review <span id="cnt-pending"></span></button>
-        <button type="button" class="ghost" role="tab" data-s="approved" aria-selected="false">On the wall <span id="cnt-approved"></span></button>
-      </div>
-      <div class="bar"><button type="button" class="ghost" id="refresh">Refresh</button><button type="button" class="ghost" id="logout">Log out</button></div>
+
+  <div id="app" hidden style="display:flex;flex-direction:column;gap:18px">
+    <div class="sections" role="tablist" id="sections">
+      <button type="button" role="tab" data-sec="wall" aria-selected="true">Wall of Fat<small>Memes</small></button>
+      <button type="button" role="tab" data-sec="fat" aria-selected="false">Fat List<small>Coins, payments, Hood Talk</small></button>
+      <button type="button" role="tab" data-sec="test" aria-selected="false">Test prices<small>$1 test mode</small></button>
     </div>
-    <p class="msg" id="msg" role="status"></p>
-    <div class="grid" id="grid"></div>
-  </section>
+
+    <!-- WALL OF FAT -->
+    <section id="sec-wall" style="display:flex;flex-direction:column;gap:18px">
+      <div class="card">
+        <h2>Add a meme</h2>
+        <p class="meta" style="margin:4px 0 14px">Pick an image, add a caption if you want, and it goes straight onto the Wall of Fat.</p>
+        <div class="maker">
+          <canvas id="mm-canvas" width="1080" height="1080" aria-label="Meme preview"></canvas>
+          <div>
+            <label class="pick" style="margin-bottom:12px">Choose an image<input type="file" id="mm-file" accept="image/png,image/jpeg,image/webp,image/gif"></label>
+            <div class="f"><label for="mm-top">Top text (optional)</label><input id="mm-top" maxlength="80"></div>
+            <div class="f"><label for="mm-bottom">Bottom text (optional)</label><input id="mm-bottom" maxlength="80"></div>
+            <button type="button" class="ok big" id="mm-go" style="width:100%" disabled>Put it on the wall</button>
+            <p class="msg" id="mm-msg" role="status" style="margin-top:10px"></p>
+          </div>
+        </div>
+      </div>
+      <div class="bar" style="justify-content:space-between">
+        <div class="tabs" role="tablist" id="wtabs">
+          <button type="button" class="ghost" role="tab" data-s="pending" aria-selected="true">Waiting for review <span id="cnt-pending"></span></button>
+          <button type="button" class="ghost" role="tab" data-s="approved" aria-selected="false">On the wall <span id="cnt-approved"></span></button>
+        </div>
+        <button type="button" class="ghost" id="wrefresh">Refresh</button>
+      </div>
+      <p class="msg" id="wmsg" role="status"></p>
+      <div class="grid" id="wgrid"></div>
+    </section>
+
+    <!-- FAT LIST -->
+    <section id="sec-fat" hidden>
+      <div class="empty" id="fl-off">Loading the Fat List…</div>
+      <div id="fl-app" hidden>
+        <div class="tabs" role="tablist" id="tabs">
+          <button role="tab" data-t="add" aria-selected="true">Add a coin</button>
+          <button role="tab" data-t="pending" aria-selected="false">To review</button>
+          <button role="tab" data-t="claims" aria-selected="false">Claims</button>
+          <button role="tab" data-t="approved" aria-selected="false">Live coins</button>
+          <button role="tab" data-t="orders" aria-selected="false">Payments</button>
+          <button role="tab" data-t="ads" aria-selected="false">Ads running</button>
+          <button role="tab" data-t="talk" aria-selected="false">Hood Talk</button>
+          <button role="tab" data-t="rejected" aria-selected="false">Rejected</button>
+        </div>
+        <p class="meta" id="stats" style="margin-top:14px"></p>
+        <p class="msg" id="msg" style="margin-top:8px"></p>
+        <div id="list" style="display:flex;flex-direction:column;gap:16px;margin-top:14px"></div>
+      </div>
+    </section>
+
+    <!-- TEST PRICES -->
+    <section id="sec-test" hidden style="display:flex;flex-direction:column;gap:18px">
+      <div class="card">
+        <h2>Test prices</h2>
+        <p style="margin:10px 0">Right now: <span class="state off" id="tp-state">Normal prices</span></p>
+        <p>Switch this on to make <b>every</b> boost, promotion, banner ad and blue tick cost <b>$1</b>, so you can test a real payment from your own wallet. It switches itself off after <span id="tp-hours">2</span> hours.</p>
+        <p class="meta">While it’s on, anyone on the site can buy at $1. Turn it off as soon as your test is done.</p>
+        <div class="row" style="margin-top:14px"><button type="button" class="no big" id="tp-on">Turn test prices ON</button><button type="button" class="ok big" id="tp-off" hidden>Turn test prices OFF</button></div>
+        <p class="msg" id="tp-msg" role="status" style="margin-top:10px"></p>
+      </div>
+      <div class="card">
+        <h2>How to run the $1 test</h2>
+        <ol class="steps">
+          <li>Press <b>Turn test prices ON</b> above. The red bar appears at the top.</li>
+          <li>Go to the <b>Fat List</b> section here, open <b>Add a coin</b>, paste the $FATHOOD contract address, press <b>Find details</b>, then <b>Add to the Fat List</b>.</li>
+          <li>On your phone, open fathood.org/fatlist.html <b>inside your wallet app’s browser</b> (MetaMask, Rabby or OKX). Find $FATHOOD, open it and press <b>Boost</b>. The 10-boost pack shows <b>$1</b>.</li>
+          <li>Pick Robinhood Chain and ETH (or USDG/USDC), connect your wallet and confirm the $1 payment in your wallet. Wait for “Paid. You’re in.”</li>
+          <li>Check that $FATHOOD shows the ⚡10 boost badge on the board (it can take a minute), and that the payment is listed under <b>Fat List → Payments</b>, marked “TEST PRICE”.</li>
+          <li>Come back here and press <b>Turn test prices OFF</b>. The red bar disappears and normal prices are back.</li>
+        </ol>
+      </div>
+    </section>
+  </div>
 </main>
+
 <script>
-(function(){
-  var key='', state='pending', urls=[];
-  try{ key=sessionStorage.getItem('fh-admin')||''; }catch(e){}
+// Shared login for both admin areas. One password (ADMIN_PASSWORD), kept only for this browser tab.
+window.FH=(function(){
   var $=function(s){return document.querySelector(s)};
-  function api(path,opt){opt=opt||{};opt.headers=Object.assign({'x-admin-key':key},opt.headers||{});return fetch('/api/admin'+path,opt);}
-  function when(ts){var d=new Date(Number(ts.split('-')[0]));return d.toLocaleString();}
-  function load(){
-    $('#msg').textContent='Loading…'; urls.forEach(URL.revokeObjectURL); urls=[];
-    Promise.all(['pending','approved'].map(function(s){return api('?list='+s).then(function(r){if(r.status===401)throw 'auth';return r.json();}).then(function(j){if(j.error)throw j.error;$('#cnt-'+s).textContent='('+j.ids.length+')';return j.ids;});}))
-    .then(function(lists){
-      var ids=state==='pending'?lists[0]:lists[1], g=$('#grid'); g.innerHTML='';
-      $('#msg').textContent='';
-      if(!ids.length){g.innerHTML='<p class="empty">'+(state==='pending'?'Nothing waiting. All caught up.':'Nothing on the wall yet.')+'</p>';return;}
-      ids.forEach(function(id){
-        var c=document.createElement('div');c.className='card';
-        var im=new Image();im.alt='Submitted meme';c.appendChild(im);
-        api('?image='+state+'/'+id).then(function(r){return r.blob();}).then(function(b){var u=URL.createObjectURL(b);urls.push(u);im.src=u;});
-        var t=document.createElement('small');t.textContent='Sent '+when(id);c.appendChild(t);
-        var row=document.createElement('div');row.className='row';
-        if(state==='pending'){row.appendChild(btn('Approve','ok',function(){act('approve',id,c);}));row.appendChild(btn('Delete','no',function(){act('delete',id,c,'pending');}));}
-        else{row.appendChild(btn('Take down','ghost',function(){act('unpublish',id,c);}));row.appendChild(btn('Delete','no',function(){act('delete',id,c,'approved');}));}
-        c.appendChild(row);g.appendChild(c);
-      });
-    }).catch(function(e){ if(e==='auth'){logout('Wrong password.');} else $('#msg').textContent=String(e); });
-  }
-  function btn(t,cls,cb){var b=document.createElement('button');b.type='button';b.className=cls;b.textContent=t;b.addEventListener('click',cb);return b;}
-  function act(action,id,card,from){
-    if(action==='delete'&&!confirm('Delete this meme for good?'))return;
-    card.style.opacity='.4';
-    api('',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({action:action,id:id,from:from})})
-      .then(function(r){return r.json();}).then(function(j){if(j.error)throw j.error;card.remove();load();})
-      .catch(function(e){card.style.opacity='1';$('#msg').textContent='That didn’t work: '+e;});
-  }
-  function show(){ $('#login').hidden=true; $('#app').hidden=false; load(); }
-  function logout(m){ key=''; try{sessionStorage.removeItem('fh-admin');}catch(e){} $('#app').hidden=true; $('#login').hidden=false; $('#loginmsg').textContent=m||''; }
-  $('#login').addEventListener('submit',function(e){e.preventDefault();key=$('#pw').value;
-    api('?list=pending').then(function(r){return r.json().then(function(j){return {r:r,j:j};});}).then(function(x){
-      if(x.r.ok){try{sessionStorage.setItem('fh-admin',key);}catch(e){} show();} else $('#loginmsg').textContent=x.j.error||'Something went wrong.';
-    }).catch(function(){$('#loginmsg').textContent='The admin only works once the site is live on Netlify.';});
-  });
-  document.querySelectorAll('[role=tab]').forEach(function(b){b.addEventListener('click',function(){state=b.dataset.s;document.querySelectorAll('[role=tab]').forEach(function(x){x.setAttribute('aria-selected',x===b?'true':'false');});load();});});
-  $('#refresh').addEventListener('click',load); $('#logout').addEventListener('click',function(){logout('');});
-  if(key) show();
+  var FH={key:""};
+  try{FH.key=sessionStorage.getItem("fh-admin")||""}catch(e){}
+  FH.logout=function(m){FH.key="";try{sessionStorage.removeItem("fh-admin")}catch(e){}$("#app").hidden=true;$("#logout").hidden=true;$("#testbar").hidden=true;$("#login").hidden=false;$("#loginmsg").textContent=m||""};
+  FH.show=function(){$("#login").hidden=true;$("#app").hidden=false;$("#logout").hidden=false;FH.openSection(FH.section||"wall");if(FH.loadFatList)FH.loadFatList()};
+  FH.openSection=function(s){FH.section=s;document.querySelectorAll("#sections button").forEach(function(b){b.setAttribute("aria-selected",String(b.dataset.sec===s))});
+    ["wall","fat","test"].forEach(function(x){$("#sec-"+x).hidden=x!==s});
+    if(s==="wall"&&FH.loadWall)FH.loadWall();if((s==="fat"||s==="test")&&FH.loadFatList)FH.loadFatList()};
+  FH.setTest=function(tp,hours){
+    var on=!!(tp&&tp.on);FH.test=on;
+    $("#testbar").hidden=!on;
+    if(on){var t=new Date(tp.until).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"});$("#tb-until").textContent=t}
+    $("#tp-state").textContent=on?"TEST PRICES ON ($1) until "+$("#tb-until").textContent:"Normal prices";$("#tp-state").className="state "+(on?"on":"off");
+    $("#tp-on").hidden=on;$("#tp-off").hidden=!on;if(hours)$("#tp-hours").textContent=hours};
+  $("#login").addEventListener("submit",function(e){e.preventDefault();FH.key=$("#pw").value;$("#loginmsg").textContent="Checking…";
+    fetch("/api/admin?list=pending",{headers:{"x-admin-key":FH.key}}).then(function(r){return r.json().then(function(j){return{r:r,j:j}})}).then(function(x){
+      if(x.r.ok){try{sessionStorage.setItem("fh-admin",FH.key)}catch(e){}$("#pw").value="";$("#loginmsg").textContent="";FH.show()}
+      else{FH.key="";$("#loginmsg").textContent=x.j.error||"Something went wrong."}
+    }).catch(function(){FH.key="";$("#loginmsg").textContent="The admin only works on the live site (fathood.org/admin.html)."})});
+  $("#logout").addEventListener("click",function(){FH.logout("")});
+  $("#sections").addEventListener("click",function(e){var b=e.target.closest("button");if(b)FH.openSection(b.dataset.sec)});
+  async function setTest(on){
+    if(on&&!confirm("Switch EVERY paid item on the Fat List to $1 for everyone? It switches itself off after 2 hours."))return;
+    $("#tp-msg").textContent=on?"Switching on…":"Switching off…";
+    try{var j=await FH.flApi("POST",{action:"testPrices",on:on});FH.setTest(j.testPrices);$("#tp-msg").textContent=on?"Test prices are on. Everything costs $1 now (the public page can take up to a minute to update).":"Normal prices are back."}
+    catch(err){$("#tp-msg").textContent=err.message}}
+  $("#tp-on").addEventListener("click",function(){setTest(true)});
+  $("#tp-off").addEventListener("click",function(){setTest(false)});
+  $("#tb-off").addEventListener("click",function(){setTest(false)});
+  return FH;
 })();
 </script>
+
+<script>
+// WALL OF FAT: add memes, review submissions, take memes down.
+(function(){
+  var $=function(s){return document.querySelector(s)};
+  var state="pending",urls=[],img=null;
+  function api(path,opt){opt=opt||{};opt.headers=Object.assign({"x-admin-key":FH.key},opt.headers||{});
+    return fetch("/api/admin"+path,opt).then(function(r){if(r.status===401){FH.logout("Wrong password.");throw "auth"}return r})}
+  function when(ts){return new Date(Number(ts.split("-")[0])).toLocaleString()}
+  function load(){
+    $("#wmsg").textContent="Loading…";urls.forEach(URL.revokeObjectURL);urls=[];
+    Promise.all(["pending","approved"].map(function(s){return api("?list="+s).then(function(r){return r.json()}).then(function(j){if(j.error)throw j.error;$("#cnt-"+s).textContent="("+j.ids.length+")";return j.ids})}))
+    .then(function(lists){
+      var ids=state==="pending"?lists[0]:lists[1],g=$("#wgrid");g.innerHTML="";$("#wmsg").textContent="";
+      if(!ids.length){g.innerHTML='<p class="empty">'+(state==="pending"?"Nothing waiting. All caught up.":"Nothing on the wall yet.")+"</p>";return}
+      ids.forEach(function(id){
+        var c=document.createElement("div");c.className="mcard";
+        var im=new Image();im.alt="Meme";c.appendChild(im);
+        api("?image="+state+"/"+id).then(function(r){return r.blob()}).then(function(b){var u=URL.createObjectURL(b);urls.push(u);im.src=u}).catch(function(){});
+        var t=document.createElement("small");t.textContent="Sent "+when(id);c.appendChild(t);
+        var row=document.createElement("div");row.className="row";
+        if(state==="pending"){row.appendChild(btn("Approve","ok",function(){act("approve",id,c)}));row.appendChild(btn("Delete","no",function(){act("delete",id,c,"pending")}))}
+        else{row.appendChild(btn("Take down","ghost",function(){act("unpublish",id,c)}));row.appendChild(btn("Delete","no",function(){act("delete",id,c,"approved")}))}
+        c.appendChild(row);g.appendChild(c)});
+    }).catch(function(e){if(e!=="auth")$("#wmsg").textContent=String(e)});
+  }
+  function btn(t,cls,cb){var b=document.createElement("button");b.type="button";b.className=cls;b.textContent=t;b.addEventListener("click",cb);return b}
+  function act(action,id,card,from){
+    if(action==="delete"&&!confirm("Delete this meme for good?"))return;
+    card.style.opacity=".4";
+    api("",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({action:action,id:id,from:from})})
+      .then(function(r){return r.json()}).then(function(j){if(j.error)throw j.error;load()})
+      .catch(function(e){card.style.opacity="1";if(e!=="auth")$("#wmsg").textContent="That didn’t work: "+e});
+  }
+  document.querySelectorAll("#wtabs [role=tab]").forEach(function(b){b.addEventListener("click",function(){state=b.dataset.s;document.querySelectorAll("#wtabs [role=tab]").forEach(function(x){x.setAttribute("aria-selected",x===b?"true":"false")});load()})});
+  $("#wrefresh").addEventListener("click",load);
+  FH.loadWall=load;
+
+  // ---- meme maker: image + optional top/bottom text, made into a JPEG in the browser
+  var cv=$("#mm-canvas"),cx=cv.getContext("2d");
+  function wrap(text,maxW){var words=text.split(/\s+/),lines=[],cur="";words.forEach(function(w){var t=cur?cur+" "+w:w;if(cx.measureText(t).width>maxW&&cur){lines.push(cur);cur=w}else cur=t});if(cur)lines.push(cur);return lines}
+  function caption(text,top){
+    text=text.trim().toUpperCase();if(!text)return;
+    var W=cv.width,H=cv.height,size=Math.round(W*0.11),lines;
+    do{cx.font="400 "+size+"px 'Bowlby One', Impact, sans-serif";lines=wrap(text,W*0.92);size-=4}while(lines.length>3&&size>20);
+    var lh=size*1.12;cx.textAlign="center";cx.lineJoin="round";cx.lineWidth=Math.max(4,size*0.14);cx.strokeStyle="#111111";cx.fillStyle="#FFFFFF";
+    lines.forEach(function(l,i){var y=top?H*0.04+lh*(i+0.85):H-H*0.04-lh*(lines.length-1-i)-lh*0.15;cx.strokeText(l,W/2,y);cx.fillText(l,W/2,y)});
+  }
+  function draw(){
+    if(!img){cx.fillStyle="#EEEEEE";cx.fillRect(0,0,cv.width,cv.height);cx.fillStyle="#555";cx.font="700 48px 'Space Grotesk', sans-serif";cx.textAlign="center";cx.fillText("Your meme shows here",cv.width/2,cv.height/2);return}
+    var max=1080,s=Math.min(1,max/Math.max(img.naturalWidth,img.naturalHeight));
+    cv.width=Math.max(200,Math.round(img.naturalWidth*s));cv.height=Math.max(200,Math.round(img.naturalHeight*s));
+    cx.fillStyle="#FFFFFF";cx.fillRect(0,0,cv.width,cv.height);cx.drawImage(img,0,0,cv.width,cv.height);
+    caption($("#mm-top").value,true);caption($("#mm-bottom").value,false);
+  }
+  $("#mm-file").addEventListener("change",function(e){var f=e.target.files[0];if(!f)return;var u=URL.createObjectURL(f),i=new Image();
+    i.onload=function(){img=i;draw();$("#mm-go").disabled=false;$("#mm-msg").textContent="";URL.revokeObjectURL(u)};
+    i.onerror=function(){$("#mm-msg").textContent="Couldn’t read that image. Try a JPG or PNG."};i.src=u});
+  $("#mm-top").addEventListener("input",draw);$("#mm-bottom").addEventListener("input",draw);
+  if(document.fonts&&document.fonts.ready)document.fonts.ready.then(draw);draw();
+  function toJpeg(q){return new Promise(function(ok){cv.toBlob(ok,"image/jpeg",q)})}
+  $("#mm-go").addEventListener("click",async function(){
+    var b=$("#mm-go");b.disabled=true;$("#mm-msg").textContent="Posting…";
+    try{var blob=await toJpeg(0.9);if(blob&&blob.size>2.4*1024*1024)blob=await toJpeg(0.75);
+      var r=await api("?add=1",{method:"POST",headers:{"content-type":"image/jpeg"},body:blob});var j=await r.json();if(j.error)throw j.error;
+      $("#mm-msg").textContent="It’s on the Wall of Fat.";img=null;$("#mm-file").value="";$("#mm-top").value="";$("#mm-bottom").value="";draw();
+      state="approved";document.querySelectorAll("#wtabs [role=tab]").forEach(function(x){x.setAttribute("aria-selected",String(x.dataset.s==="approved"))});load()}
+    catch(e){if(e!=="auth")$("#mm-msg").textContent="That didn’t work: "+e;b.disabled=false}});
+})();
+</script>
+
+<script>
+// FAT LIST admin (coins, claims, payments, ads, Hood Talk).
+(function(){
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+let data={listings:[],orders:[],claims:[],posts:[]},tab="add",liveQ="",loading=null;
+async function api(method,body,q){
+  const r=await fetch("/api/fatlist-admin"+(q?"?q="+encodeURIComponent(q):""),{method,headers:{"x-admin-key":FH.key,"content-type":"application/json"},body:body?JSON.stringify(body):undefined});
+  const j=await r.json().catch(()=>({}));if(r.status===401){FH.logout("Wrong password.")}if(!r.ok)throw new Error(j.error||(r.status===404?"The Fat List only works on the live site.":"Request failed"));return j;
+}
+async function load(){
+  if(!FH.key)return;
+  if(loading)return loading;
+  loading=(async()=>{try{data=await api("GET",undefined,liveQ);$("#fl-off").hidden=true;$("#fl-app").hidden=false;FH.setTest(data.testPrices,data.testHours);render()}
+  catch(e){$("#fl-app").hidden=true;$("#fl-off").hidden=false;$("#fl-off").textContent=e.message;$("#tp-msg").textContent=e.message}
+  finally{loading=null}})();
+  return loading;
+}
+FH.loadFatList=load;FH.flApi=api;
+const ago=t=>{const m=Math.round((Date.now()-t)/60000);return m<60?m+" min ago":m<1440?Math.round(m/60)+" h ago":Math.round(m/1440)+" days ago"};
+const day=t=>new Date(t).toISOString().slice(0,10);
+const ADD_HTML=`<form class="card" id="addf" novalidate><h3>Add a coin for free</h3><p class="meta" style="margin-bottom:12px">It goes live straight away. No payment, no liquidity minimum.</p>
+  <div class="f"><label for="ad-addr">Contract address</label><div class="row"><input id="ad-addr" style="flex:1;min-width:0" placeholder="0x… or Solana address" spellcheck="false"><button type="button" class="ok" id="ad-find">Find details</button></div></div>
+  <div id="ad-rest" hidden>
+   <p class="msg" id="ad-found" style="margin-bottom:12px"></p>
+   <div class="g2"><div class="f"><label for="ad-name">Name</label><input id="ad-name" maxlength="40"></div><div class="f"><label for="ad-symbol">Symbol</label><input id="ad-symbol" maxlength="12"></div></div>
+   <div class="g2"><div class="f"><label for="ad-chain">Chain</label><select id="ad-chain"></select></div><div class="f"><label for="ad-image">Logo link (optional)</label><input id="ad-image" placeholder="https://"></div></div>
+   <div class="f"><label for="ad-logo">Upload a logo (optional, replaces the one found)</label><div class="row"><img id="ad-logoprev" alt="" hidden style="width:56px;height:56px;border-radius:50%;border:2px solid var(--ink);object-fit:cover"><input id="ad-logo" type="file" accept="image/png,image/jpeg,image/webp"></div></div>
+   <div class="f"><label for="ad-description">Description</label><textarea id="ad-description" maxlength="1000"></textarea></div>
+   <div class="g2"><div class="f"><label for="ad-website">Website</label><input id="ad-website" placeholder="https://"></div><div class="f"><label for="ad-x">X</label><input id="ad-x" placeholder="https://x.com/…"></div></div>
+   <div class="g2"><div class="f"><label for="ad-telegram">Telegram</label><input id="ad-telegram" placeholder="https://t.me/…"></div><div class="f"><label for="ad-discord">Discord</label><input id="ad-discord" placeholder="https://discord.gg/…"></div></div>
+   <label class="chk"><input type="checkbox" id="ad-verified">Give it the blue tick</label>
+   <button class="ok" id="ad-go">Add to the Fat List</button>
+  </div></form>`;
+async function shrinkLogo(file){
+  if(!/^image\/(png|jpeg|webp)$/.test(file.type))throw new Error("Upload a PNG, JPG or WebP image.");
+  const url=URL.createObjectURL(file);
+  try{const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(new Error("Couldn’t read that image."));i.src=url});
+    const S=256,c=document.createElement("canvas");c.width=c.height=S;const side=Math.min(img.naturalWidth,img.naturalHeight);
+    c.getContext("2d").drawImage(img,(img.naturalWidth-side)/2,(img.naturalHeight-side)/2,side,side,0,0,S,S);
+    let d=c.toDataURL("image/webp",0.85);if(!d.startsWith("data:image/webp"))d=c.toDataURL("image/png");return d}
+  finally{URL.revokeObjectURL(url)}
+}
+let adLogo=null;
+const CHAINS={robinhood:"Robinhood Chain",solana:"Solana",ethereum:"Ethereum",base:"Base",bsc:"BNB Chain",arbitrum:"Arbitrum",polygon:"Polygon",avalanche:"Avalanche",sui:"Sui",ton:"TON",tron:"Tron",hyperevm:"HyperEVM"};
+function wireAdd(){
+  $("#ad-chain").innerHTML=Object.entries(CHAINS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("");
+  adLogo=null;
+  $("#ad-logo").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{adLogo=await shrinkLogo(f);$("#ad-logoprev").src=adLogo;$("#ad-logoprev").hidden=false}catch(err){$("#msg").textContent=err.message}};
+  $("#ad-find").onclick=async()=>{
+    const a=$("#ad-addr").value.trim();if(!a){$("#msg").textContent="Paste a contract address first.";return}
+    $("#ad-find").disabled=true;$("#msg").textContent="Looking it up…";
+    try{const d=await api("POST",{action:"lookup",address:a});$("#msg").textContent="";
+      if(d.existing){$("#msg").textContent="That coin is already on the Fat List.";return}
+      $("#ad-rest").hidden=false;
+      $("#ad-found").textContent=d.found?`Found on ${CHAINS[d.chain]||d.chain} with $${Math.round(d.liquidity||0).toLocaleString()} liquidity. Check the details, then add it.`:"No trading pair found. Fill in the details yourself.";
+      for(const k of ["name","symbol","description","website","x","telegram","discord","image"])$("#ad-"+k).value=d[k]||"";
+      if(d.chain)$("#ad-chain").value=d.chain;
+    }catch(err){$("#msg").textContent=err.message}finally{$("#ad-find").disabled=false}
+  };
+  $("#addf").onsubmit=async e=>{e.preventDefault();const v=k=>$("#ad-"+k).value.trim();const btn=$("#ad-go");btn.disabled=true;
+    try{await api("POST",{action:"addCoin",address:v("addr"),name:v("name"),symbol:v("symbol"),chain:v("chain"),image:v("image"),description:v("description"),website:v("website"),x:v("x"),telegram:v("telegram"),discord:v("discord"),verified:$("#ad-verified").checked,logo:adLogo||undefined});
+      $("#msg").textContent=`Added ${v("name")}. It’s live on the Fat List.`;await load();tab="add";render()}
+    catch(err){$("#msg").textContent=err.message}finally{btn.disabled=false}};
+}
+const today=()=>new Date().toISOString().slice(0,10);
+const compForm=id=>`<form class="comp" data-comp="${id}" novalidate><div class="g2"><div class="f"><label>Give for free</label><select name="what">
+  <option value="b10">10 boosts (24h)</option><option value="b30">30 boosts (24h)</option><option value="b100">100 boosts (24h)</option>
+  <option value="spotlight">Spotlight card</option><option value="row">Promoted row</option><option value="banner">Banner ad</option></select></div>
+  <div class="f"><label>Days (placements and ads)</label><input name="days" type="number" min="1" max="90" value="7"></div></div>
+  <div class="g2"><div class="f"><label>Start date</label><input name="start" type="date" value="${today()}" min="${today()}"></div>
+  <div class="f"><label>Banner message (ads only)</label><input name="adText" maxlength="70"></div></div>
+  <div class="row"><button class="ok">Give it</button><button type="button" class="ghost" data-cancel>Cancel</button></div></form>`;
+function render(){
+  const el=$("#list");
+  if(data.stats)$("#stats").textContent=`${data.stats.approved.toLocaleString()} coins listed · ${data.stats.indexed.toLocaleString()} auto-listed · $${Math.round(data.stats.revenue30).toLocaleString()} paid in the last 30 days`;
+  if(tab==="claims"){
+    const cs=data.claims||[];
+    el.innerHTML=cs.length?cs.map(c=>`<div class="card">${c.data.image||c.image?`<img src="${esc(c.data.image||c.image)}" alt="" style="width:44px;height:44px;border-radius:50%;border:2px solid var(--ink);object-fit:cover;float:right">`:""}<h3>Claim for ${esc(c.name)} ($${esc(c.symbol)})</h3>
+      <p class="meta">${esc(c.chain)} · <a href="https://dexscreener.com/${esc(c.chain)}/${esc(c.address)}" target="_blank" rel="noopener">${esc(c.address)}</a> · liquidity $${Math.round(c.liquidity||0).toLocaleString()} · ${ago(c.createdAt)}</p>
+      <p>${esc(c.data.description)}</p>
+      <p class="meta">${[c.data.website,c.data.x,c.data.telegram,c.data.discord].filter(Boolean).map(esc).join(" · ")||"No links"} · contact ${esc(c.data.contact)}</p>
+      <p class="meta">Check the links really belong to this coin, for example that its X or Telegram posts this contract address.</p>
+      <div class="row" style="margin-top:10px"><button class="ok" data-a="approveClaim" data-id="${c.id}">Approve claim</button><button class="no" data-a="rejectClaim" data-id="${c.id}">Reject</button></div></div>`).join(""):`<div class="empty">No claims waiting.</div>`;
+    return;
+  }
+  if(tab==="add"){el.innerHTML=ADD_HTML;wireAdd();return}
+  if(tab==="orders"||tab==="ads"){
+    const o=tab==="ads"?data.orders.filter(x=>x.pkg==="banner"&&x.live):data.orders;
+    el.innerHTML=o.length?o.map(x=>`<div class="card"><h3>${x.comped?"FREE":"$"+x.usd} · ${esc(x.label)}</h3><p>${esc(x.coin)}${x.start?` · ${day(x.start)} to ${day(x.end-1)}`:""}${x.live?'<span class="tag">LIVE</span>':""}${x.pulled?'<span class="tag" style="background:#eee">PULLED</span>':""}</p>
+      ${x.adText?`<p><b>Banner:</b> ${esc(x.adText)}</p>`:""}
+      ${x.comped?`<p class="meta">Given free by admin · ${ago(x.paidAt)}</p>`:`<p class="meta">Paid ${esc(x.amount)} ${esc(x.token)} on ${esc(x.chain)} · ${ago(x.paidAt)} · from ${esc(x.payer)}</p><p class="meta"><a href="${esc(x.explorer)}" target="_blank" rel="noopener">View transaction</a></p>`}
+      ${x.live&&!x.pulled?`<div class="row" style="margin-top:10px"><button class="no" data-a="pullAd" data-id="${x.id}">Take it down</button></div>`:""}</div>`).join(""):`<div class="empty">${tab==="ads"?"No banner ads running.":"No payments yet."}</div>`;
+    return;
+  }
+  if(tab==="talk"){
+    const ps=data.posts;
+    el.innerHTML=ps.length?ps.map(p=>`<div class="card"><h3>${esc(p.title)}${p.reports?`<span class="tag" style="background:#C8221C;color:#fff">${p.reports} REPORT${p.reports>1?"S":""}</span>`:""}${p.removed?'<span class="tag" style="background:#eee">REMOVED</span>':""}</h3>
+      <p class="meta">by ${esc(p.author)} · ${ago(p.createdAt)}${p.disclosure?" · disclosed":""} · <a href="/fatlist.html#post/${p.id}" target="_blank">Open</a></p><p>${esc(p.excerpt)}</p>
+      <div class="row" style="margin-top:10px">${p.removed?`<button class="ghost" data-a="restorePost" data-id="${p.id}">Restore</button>`:`<button class="no" data-a="removePost" data-id="${p.id}">Remove post</button>`}<button class="ghost" data-a="ban" data-addr="${esc(p.author)}">Ban this wallet</button></div></div>`).join(""):`<div class="empty">No posts yet.</div>`;
+    return;
+  }
+  const ls=data.listings.filter(l=>tab==="pending"?(l.status==="pending"||(l.verifyPaid&&!l.verified&&l.status!=="rejected"&&l.status!=="removed")):tab==="rejected"?(l.status==="rejected"||l.status==="removed"):(tab==="approved"?(l.status==="approved"||l.status==="indexed"):l.status===tab));
+  const searchBox=tab==="approved"?`<form class="row" id="lsf" style="margin-bottom:6px"><input id="liveSearch" value="${esc(liveQ)}" placeholder="Search any coin, including auto-listed" style="flex:1;min-width:0"><button class="ghost">Search</button></form>`:"";
+  if(!ls.length){el.innerHTML=searchBox+`<div class="empty">${tab==="pending"?"Nothing waiting. Nice.":"Nothing here."}</div>`;wireSearch();return}
+  setTimeout(wireSearch);
+  el.innerHTML=searchBox+ls.map(l=>`<div class="card">${l.image?`<img src="${esc(l.image)}" alt="" style="width:44px;height:44px;border-radius:50%;border:2px solid var(--ink);object-fit:cover;float:right">`:""}<h3>${esc(l.name)} ($${esc(l.symbol)})${l.status==="indexed"?'<span class="tag" style="background:#eee">AUTO-LISTED</span>':""}${l.verifyPaid&&!l.verified?'<span class="tag">BLUE TICK PAID</span>':""}${l.verified?'<span class="tag" style="background:#1D6FE0;color:#fff">VERIFIED</span>':""}${l.status==="approved"&&tab==="pending"?'<span class="tag" style="background:#eee">ALREADY LIVE</span>':""}</h3>
+    <p class="meta">${esc(l.chain)} · <a href="https://dexscreener.com/${esc(l.chain)}/${esc(l.address)}" target="_blank" rel="noopener">${esc(l.address)}</a> · liquidity when added $${Math.round(l.liquidityAtListing||0).toLocaleString()}</p>
+    <p>${esc(l.description)}</p>
+    <p class="meta">${[l.website,l.x,l.telegram,l.discord].filter(Boolean).map(esc).join(" · ")||"No links"}${l.contact?` · contact ${esc(l.contact)}`:""} · added ${ago(l.createdAt)}</p>
+    <div class="row" style="margin-top:10px">${
+      tab==="pending"?`${l.status!=="approved"?`<button class="ok" data-a="approve" data-id="${l.id}">Approve</button>`:""}${l.verifyPaid&&!l.verified?`<button class="ok" data-a="verify" data-id="${l.id}">Give blue tick</button>`:""}<button class="no" data-a="reject" data-id="${l.id}">Reject</button>`:
+      tab==="approved"?`<button class="ok" data-givefree="${l.id}">Give free boost or spot</button><label class="ghost" style="display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border:3px solid var(--ink);border-radius:12px;font-weight:700;cursor:pointer;background:#fff">Change logo<input type="file" accept="image/png,image/jpeg,image/webp" data-setlogo="${l.id}" style="position:absolute;opacity:0;width:1px"></label>${l.verified?`<button class="ghost" data-a="unverify" data-id="${l.id}">Remove blue tick</button>`:`<button class="ghost" data-a="verify" data-id="${l.id}">Give blue tick</button>`}<button class="no" data-a="remove" data-id="${l.id}">Take down</button>`:
+      `<button class="ok" data-a="approve" data-id="${l.id}">Approve after all</button><button class="no" data-a="delete" data-id="${l.id}">Delete for good</button>`}</div></div>`).join("");
+}
+$("#list").addEventListener("change",async e=>{
+  const i=e.target.closest("[data-setlogo]");if(!i||!i.files[0])return;
+  try{const logo=await shrinkLogo(i.files[0]);await api("POST",{action:"setLogo",id:i.dataset.setlogo,logo});$("#msg").textContent="Logo updated.";await load()}
+  catch(err){$("#msg").textContent=err.message}
+});
+$("#list").addEventListener("submit",async e=>{
+  const f=e.target.closest("[data-comp]");if(!f)return;e.preventDefault();const fd=new FormData(f);const btn=f.querySelector("button.ok");btn.disabled=true;
+  try{await api("POST",{action:"comp",id:f.dataset.comp,what:fd.get("what"),days:+fd.get("days"),start:fd.get("start"),adText:fd.get("adText")});$("#msg").textContent="Done. It’s live on the Fat List.";await load()}
+  catch(err){$("#msg").textContent=err.message;btn.disabled=false}
+});
+function wireSearch(){const f=$("#lsf");if(f)f.onsubmit=async e=>{e.preventDefault();liveQ=$("#liveSearch").value.trim();await load()}}
+$("#list").onclick=async e=>{
+  const gf=e.target.closest("[data-givefree]");if(gf){const card=gf.closest(".card");if(!card.querySelector(".comp"))card.insertAdjacentHTML("beforeend",compForm(gf.dataset.givefree));return}
+  const cx=e.target.closest("[data-cancel]");if(cx){cx.closest(".comp").remove();return}
+  const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a;
+  if(a==="delete"&&!confirm("Delete this listing for good? The same contract can then be added again."))return;
+  if(a==="ban"&&!confirm("Ban this wallet from Hood Talk and remove all its posts?"))return;
+  if(a==="pullAd"&&!confirm("Take this paid ad down now? Refunds are up to you."))return;
+  b.disabled=true;
+  try{await api("POST",a==="ban"?{action:a,address:b.dataset.addr}:{action:a,id:b.dataset.id});
+    $("#msg").textContent={approve:"Approved. It’s live.",reject:"Rejected.",remove:"Taken down.",delete:"Deleted.",verify:"Blue tick added.",unverify:"Blue tick removed.",pullAd:"Ad taken down.",approveClaim:"Claim approved. The details are live.",rejectClaim:"Claim rejected.",removePost:"Post removed.",restorePost:"Post restored.",ban:"Wallet banned and its posts removed."}[a];await load()}
+  catch(err){$("#msg").textContent=err.message;b.disabled=false}
+};
+$("#tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.t;document.querySelectorAll("#tabs button").forEach(x=>x.setAttribute("aria-selected",String(x===b)));$("#msg").textContent="";render()};
+})();
+</script>
+<script>if(FH.key)FH.show();</script>
 </body>
 </html>
