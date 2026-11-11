@@ -53,6 +53,9 @@ h1,h2,h3,.disp{font-family:'Bowlby One',Impact,sans-serif;font-weight:400;letter
 .spot .who{display:flex;gap:12px;align-items:center;margin-bottom:12px}
 .spot .nm{font:400 20px/1.1 'Bowlby One',Impact,sans-serif}
 .spot .row{display:flex;justify-content:space-between;font-weight:700;font-size:15px}
+.spot .dots{position:absolute;bottom:8px;right:14px;display:flex;gap:4px}.spot .dots i{width:7px;height:7px;border-radius:50%;background:rgba(17,17,17,.25)}.spot .dots i.on{background:var(--ink)}
+.spot.fade{animation:spotin .4s ease}@keyframes spotin{from{opacity:.2;transform:translateY(4px)}}
+@media (prefers-reduced-motion:reduce){.spot.fade{animation:none}}
 .spot-empty{border:3px dashed var(--ink);border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:center;gap:6px;text-decoration:none;font-weight:700}
 
 .av{flex:none;width:40px;height:40px;border-radius:50%;border:2px solid var(--ink);display:grid;place-items:center;font:400 14px/1 'Bowlby One',Impact,sans-serif;background:var(--soft);overflow:hidden}
@@ -414,6 +417,8 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
         <div class="hint">Only coins live on the Fat List can be grown. Not on it yet? <a href="#add">Add it</a>.</div></div>
       <p id="g-blurb" style="margin:0 0 16px"></p>
       <div class="pkgs" id="g-pkgs"></div>
+      <div class="f" id="g-spotf" hidden><label>Which Spotlight spot?</label><div class="opts" id="g-spots" role="group" aria-label="Spotlight spot"><button type="button" class="opt" data-s="1">Spot 1</button><button type="button" class="opt" data-s="2">Spot 2</button><button type="button" class="opt" data-s="3">Spot 3</button></div>
+        <div class="hint">Each spot takes turns between up to 4 coins, 10 seconds each. If your spot is full on your dates, pick another one.</div></div>
       <div id="g-ad" hidden>
         <div class="f" id="g-imgf" hidden><label for="g-img">Your banner image (optional)</label><input id="g-img" type="file" accept="image/png,image/jpeg,image/webp"><div class="err">Use a PNG, JPG or WebP picture.</div><div class="hint">A tall picture works best (about 300 × 600). We shrink it to fit. No picture? We make the banner from your logo and message.</div></div>
         <div class="f"><label for="g-adtext" id="g-adlabel">Banner message</label><input id="g-adtext" maxlength="70" placeholder="The crispiest meme on Robinhood Chain"><div class="err">Write 8 to 70 characters, without links.</div><div class="hint"><span id="g-adcount">0</span>/70. The banner links to your coin page.</div></div>
@@ -519,8 +524,8 @@ const DEMO_COINS=[["Fathood","FATHOOD","robinhood",0.000412,38.2,4.1e6,310e3,3,1
  ["Fry Guy","FRY","robinhood",0.000912,112.4,0.88e6,60e3,1,1720,null,100,false],["Buffet","BUFF","base",0.0193,-2.7,1.9e6,120e3,11,214,null,0,false]]
  .map((d,i)=>({id:"1700000000000-0000000"+i,name:d[0],symbol:d[1],chain:d[2],address:"0x"+(i+1).toString(16).padStart(40,"a"),price:d[3],change:d[4],mcap:d[5],liquidity:d[6],volume:d[6]*1.7,
   pairCreatedAt:Date.now()-d[7]*DAY-3600e3,votes:d[8],promo:d[9],boosts:d[10],verified:d[11],unclaimed:i===7,description:`${d[0]} is a sample coin used in this preview. On the real site this text comes from the project’s own description.`,website:"https://example.com",x:"https://x.com/example",telegram:"https://t.me/example",discord:""}));
-const DEMO_SETTINGS={packages:{spotlight:{group:"promote",name:"Spotlight card",perDay:349,maxAtOnce:3,blurb:"One of three big cards at the top of the Fat List."},row:{group:"promote",name:"Promoted row",perDay:149,maxAtOnce:10,blurb:"Pinned above the rankings with a lime highlight."},banner:{group:"advertise",name:"Banner ad",perDay:199,maxAtOnce:2,blurb:"Your coin and a one-line message across the top of every page, including Hood Talk."},side:{group:"advertise",name:"Left side banner",fixedUsd:250,fixedDays:3,perDay:250,boosts:100,votes:50,maxAtOnce:1,blurb:"Your banner down the whole left side of every Fat List and Hood Talk page for 3 days. Includes 100 boosts and 50 votes."}},
- boosts:{b10:{name:"10 boosts",boosts:10,hours:24,usd:29},b30:{name:"30 boosts",boosts:30,hours:24,usd:79},b100:{name:"100 boosts",boosts:100,hours:24,usd:199}},
+const DEMO_SETTINGS={packages:{spotlight:{group:"promote",name:"Spotlight card",perDay:74,spots:3,perSpot:4,rotateSeconds:10,maxAtOnce:12,blurb:"A big card at the top of the Fat List. Pick spot 1, 2 or 3. Each spot takes turns between up to 4 coins, 10 seconds each."},row:{group:"promote",name:"Promoted row",perDay:24.99,maxAtOnce:10,blurb:"Pinned above the Trending list with a lime highlight."},banner:{group:"advertise",name:"Banner ad",perDay:199,maxAtOnce:2,blurb:"Your coin and a one-line message across the top of every page, including Hood Talk."},side:{group:"advertise",name:"Left side banner",fixedUsd:250,fixedDays:3,perDay:250,boosts:100,votes:50,maxAtOnce:1,blurb:"Your banner down the whole left side of every Fat List and Hood Talk page for 3 days. Includes 100 boosts and 50 votes."}},
+ boosts:{b10:{name:"10 boosts",boosts:10,hours:12,usd:4.99},b30:{name:"30 boosts",boosts:30,hours:24,usd:9.99},b100:{name:"100 boosts",boosts:100,hours:48,usd:19.99}},
  discounts:{1:0,3:0,7:.1,14:.15},verifyUsd:49,claimUsd:1.99,autoListMin:5000,chains:{robinhood:"Robinhood Chain",solana:"Solana",ethereum:"Ethereum",base:"Base",bsc:"BNB Chain",arbitrum:"Arbitrum",polygon:"Polygon",avalanche:"Avalanche",sui:"Sui",ton:"TON",tron:"Tron",hyperevm:"HyperEVM"},
  payChains:{robinhood:{name:"Robinhood Chain",chainId:4663,tokens:["ETH","USDG","USDC"]},ethereum:{name:"Ethereum",chainId:1,tokens:["ETH","USDG","USDT","USDC"]}},paymentsOn:false};
 const DEMO_ADDR="0x7a1e9b0c2f3d4e5a6b7c8d9e0f1a2b3c4d5e6f70";
@@ -551,9 +556,12 @@ function renderTick(){
   $("#tickTrack").style.setProperty("--dur",row.length*4+"s");el.hidden=false;
 }
 let side=null;
+// Booking previews: "View" opens the picked coin's page in a new tab (the form stays filled in); no coin yet = ask to pick one.
+function prevLink(c){return c&&c.id?`href="/fatlist.html#coin/${esc(c.id)}" target="_blank" rel="noopener"`:`href="#" data-pickcoin`}
+document.addEventListener("click",e=>{if(!e.target.closest("[data-pickcoin]"))return;e.preventDefault();toast("Pick your coin first: search for it under “Which coin?”.");const q=$("#g-q");if(q&&!q.hidden)q.focus()});
 function sideHTML(a,preview){
   const c=coins.find(x=>x.id===a.coinId)||{},price=c.price??a.price,change=c.change??a.change;
-  return `<a href="${preview?"#":"#coin/"+esc(a.coinId)}"${preview?' onclick="return false"':""}><span class="s-tag">Ad · paid</span>
+  return `<a ${preview?prevLink({id:a.coinId}):`href="#coin/${esc(a.coinId)}"`}><span class="s-tag">Ad · paid</span>
     ${a.image?`<img class="s-img" src="${esc(a.image)}" alt="${esc(a.name)} ($${esc(a.symbol)})">`:""}
     <span class="s-card">${av({name:a.name,image:a.logo})}<span><span class="s-nm">${esc(a.name)}</span><br><b>$${esc(a.symbol)}</b>${a.text?`<br><span class="s-msg">${esc(a.text)}</span>`:""}</span></span>
     <span class="s-foot"><span class="num">${fP(price)} <span class="${(change||0)>=0?"up":"down"}">${fC(change)}</span></span><span class="s-go">View chart</span></span></a>`;
@@ -586,14 +594,21 @@ let qTimer=null;
 $("#q").oninput=e=>{q=e.target.value.trim().toLowerCase();searchHits=[];renderRows();clearTimeout(qTimer);
   if(DEMO||q.replace(/^\$/,"").length<2)return;
   qTimer=setTimeout(async()=>{const mine=q;try{const j=await api("/api/fatlist?q="+encodeURIComponent(mine));if(mine===q&&j.coins){searchHits=j.coins;renderRows()}}catch(_){}},300)};
-function renderSpots(){
-  const sp=coins.filter(c=>c.promo==="spotlight").slice(0,3);
-  let h=sp.map(c=>`<a class="spot" href="#coin/${esc(c.id)}" style="text-decoration:none"><span class="tag">Spotlight · paid</span>
+// Three Spotlight spots. Each spot takes turns between the coins booked in it (10 seconds each).
+let spotTick=0;
+function renderSpots(anim){
+  const all=coins.filter(c=>c.promo==="spotlight"),n=(S&&S.packages.spotlight.spots)||3,per=[];
+  for(let i=1;i<=n;i++)per.push(all.filter(c=>(c.spot||1)===i));
+  $("#spots").innerHTML=per.map((l,i)=>{
+    if(!l.length)return `<a class="spot-empty" href="#grow" data-grow="promote" data-spot="${i+1}"><span class="disp" style="font-size:20px">Your coin here</span><span>Spotlight spot ${i+1} is open. Book it.</span></a>`;
+    const k=spotTick%l.length,c=l[k];
+    return `<a class="spot${anim&&l.length>1?" fade":""}" href="#coin/${esc(c.id)}" style="text-decoration:none"><span class="tag">Spotlight · paid</span>
     <div class="who">${av(c)}<div><div class="nm">${esc(c.name)}${vb(c)}</div><div class="small">$${esc(c.symbol)} on ${esc(chainName(c.chain))}</div></div></div>
-    <div class="row num"><span>${fP(c.price)}</span><span class="${(c.change||0)>=0?"up":"down"}">${fC(c.change)}</span><span>${fM(c.mcap)}</span></div></a>`).join("");
-  for(let i=sp.length;i<3;i++)h+=`<a class="spot-empty" href="#grow" data-grow="promote"><span class="disp" style="font-size:20px">Your coin here</span><span>Spotlight spot open. Book it.</span></a>`;
-  $("#spots").innerHTML=h;
+    <div class="row num"><span>${fP(c.price)}</span><span class="${(c.change||0)>=0?"up":"down"}">${fC(c.change)}</span><span>${fM(c.mcap)}</span></div>
+    ${l.length>1?`<span class="dots" aria-hidden="true">${l.map((_,j)=>`<i class="${j===k?"on":""}"></i>`).join("")}</span>`:""}</a>`}).join("");
 }
+setInterval(()=>{if(document.hidden||!S)return;if(!coins.some(c=>c.promo==="spotlight"))return;spotTick++;renderSpots(true)},((S&&S.packages.spotlight.rotateSeconds)||10)*1000);
+$("#spots").addEventListener("click",e=>{const a=e.target.closest("[data-spot]");if(a){growTab="promote";growPick.promote="spotlight";growSpot=+a.dataset.spot}});
 function sorted(){
   const qq=q.replace(/^\$/,"");
   const pool=[...coins,...searchHits.filter(h=>!coins.some(c=>c.id===h.id))];
@@ -756,7 +771,7 @@ $("#addForm").onsubmit=async e=>{
       <p>${claim?`Your details for ${esc(name)} are saved. Once the $${S.claimUsd} payment goes through, the team checks that it’s really your coin, usually within 24 hours, and may message ${esc(body.contact)} on Telegram. Then your logo, description and links go live.`:live?`Share its page with your community so they can vote it up.`:`The team usually reviews new coins within 24 hours and will message ${esc(body.contact)} on Telegram if anything’s missing.`}</p>
       <div class="foot" style="justify-content:flex-start">${claim?`<button class="btn" id="pc">Pay $${S.claimUsd}</button>`:""}${(live||claim)&&!DEMO?`<a class="btn white" href="#coin/${esc(j.id)}">See its page</a>`:""}<button class="btn dark" id="dv">Get the blue tick · $${S.verifyUsd}</button></div></div>
       ${live||claim?`<h2 style="margin:30px 0 12px;font-size:26px">Now grow it</h2><div class="pkgs">
-        <button class="box pkg" data-g="boost"><h3>⚡ Boost</h3><p>Jump up Trending for 24 hours. From $${Math.min(...Object.values(S.boosts).map(b=>b.usd))}.</p></button>
+        <button class="box pkg" data-g="boost"><h3>⚡ Boost</h3><p>Jump up Trending for 12 to 48 hours. From $${Math.min(...Object.values(S.boosts).map(b=>b.usd))}.</p></button>
         <button class="box pkg" data-g="promote"><h3>Promote</h3><p>A Spotlight card or pinned row on the Fat List. From $${S.packages.row.perDay}/day.</p></button>
         <button class="box pkg" data-g="advertise"><h3>Advertise</h3><p>A banner across every page, including Hood Talk. $${S.packages.banner.perDay}/day.</p></button></div>`:""}`;
     $("#dv").onclick=()=>openPay({kind:"verify",listingId:j.id,title:`Blue tick check for ${name}`,usd:S.verifyUsd});
@@ -769,9 +784,9 @@ $("#addForm").onsubmit=async e=>{
 function fieldErrs(form,errs){let first=null;for(const[k,m]of Object.entries(errs)){const f=form.querySelector(`.f[data-k="${k}"]`);if(!f)continue;f.classList.add("bad");f.querySelector(".err").textContent=m;first=first||f}if(first)first.querySelector("input,select,textarea").focus()}
 
 // ---------- grow
-let growTab="boost",growCoin="",growImg=null,growPick={boost:"b30",promote:"spotlight",advertise:"banner"};
-const GROW_BLURB={boost:"Boosts push your coin up the Trending list straight away and show a ⚡ badge for 24 hours. Boosts from different buyers stack.",
-  promote:"Book a Spotlight card at the top of the Fat List or a pinned, highlighted row above the rankings.",
+let growSpot=1,growTab="boost",growCoin="",growImg=null,growPick={boost:"b30",promote:"spotlight",advertise:"banner"};
+const GROW_BLURB={boost:"Boosts push your coin up the Trending list straight away and show a ⚡ badge while they last (12 to 48 hours, depending on the pack). Boosts from different buyers stack.",
+  promote:"Book a Spotlight card at the top of the Fat List (you pick the spot) or a pinned, highlighted row above the Trending list.",
   advertise:"Run a banner across the top of every Fat List and Hood Talk page, or take the whole left side for 3 days (with 100 boosts and 50 votes)."};
 function buildGrow(){
   const today=new Date().toISOString().slice(0,10);$("#g-start").min=today;$("#g-start").value=today;
@@ -816,33 +831,37 @@ function renderGrow(){
   $("#g-blurb").textContent=GROW_BLURB[growTab];
   let cards;
   if(growTab==="boost")cards=Object.entries(S.boosts).map(([k,b])=>[k,`<h3>⚡ ${esc(b.name)}</h3><div class="price num">$${b.usd}</div><p>Lasts ${b.hours} hours from payment.</p>`]);
-  else cards=Object.entries(S.packages).filter(([,p])=>p.group===growTab).map(([k,p])=>[k,`<h3>${esc(p.name)}</h3><div class="price num">${p.fixedDays?`$${S.testPrices?p.perDay:p.fixedUsd}<small> / ${p.fixedDays} days</small>`:`$${p.perDay}<small> / day</small>`}</div><p>${esc(p.blurb)}</p><div class="left">${p.maxAtOnce===1?"Only one at a time":`${p.maxAtOnce} at a time`}</div>`]);
+  else cards=Object.entries(S.packages).filter(([,p])=>p.group===growTab).map(([k,p])=>[k,`<h3>${esc(p.name)}</h3><div class="price num">${p.fixedDays?`$${S.testPrices?p.perDay:p.fixedUsd}<small> / ${p.fixedDays} days</small>`:`$${p.perDay}<small> / day</small>`}</div><p>${esc(p.blurb)}</p><div class="left">${p.spots?`${p.spots} spots, up to ${p.perSpot} coins each`:p.maxAtOnce===1?"Only one at a time":`${p.maxAtOnce} at a time`}</div>`]);
   if(!cards.some(([k])=>k===growPick[growTab]))growPick[growTab]=cards[0][0];
   $("#g-pkgs").innerHTML=cards.map(([k,h])=>`<button type="button" class="box pkg" data-p="${k}" aria-pressed="${k===growPick[growTab]}">${h}</button>`).join("");
   $("#g-pkgs").style.display=cards.length>1?"":"none";
   $("#g-ad").hidden=growTab!=="advertise";$("#g-dates").hidden=growTab==="boost";
   const isSide=growTab==="advertise"&&growPick.advertise==="side";
-  $("#g-imgf").hidden=!isSide;$("#g-adlabel").textContent=isSide?"Banner message (optional)":"Banner message";
+  $("#g-imgf").hidden=!isSide;
+  const isSpot=growTab==="promote"&&growPick.promote==="spotlight";$("#g-spotf").hidden=!isSpot;
+  $$("#g-spots [data-s]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.s===growSpot)));$("#g-adlabel").textContent=isSide?"Banner message (optional)":"Banner message";
   $("#g-days").closest(".f").hidden=growTab!=="boost"&&!!(S.packages[growPick[growTab]]||{}).fixedDays;
   adPreview();updGrow();
 }
 $("#growTabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;growTab=b.dataset.g;renderGrow()};
+$("#g-spots").onclick=e=>{const b=e.target.closest("[data-s]");if(!b)return;growSpot=+b.dataset.s;renderGrow()};
 $("#g-pkgs").onclick=e=>{const b=e.target.closest("[data-p]");if(!b)return;growPick[growTab]=b.dataset.p;renderGrow()};
 function adPreview(){
   const c=coins.find(x=>x.id===growCoin)||{name:"Your Coin",symbol:"COIN"};
   if(growPick.advertise==="side"){$("#g-adprev").className="adpreview side";
     $("#g-adprev").innerHTML=`<div class="sidead${growImg?" has-img":""}">${sideHTML({coinId:c.id,name:c.name,symbol:c.symbol,logo:c.image,image:growImg,text:$("#g-adtext").value.trim(),price:c.price,change:c.change},true)}</div>`;return}
   $("#g-adprev").className="adpreview";
-  $("#g-adprev").innerHTML=`<div class="adbar" style="border:0"><a href="#" onclick="return false" style="padding:0 12px"><span class="adtag">Ad</span>${av(c)}<span class="adtxt"><b>$${esc(c.symbol)}</b> · ${esc($("#g-adtext").value||"Your message here")}</span><span class="go">View</span></a></div>`;
+  $("#g-adprev").innerHTML=`<div class="adbar" style="border:0"><a ${prevLink(c)} style="padding:0 12px"><span class="adtag">Ad</span>${av(c)}<span class="adtxt"><b>$${esc(c.symbol)}</b> · ${esc($("#g-adtext").value||"Your message here")}</span><span class="go">View</span></a></div>`;
 }
 function growPrice(){
   if(growTab==="boost"){const b=S.boosts[growPick.boost];return {usd:b.usd,line:`${b.name} for ${b.hours} hours`}}
   const p=S.packages[growPick[growTab]],d=+$("#g-days").value;
   if(p.fixedDays)return {usd:S.testPrices?p.perDay:p.fixedUsd,line:`${p.name}, ${p.fixedDays} days${S.testPrices?" (test price)":""}`};
   if(S.testPrices)return {usd:p.perDay,line:`${p.name}, ${d} day${d>1?"s":""} (test price)`};
-  return {usd:Math.round(p.perDay*d*(1-(S.discounts[d]||0))),line:`${p.name}, ${d} day${d>1?"s":""}${S.discounts[d]?` (${S.discounts[d]*100}% off)`:""}`};
+  return {usd:Math.round(p.perDay*d*(1-(S.discounts[d]||0))*100)/100,line:`${p.name}, ${d} day${d>1?"s":""}${S.discounts[d]?` (${S.discounts[d]*100}% off)`:""}`};
 }
-function updGrow(){const g=growPrice();$("#g-total").textContent="$"+g.usd.toLocaleString();$("#g-line").textContent=g.line}
+const fUsd=v=>Number.isInteger(v)?v.toLocaleString():v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
+function updGrow(){const g=growPrice();$("#g-total").textContent="$"+fUsd(g.usd);$("#g-line").textContent=g.line}
 $("#growForm").onsubmit=e=>{
   e.preventDefault();const f=e.target;f.querySelectorAll(".f").forEach(x=>x.classList.remove("bad"));
   const coin=coins.find(x=>x.id===growCoin),today=new Date().toISOString().slice(0,10),bad=[];
@@ -855,7 +874,7 @@ $("#growForm").onsubmit=e=>{
   const g=growPrice();
   if(growTab==="boost")openPay({kind:"boost",listingId:coin.id,pack:growPick.boost,title:`${g.line} · ${coin.name}`,usd:g.usd});
   else{const pk2=growPick[growTab],fixed=(S.packages[pk2]||{}).fixedDays;
-    openPay({kind:"promo",listingId:coin.id,pkg:pk2,days:fixed||+$("#g-days").value,start:$("#g-start").value,adText:t,adImage:pk2==="side"?growImg:undefined,title:`${g.line} · ${coin.name}`,usd:g.usd})}
+    openPay({kind:"promo",listingId:coin.id,pkg:pk2,days:fixed||+$("#g-days").value,start:$("#g-start").value,adText:t,adImage:pk2==="side"?growImg:undefined,spot:pk2==="spotlight"?growSpot:undefined,title:`${g.line} · ${coin.name}`,usd:g.usd})}
 };
 
 // ---------- wallet
@@ -872,7 +891,7 @@ payDlg.addEventListener("close",()=>{if(P)P.closed=true});
 payDlg.addEventListener("click",e=>{if(e.target===payDlg&&!(P&&P.polling))payDlg.close()});
 function renderPay(state){
   const pc=S.payChains,c=pc[P.chain];
-  let h=`<h2>${esc(P.title)}</h2><p class="small" style="margin:6px 0 0">Total <b class="num">$${P.usd.toLocaleString()}</b></p>`;
+  let h=`<h2>${esc(P.title)}</h2><p class="small" style="margin:6px 0 0">Total <b class="num">$${fUsd(P.usd)}</b></p>`;
   if(!S.paymentsOn&&!DEMO){h+=`<p class="msg bad">Payments aren’t switched on yet. Message the team on Telegram to book this.</p><div class="foot"><button class="btn white" data-x>Close</button></div>`;$("#payMd").innerHTML=h;wireClose();return}
   if(!P.order){
     h+=`<p class="step">1. Pay on</p><div class="opts" role="group" aria-label="Network">${Object.entries(pc).map(([k,v])=>`<button class="opt" data-ch="${k}" aria-pressed="${k===P.chain}">${esc(v.name)}</button>`).join("")}</div>
@@ -881,7 +900,7 @@ function renderPay(state){
       ${state?`<p class="msg ${state.bad?"bad":""}">${state.msg}</p>`:""}
       <div class="foot"><button class="btn white" data-x>Cancel</button>${P.account?`<button class="btn" id="getq">Get exact amount</button>`:`<button class="btn" id="cn">Connect wallet</button>`}</div>`;
   }else if(P.order.status==="paid"){
-    const o=P.order,what={claim:" The team checks it’s really your coin, usually within 24 hours, then your details go live.",promo:" It goes live on your start date and shows automatically.",boost:" Your boosts are live now for 24 hours.",verify:" The team checks your coin and adds the blue tick, usually within a few hours."}[P.kind]||"";
+    const o=P.order,what={claim:" The team checks it’s really your coin, usually within 24 hours, then your details go live.",promo:" It goes live on your start date and shows automatically.",boost:" Your boosts are live now.",verify:" The team checks your coin and adds the blue tick, usually within a few hours."}[P.kind]||"";
     h+=`<p class="payamt">Paid. You’re in.</p><p>${esc(o.label)} for ${esc(o.coin)} is confirmed.${what}</p>
       ${o.explorer?`<p class="small"><a href="${esc(o.explorer)}" target="_blank" rel="noopener">See the payment on the explorer</a>. Order ${esc(o.id)}</p>`:""}<div class="foot"><button class="btn" data-x>Done</button></div>`;
   }else{
@@ -912,7 +931,7 @@ async function getQuote(){
   if(DEMO){renderPay({msg:"This is the preview, so payments stop here. On fathood.org your wallet opens with the exact amount."});return}
   renderPay({msg:"Getting today’s price…"});
   try{
-    const j=await api("/api/fatpay",{body:{action:"quote",kind:P.kind,listingId:P.listingId,claimId:P.claimId,pkg:P.pkg,pack:P.pack,days:P.days,start:P.start,adText:P.adText,adImage:P.adImage,chain:P.chain,token:P.token,payer:P.account}});
+    const j=await api("/api/fatpay",{body:{action:"quote",kind:P.kind,listingId:P.listingId,claimId:P.claimId,spot:P.spot,pkg:P.pkg,pack:P.pack,days:P.days,start:P.start,adText:P.adText,adImage:P.adImage,chain:P.chain,token:P.token,payer:P.account}});
     if(!j.ok){renderPay({bad:1,msg:esc(j.error||"Couldn’t get a price. Try again.")});return}
     P.order=j.order;renderPay();
   }catch(_){renderPay({bad:1,msg:"Couldn’t reach the server. Check your connection and try again."})}

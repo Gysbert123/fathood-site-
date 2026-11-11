@@ -34,7 +34,7 @@ export function toCoin(r) {
     launchedAt: ms(r.created_at), votes: r.votes || 0, verified: !!r.verified, unclaimed: r.status === "indexed",
     price: num(r.price), change: num(r.change24), mcap: num(r.mcap), liquidity: num(r.liquidity), volume: num(r.volume24),
     pairCreatedAt: ms(r.pair_created_at), pairAddress: r.pair_address || null, url: r.dex_url || null,
-    promo: r.promo || null, boosts: Number(r.boosts || 0),
+    promo: r.promo || null, spot: r.spot == null ? null : Number(r.spot), boosts: Number(r.boosts || 0),
   };
 }
 
@@ -44,7 +44,8 @@ export const VISIBLE = (min) => sql()`(c.status = 'approved' or (c.status = 'ind
 export const LIVE_EXTRAS = () => sql()`
   left join (select coin_id, sum(boosts) as boosts from orders
              where (kind = 'boost' or (kind = 'promo' and pkg = 'side')) and status = 'paid' and not pulled and start_at <= now() and end_at > now() group by coin_id) b on b.coin_id = c.id
-  left join (select coin_id, case when bool_or(pkg = 'spotlight') then 'spotlight' else 'row' end as promo from orders
+  left join (select coin_id, case when bool_or(pkg = 'spotlight') then 'spotlight' else 'row' end as promo,
+                    min(coalesce((to_jsonb(orders) ->> 'spot')::int, 1)) filter (where pkg = 'spotlight') as spot from orders
              where kind = 'promo' and pkg in ('spotlight', 'row') and status = 'paid' and not pulled and start_at <= now() and end_at > now() group by coin_id) p on p.coin_id = c.id`;
 
 export async function liveAds() {
@@ -65,8 +66,10 @@ export async function liveSide() {
     price: r.price == null ? null : Number(r.price), change: r.change24 == null ? null : Number(r.change24) } : null;
 }
 
-export async function slotsTaken(pkg, start, end) {
-  const [r] = await sql()`select count(*)::int as n from orders where kind = 'promo' and pkg = ${pkg} and not pulled
+// spot (1-3) only for the Spotlight: counts bookings in that one spot. Old bookings without a spot count as spot 1.
+export async function slotsTaken(pkg, start, end, spot = null) {
+  const inSpot = spot ? sql()`and coalesce((to_jsonb(orders) ->> 'spot')::int, 1) = ${spot}` : sql()``;
+  const [r] = await sql()`select count(*)::int as n from orders where kind = 'promo' and pkg = ${pkg} and not pulled ${inSpot}
     and start_at < ${new Date(end)} and end_at > ${new Date(start)}
     and (status = 'paid' or (status = 'awaiting' and expires_at > now()))`;
   return r.n;

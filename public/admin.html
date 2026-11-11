@@ -346,7 +346,7 @@ function wireAdd(){
 }
 const today=()=>new Date().toISOString().slice(0,10);
 const compForm=id=>`<form class="comp" data-comp="${id}" novalidate><div class="g2"><div class="f"><label>Give for free</label><select name="what">
-  <option value="b10">10 boosts (24h)</option><option value="b30">30 boosts (24h)</option><option value="b100">100 boosts (24h)</option>
+  <option value="b10">10 boosts (12h)</option><option value="b30">30 boosts (24h)</option><option value="b100">100 boosts (48h)</option>
   <option value="spotlight">Spotlight card</option><option value="row">Promoted row</option><option value="banner">Banner ad</option><option value="side">Left side banner (3 days, 100 boosts, 50 votes)</option></select></div>
   <div class="f"><label>Days (placements and ads)</label><input name="days" type="number" min="1" max="90" value="7"></div></div>
   <div class="g2"><div class="f"><label>Start date</label><input name="start" type="date" value="${today()}" min="${today()}"></div>

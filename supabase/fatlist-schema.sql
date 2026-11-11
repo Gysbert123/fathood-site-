@@ -68,6 +68,8 @@ create table if not exists orders (
 create unique index if not exists orders_tx on orders (chain, tx_hash) where tx_hash is not null;
 create index if not exists orders_live on orders (status, end_at);
 alter table orders add column if not exists claim_id text;   -- for databases made before claims were paid
+alter table orders add column if not exists ad_image text;   -- left side banner picture
+alter table orders add column if not exists spot integer;    -- Spotlight spot 1-3
 
 create table if not exists votes (
   coin_id text not null references coins(id) on delete cascade,

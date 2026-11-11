@@ -414,7 +414,13 @@ function bootBooth(M) {
   function thumbBtn(label, src, on, cb, sceneId) {
     var b = el('button', 'bt-thumb' + (on ? ' on' : '')); b.type = 'button'; b.setAttribute('aria-label', label); b.title = label;
     if (sceneId) { var c = document.createElement('canvas'); c.width = c.height = 120; c.getContext('2d').drawImage(sceneCanvas(sceneId), 0, 0, 120, 120); b.appendChild(c); }
-    else { var im = new Image(); im.src = src; im.alt = ''; im.loading = 'lazy'; b.appendChild(im); }
+    else {
+      // small thumbnail for the button (full picture only loads once it's picked); falls back to the full picture
+      var im = new Image(), small = /^\/booth\/[^/]+\.webp$/.test(src || '') ? src.replace('/booth/', '/booth/thumbs/') : src;
+      im.alt = ''; im.loading = 'lazy'; im.decoding = 'async';
+      if (small !== src) im.onerror = function () { im.onerror = null; im.src = src; };
+      im.src = small; b.appendChild(im);
+    }
     var s = el('span', null); s.textContent = label; b.appendChild(s);
     b.addEventListener('click', cb); return b;
   }

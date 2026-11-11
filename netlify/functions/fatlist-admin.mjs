@@ -100,7 +100,14 @@ export default async (req, context) => {
         const days = PACKAGES[b.what].fixedDays || Number(b.days); if (!(days >= 1 && days <= 90)) return json({ error: "Pick 1 to 90 days." }, 400);
         const start = Date.parse(String(b.start || "") + "T00:00:00Z"); if (!(start >= Math.floor(now / DAY) * DAY)) return json({ error: "Pick a start date from today onwards." }, 400);
         const end = start + days * DAY;
-        if (await slotsTaken(b.what, start, end) >= PACKAGES[b.what].maxAtOnce) return json({ error: `All ${PACKAGES[b.what].name.toLowerCase()} slots are taken on those dates.` }, 409);
+        if (b.what === "spotlight") {
+          // free Spotlight: the first spot with room
+          let spot = 0;
+          for (let s = 1; s <= PACKAGES.spotlight.spots && !spot; s++) if (await slotsTaken("spotlight", start, end, s) < PACKAGES.spotlight.perSpot) spot = s;
+          if (!spot) return json({ error: "All Spotlight spots are full on those dates." }, 409);
+          await sql()`alter table orders add column if not exists spot integer`;
+          o.spot = spot;
+        } else if (await slotsTaken(b.what, start, end) >= PACKAGES[b.what].maxAtOnce) return json({ error: `All ${PACKAGES[b.what].name.toLowerCase()} slots are taken on those dates.` }, 409);
         Object.assign(o, { kind: "promo", pkg: b.what, days, start_at: new Date(start), end_at: new Date(end), label: `${PACKAGES[b.what].name}, ${days} day${days > 1 ? "s" : ""} (free)` });
         if (b.what === "banner") { o.ad_text = clean(b.adText, 70); if (o.ad_text.length < 8) return json({ error: "Write a banner message of 8 to 70 characters." }, 400); }
         if (b.what === "side") { o.ad_text = clean(b.adText, 70) || null; o.boosts = PACKAGES.side.boosts; await sql()`update coins set votes = votes + ${PACKAGES.side.votes} where id = ${c.id}`; }

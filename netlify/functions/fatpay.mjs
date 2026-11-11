@@ -7,7 +7,7 @@ const pad = (a) => "0x" + a.toLowerCase().replace(/^0x/, "").padStart(64, "0");
 const LIVE = ["approved", "indexed"];
 // orders.claim_id and orders.ad_image were added after launch; make sure the columns exist (cheap, once per warm function).
 let extraCols = null;
-const ensureCols = () => (extraCols ||= sql()`alter table orders add column if not exists claim_id text, add column if not exists ad_image text`
+const ensureCols = () => (extraCols ||= sql()`alter table orders add column if not exists claim_id text, add column if not exists ad_image text, add column if not exists spot integer`
   .catch((e) => { extraCols = null; throw e; }));
 
 async function rpc(chain, method, params) {
@@ -99,7 +99,14 @@ async function quote(b, context) {
     const start = Date.parse(String(b.start || "") + "T00:00:00Z"), today = Math.floor(now / DAY) * DAY;
     if (!(start >= today) || start > today + 90 * DAY) return json({ error: "Pick a start date between today and 90 days from now." }, 400);
     const end = start + days * DAY;
-    if (await slotsTaken(b.pkg, start, end) >= PACKAGES[b.pkg].maxAtOnce)
+    if (b.pkg === "spotlight") {
+      const spot = Number(b.spot), S = PACKAGES.spotlight;
+      if (!(spot >= 1 && spot <= S.spots)) return json({ error: "Pick spot 1, 2 or 3." }, 400);
+      if (await slotsTaken("spotlight", start, end, spot) >= S.perSpot)
+        return json({ error: `Spot ${spot} is full for those dates. Pick another spot or a later start date.` }, 409);
+      await ensureCols();
+      o.spot = spot;
+    } else if (await slotsTaken(b.pkg, start, end) >= PACKAGES[b.pkg].maxAtOnce)
       return json({ error: `All ${PACKAGES[b.pkg].name.toLowerCase()} slots are booked for those dates. Try a later start date.` }, 409);
     Object.assign(o, { pkg: b.pkg, days, start_at: new Date(start), end_at: new Date(end), usd, label: `${PACKAGES[b.pkg].name}, ${days} day${days > 1 ? "s" : ""}` });
   } else return json({ error: "Unknown order type." }, 400);

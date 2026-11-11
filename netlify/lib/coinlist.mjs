@@ -4,18 +4,20 @@
 // PROMOTE: placements booked by the day (US dollars per day).
 // ADVERTISE: the banner ad at the top of every Fat List and Hood Talk page.
 export const PACKAGES = {
-  spotlight: { group: "promote",   name: "Spotlight card", perDay: 349, maxAtOnce: 3,  blurb: "One of three big cards at the top of the Fat List." },
-  row:       { group: "promote",   name: "Promoted row",   perDay: 149, maxAtOnce: 10, blurb: "Pinned above the rankings with a lime highlight." },
+  // Spotlight: 3 card spots at the top. Each spot rotates between up to `perSpot` coins, `rotateSeconds` each. Buyers pick their spot.
+  spotlight: { group: "promote",   name: "Spotlight card", perDay: 74, spots: 3, perSpot: 4, rotateSeconds: 10, maxAtOnce: 12,
+               blurb: "A big card at the top of the Fat List. Pick spot 1, 2 or 3. Each spot takes turns between up to 4 coins, 10 seconds each." },
+  row:       { group: "promote",   name: "Promoted row",   perDay: 24.99,  maxAtOnce: 10, blurb: "Pinned above the Trending list with a lime highlight." },
   banner:    { group: "advertise", name: "Banner ad",      perDay: 199, maxAtOnce: 2,  blurb: "Your coin and a one-line message across the top of every page, including Hood Talk." },
   // A fixed package: one coin at a time gets the whole left side of every Fat List page for 3 days, plus boosts and votes.
   side:      { group: "advertise", name: "Left side banner", fixedUsd: 250, fixedDays: 3, perDay: 250, boosts: 100, votes: 50, maxAtOnce: 1,
                blurb: "Your banner down the whole left side of every Fat List and Hood Talk page for 3 days. Includes 100 boosts and 50 votes." },
 };
-// BOOST: instant push up the Trending ranking for 24 hours. Boosts stack.
+// BOOST: instant push up the Trending ranking for the pack's hours. Boosts stack.
 export const BOOSTS = {
-  b10:  { name: "10 boosts",  boosts: 10,  hours: 24, usd: 29 },
-  b30:  { name: "30 boosts",  boosts: 30,  hours: 24, usd: 79 },
-  b100: { name: "100 boosts", boosts: 100, hours: 24, usd: 199 },
+  b10:  { name: "10 boosts",  boosts: 10,  hours: 12, usd: 4.99 },
+  b30:  { name: "30 boosts",  boosts: 30,  hours: 24, usd: 9.99 },
+  b100: { name: "100 boosts", boosts: 100, hours: 48, usd: 19.99 },
 };
 export const VERIFY_USD = 49;                  // verified badge check by the team
 export const CLAIM_USD = 1.99;                 // claim an auto-listed coin and put your own logo, description and links on it
@@ -84,7 +86,7 @@ export function priceFor(pkg, days, test = false) {
   if (p.fixedDays) return days === p.fixedDays ? (test ? TEST_PRICE_USD : p.fixedUsd) : null;
   if (!(days in DISCOUNTS)) return null;
   if (test) return TEST_PRICE_USD;
-  return Math.round(p.perDay * days * (1 - DISCOUNTS[days]));
+  return Math.round(p.perDay * days * (1 - DISCOUNTS[days]) * 100) / 100; // keep cents (e.g. $24.99)
 }
 
 // ---------- TEST PRICES: the admin can switch every paid item to $1 for a real end-to-end test.
