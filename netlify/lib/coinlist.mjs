@@ -95,9 +95,9 @@ export async function testPrices() {
   try { const v = await getJSON("settings/test-prices"); return v && v.until > Date.now() ? v : null; } catch { return null; }
 }
 export async function setTestPrices(on) {
-  const v = on ? { at: Date.now(), until: Date.now() + TEST_PRICE_HOURS * 3600000 } : null;
-  await setJSON("settings/test-prices", v);
-  return v;
+  if (on) await setJSON("settings/test-prices", { at: Date.now(), until: Date.now() + TEST_PRICE_HOURS * 3600000 });
+  else await db().delete("settings/test-prices");
+  return testPrices(); // read back, so the admin always sees what is really stored
 }
 // The prices to show and charge right now.
 export function prices(test) {

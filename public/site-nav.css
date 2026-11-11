@@ -11,6 +11,7 @@
 .sn-a:hover,.sn-g:hover,.sn-g[aria-expanded="true"]{background:#2a2a2a;opacity:1}
 .sn-a[aria-current="page"]{background:#D4F53C;color:#111111}
 .sn-play{color:#D4F53C}
+.sn-links>li>.sn-a,.sn-links>li>.sn-g{text-transform:uppercase;letter-spacing:.4px}
 .sn-g::after{content:"";width:8px;height:8px;border:solid currentColor;border-width:0 3px 3px 0;transform:translateY(-2px) rotate(45deg);transition:transform .15s}
 .sn-g[aria-expanded="true"]::after{transform:translateY(2px) rotate(-135deg)}
 .sn-sub{display:none;position:absolute;top:calc(100% + 8px);left:0;min-width:220px;margin:0;padding:8px;list-style:none;background:#FFF8E7;border:3px solid #111111;border-radius:14px;box-shadow:6px 6px 0 #D4F53C}

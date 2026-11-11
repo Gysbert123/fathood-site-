@@ -192,8 +192,11 @@ window.FH=(function(){
   async function setTest(on){
     if(on&&!confirm("Switch EVERY paid item on the Fat List to $1 for everyone? It switches itself off after 2 hours."))return;
     $("#tp-msg").textContent=on?"Switching on…":"Switching off…";
-    try{var j=await FH.flApi("POST",{action:"testPrices",on:on});FH.setTest(j.testPrices);$("#tp-msg").textContent=on?"Test prices are on. Everything costs $1 now (the public page can take up to a minute to update).":"Normal prices are back."}
-    catch(err){$("#tp-msg").textContent=err.message}}
+    try{var j=await FH.flApi("POST",{action:"testPrices",on:on});FH.setTest(j.testPrices);
+      var now=!!(j.testPrices&&j.testPrices.on);
+      if(now!==on){$("#tp-msg").textContent="That didn’t take. Try again in a minute.";alert("Test prices didn’t switch "+(on?"on":"off")+". Try again in a minute.");return}
+      $("#tp-msg").textContent=on?"Test prices are on. Everything costs $1 now (the public page can take up to a minute to update).":"Normal prices are back. The public page can take up to a minute to show them."}
+    catch(err){$("#tp-msg").textContent=err.message;alert("Couldn’t switch test prices: "+err.message)}}
   $("#tp-on").addEventListener("click",function(){setTest(true)});
   $("#rv-go").addEventListener("click",async function(){
     if(!confirm("Set every coin back to 0 votes? This can’t be undone."))return;
