@@ -19,7 +19,7 @@ export const BOOSTS = {
   b30:  { name: "30 boosts",  boosts: 30,  hours: 24, usd: 9.99 },
   b100: { name: "100 boosts", boosts: 100, hours: 48, usd: 19.99 },
 };
-export const VERIFY_USD = 49;                  // verified badge check by the team
+export const VERIFY_USD = 4.99;                 // verified badge check by the team
 export const CLAIM_USD = 1.99;                 // claim an auto-listed coin and put your own logo, description and links on it
 export const DISCOUNTS = { 1: 0, 3: 0, 7: 0.10, 14: 0.15 };
 export const ORDER_MINUTES = 30;               // how long a price quote is valid

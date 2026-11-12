@@ -41,7 +41,8 @@ export default async (req, context) => {
       }
       const q = clean(new URL(req.url).searchParams.get("q"), 90).replace(/^\$/, "");
       const like = `%${q.replace(/[%_\\]/g, "\\$&")}%`;
-      const [pending, live, claims, orders, posts, [stats]] = await Promise.all([
+      // everything at once: one slow step after another ran past Netlify's 10-second limit
+      const [pending, live, claims, orders, posts, [stats], tickets, [vdays, vsrc], tp] = await Promise.all([
         sql()`select * from coins where status = 'pending' or (verify_paid and not verified and status not in ('rejected', 'removed')) order by verify_paid desc, created_at desc limit 300`,
         q ? sql()`select * from coins where status in ('approved', 'indexed') and (address_lc = ${q.toLowerCase()} or symbol ilike ${like} or name ilike ${like}) order by liquidity desc nulls last limit 100`
           : sql()`select * from coins where status = 'approved' order by coalesce(approved_at, created_at) desc limit 200`,
@@ -50,16 +51,14 @@ export default async (req, context) => {
         sql()`select id, title, author, reports, removed, created_at, disclosure, left(body, 300) as excerpt from posts order by reports desc, created_at desc limit 150`,
         sql()`select (select count(*) from coins where status = 'approved')::int as approved, (select count(*) from coins where status = 'indexed')::int as indexed,
                (select coalesce(sum(usd), 0) from orders where status = 'paid' and not comped and paid_at > now() - interval '30 days')::float as revenue30`,
+        ensureTickets().then(() => sql()`(select * from tickets where status = 'open' order by created_at limit 200)
+          union all (select * from tickets where status <> 'open' order by closed_at desc nulls last limit 100)`),
+        ensureVisits().then(() => Promise.all([
+          sql()`select to_char(day, 'YYYY-MM-DD') as day, visits, visitors from visit_days where day > current_date - 30 order by day`,
+          sql()`select kind, name, sum(n)::int as n from visit_src where day > current_date - 30 group by kind, name order by n desc limit 40`,
+        ])),
+        testPrices(),
       ]);
-      await ensureTickets();
-      const tickets = await sql()`(select * from tickets where status = 'open' order by created_at limit 200)
-        union all (select * from tickets where status <> 'open' order by closed_at desc nulls last limit 100)`;
-      await ensureVisits();
-      const [vdays, vsrc] = await Promise.all([
-        sql()`select to_char(day, 'YYYY-MM-DD') as day, visits, visitors from visit_days where day > current_date - 30 order by day`,
-        sql()`select kind, name, sum(n)::int as n from visit_src where day > current_date - 30 group by kind, name order by n desc limit 40`,
-      ]);
-      const tp = await testPrices();
       return json({
         visits: { days: vdays, sources: vsrc.filter((r) => r.kind === "src").slice(0, 12), pages: vsrc.filter((r) => r.kind === "page") },
         testPrices: tp ? { on: true, until: tp.until } : { on: false }, testHours: TEST_PRICE_HOURS,

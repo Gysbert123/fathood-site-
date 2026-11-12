@@ -8,7 +8,7 @@ export function sql() {
     if (!url) throw new Error("DATABASE_URL is not set");
     client = postgres(url, {
       prepare: false,                      // required by Supabase's connection pooler
-      max: 3, idle_timeout: 20, connect_timeout: 10,
+      max: 5, idle_timeout: 20, connect_timeout: 10,
       ssl: /localhost|127\.0\.0\.1/.test(url) ? false : "require",
     });
   }

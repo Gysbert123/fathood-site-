@@ -5,6 +5,9 @@ import { sql } from "./db.mjs";
 let ready = null;
 export function ensureVisits() {
   return (ready ||= (async () => {
+    // one quick check; only build the tables the very first time (the database is slow, so skip needless steps)
+    const [r] = await sql()`select to_regclass('visit_days') is not null and to_regclass('visit_src') is not null and to_regclass('visit_seen') is not null as ok`;
+    if (r.ok) return;
     await sql()`create table if not exists visit_days (day date primary key, visits integer not null default 0, visitors integer not null default 0)`;
     await sql()`create table if not exists visit_src (day date not null, kind text not null, name text not null, n integer not null default 0, primary key (day, kind, name))`;
     // today's visitor fingerprints (a one-way hash); older days are deleted, only the daily totals stay

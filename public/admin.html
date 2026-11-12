@@ -341,9 +341,12 @@ window.FH=(function(){
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let data={listings:[],orders:[],claims:[],posts:[]},tab="add",liveQ="",loading=null;
-async function api(method,body,q){
+async function api(method,body,q,again){
   const r=await fetch("/api/fatlist-admin"+(q?"?q="+encodeURIComponent(q):""),{method,headers:{"x-admin-key":FH.key,"content-type":"application/json"},body:body?JSON.stringify(body):undefined});
-  const j=await r.json().catch(()=>({}));if(r.status===401){FH.logout("Wrong password.")}if(!r.ok)throw new Error(j.error||(r.status===404?"The Fat List only works on the live site.":"Request failed"));return j;
+  const j=await r.json().catch(()=>({}));if(r.status===401){FH.logout("Wrong password.")}
+  // the server was waking up and timed out: loading is safe to repeat, so try once more
+  if(r.status>=500&&!j.error&&method==="GET"&&!again)return api(method,body,q,true);
+  if(!r.ok)throw new Error(j.error||(r.status===404?"The Fat List only works on the live site.":r.status>=500?"The server was too slow to answer. Press Refresh to try again.":"Request failed"));return j;
 }
 async function load(){
   if(!FH.key)return;

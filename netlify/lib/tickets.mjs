@@ -15,6 +15,8 @@ const MAX_PIC_BYTES = 450000;
 let ready = null;
 export function ensureTickets() {
   return (ready ||= (async () => {
+    const [r] = await sql()`select to_regclass('tickets') is not null as ok`;
+    if (r.ok) return;
     await sql()`create table if not exists tickets (
       id text primary key, topic text not null, name text, contact text not null, coin text, tx text, order_id text,
       body text not null, links text[] not null default '{}', pics integer not null default 0,
