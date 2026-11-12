@@ -10,7 +10,7 @@ const ms = (d) => (d ? new Date(d).getTime() : null);
 const listing = (r) => ({ id: r.id, name: r.name, symbol: r.symbol, chain: r.chain, address: r.address, image: r.image, description: r.description,
   website: r.website, x: r.x, telegram: r.telegram, discord: r.discord, contact: r.contact, status: r.status, source: r.source,
   verified: r.verified, verifyPaid: r.verify_paid, createdAt: ms(r.created_at), liquidityAtListing: r.liquidity_at_listing, liquidity: r.liquidity });
-const order = (o) => ({ id: o.id, kind: o.kind, pkg: o.pkg, label: o.label, coin: o.coin_label, usd: Number(o.usd), start: ms(o.start_at), end: ms(o.end_at),
+const order = (o) => ({ id: o.id, kind: o.kind, pkg: o.pkg, spot: o.spot == null ? null : Number(o.spot), label: o.label, coin: o.coin_label, usd: Number(o.usd), start: ms(o.start_at), end: ms(o.end_at),
   adText: o.ad_text, amount: o.amount, token: o.token, chain: o.chain, payer: o.payer, paidAt: ms(o.paid_at), comped: o.comped, pulled: o.pulled,
   explorer: o.tx_hash ? (PAY_CHAINS[o.chain]?.explorer || "https://solscan.io/tx/") + o.tx_hash : null, live: !o.pulled && ms(o.start_at) <= Date.now() && ms(o.end_at) > Date.now() });
 const bust = () => db().delete("snapshot/board");
@@ -171,9 +171,14 @@ export default async (req, context) => {
         const start = Date.parse(String(b.start || "") + "T00:00:00Z"); if (!(start >= Math.floor(now / DAY) * DAY)) return json({ error: "Pick a start date from today onwards." }, 400);
         const end = start + days * DAY;
         if (b.what === "spotlight") {
-          // free Spotlight: the first spot with room
+          // free Spotlight: the spot the admin picked, or the first spot with room
           let spot = 0;
-          for (let s = 1; s <= PACKAGES.spotlight.spots && !spot; s++) if (await slotsTaken("spotlight", start, end, s) < PACKAGES.spotlight.perSpot) spot = s;
+          const want = Number(b.spot) || 0;
+          if (want) {
+            if (!(want >= 1 && want <= PACKAGES.spotlight.spots)) return json({ error: "Pick spot 1, 2 or 3." }, 400);
+            if (await slotsTaken("spotlight", start, end, want) >= PACKAGES.spotlight.perSpot) return json({ error: `Spot ${want} is full on those dates. Pick another spot.` }, 409);
+            spot = want;
+          } else for (let s = 1; s <= PACKAGES.spotlight.spots && !spot; s++) if (await slotsTaken("spotlight", start, end, s) < PACKAGES.spotlight.perSpot) spot = s;
           if (!spot) return json({ error: "All Spotlight spots are full on those dates." }, 409);
           await sql()`alter table orders add column if not exists spot integer`;
           o.spot = spot;
@@ -194,6 +199,18 @@ export default async (req, context) => {
       }
       await bust();
       return json({ ok: true });
+    }
+    if (b.action === "setSpot") {
+      // move a Spotlight card (paid or free) to another spot
+      const spot = Number(b.spot), S = PACKAGES.spotlight;
+      if (!(spot >= 1 && spot <= S.spots)) return json({ error: "Pick spot 1, 2 or 3." }, 400);
+      const [o] = ID_RE.test(id) ? await sql()`select id, start_at, end_at, coalesce((to_jsonb(orders) ->> 'spot')::int, 1) as spot from orders where id = ${id} and kind = 'promo' and pkg = 'spotlight'` : [];
+      if (!o) return json({ error: "That isn’t a Spotlight card." }, 404);
+      if (o.spot === spot) return json({ ok: true });
+      if (await slotsTaken("spotlight", new Date(o.start_at).getTime(), new Date(o.end_at).getTime(), spot) >= S.perSpot) return json({ error: `Spot ${spot} is full on those dates.` }, 409);
+      await sql()`alter table orders add column if not exists spot integer`;
+      await sql()`update orders set spot = ${spot} where id = ${id}`;
+      await bust(); return json({ ok: true });
     }
     if (b.action === "pullAd") { await sql()`update orders set pulled = true where id = ${id}`; await bust(); return json({ ok: true }); }
     if (b.action === "removePost" || b.action === "restorePost") {

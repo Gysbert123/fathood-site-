@@ -412,12 +412,15 @@ function wireAdd(){
 }
 const today=()=>new Date().toISOString().slice(0,10);
 let fix=null; // the help ticket being fixed, if any
+// how many Spotlight cards are running in a spot right now (each spot takes turns between up to 4)
+const spotUse=s=>(data.orders||[]).filter(o=>o.pkg==="spotlight"&&o.live&&!o.pulled&&(o.spot||1)===s).length;
 const compForm=id=>`<form class="comp" data-comp="${id}" novalidate><div class="g2"><div class="f"><label>Give for free</label><select name="what">
   <option value="b10">10 boosts (12h)</option><option value="b30">30 boosts (24h)</option><option value="b100">100 boosts (48h)</option>
   <option value="spotlight">Spotlight card</option><option value="row">Promoted row</option><option value="banner">Banner ad</option><option value="side">Left side banner (3 days, 100 boosts, 50 votes)</option></select></div>
   <div class="f"><label>Days (placements and ads)</label><input name="days" type="number" min="1" max="90" value="7"></div></div>
   <div class="g2"><div class="f"><label>Start date</label><input name="start" type="date" value="${today()}" min="${today()}"></div>
   <div class="f"><label>Banner message (ads only)</label><input name="adText" maxlength="70"></div></div>
+  <div class="f" data-spotpick hidden><label>Spotlight spot</label><select name="spot"><option value="">First spot with room</option>${[1,2,3].map(s=>`<option value="${s}">Spot ${s} (${spotUse(s)} of 4 in use now)</option>`).join("")}</select></div>
   <div class="f" data-sideimg hidden><label>Left side banner picture (optional, tall works best)</label><input type="file" accept="image/png,image/jpeg,image/webp" data-adimg></div>
   <details ${fix?"open":""} style="margin-bottom:12px"><summary style="font-weight:700;cursor:pointer">They already paid? (from a help ticket)</summary>
    <p class="meta">Fill this in when someone paid but it didn’t show up. It then counts as a sale, and the same transaction can’t be used again.</p>
@@ -452,6 +455,7 @@ function render(){
     el.innerHTML=o.length?o.map(x=>`<div class="card"><h3>${x.comped?"FREE":"$"+x.usd} · ${esc(x.label)}</h3><p>${esc(x.coin)}${x.start?` · ${day(x.start)} to ${day(x.end-1)}`:""}${x.live?'<span class="tag">LIVE</span>':""}${x.pulled?'<span class="tag" style="background:#eee">PULLED</span>':""}</p>
       ${x.adText?`<p><b>Banner:</b> ${esc(x.adText)}</p>`:""}
       ${x.comped?`<p class="meta">Given free by admin · ${ago(x.paidAt)}</p>`:`<p class="meta">Paid ${esc(x.amount)} ${esc(x.token)} on ${esc(x.chain)} · ${ago(x.paidAt)} · from ${esc(x.payer)}</p><p class="meta"><a href="${esc(x.explorer)}" target="_blank" rel="noopener">View transaction</a></p>`}
+      ${x.pkg==="spotlight"&&!x.pulled?`<p><b>Spot ${x.spot||1}</b> · move to: ${[1,2,3].filter(s=>s!==(x.spot||1)).map(s=>`<button class="ghost" data-a="setSpot" data-id="${x.id}" data-spot="${s}">Spot ${s}</button>`).join(" ")}</p>`:""}
       ${x.live&&!x.pulled?`<div class="row" style="margin-top:10px"><button class="no" data-a="pullAd" data-id="${x.id}">Take it down</button></div>`:""}</div>`).join(""):`<div class="empty">${tab==="ads"?"No ads or paid spots running.":"No payments yet."}</div>`;
     return;
   }
@@ -477,7 +481,7 @@ function render(){
       `<button class="ok" data-a="approve" data-id="${l.id}">Approve after all</button><button class="no" data-a="delete" data-id="${l.id}">Delete for good</button>`}</div></div>`).join("");
 }
 $("#list").addEventListener("change",async e=>{
-  const w=e.target.closest("select[name=what]");if(w){const f=w.closest("form");f.querySelector("[data-sideimg]").hidden=w.value!=="side";return}
+  const w=e.target.closest("select[name=what]");if(w){const f=w.closest("form");f.querySelector("[data-sideimg]").hidden=w.value!=="side";f.querySelector("[data-spotpick]").hidden=w.value!=="spotlight";return}
   const i=e.target.closest("[data-setlogo]");if(!i||!i.files[0])return;
   try{const logo=await shrinkLogo(i.files[0]);await api("POST",{action:"setLogo",id:i.dataset.setlogo,logo});$("#msg").textContent="Logo updated.";await load()}
   catch(err){$("#msg").textContent=err.message}
@@ -489,7 +493,7 @@ $("#list").addEventListener("submit",async e=>{
     catch(err){$("#msg").textContent=err.message;btn.disabled=false}return}
   const f=e.target.closest("[data-comp]");if(!f)return;e.preventDefault();const fd=new FormData(f);const btn=f.querySelector("button.ok");btn.disabled=true;
   try{let adImage;const fi=f.querySelector("[data-adimg]");if(fd.get("what")==="side"&&fi.files[0])adImage=await shrinkBanner(fi.files[0]);
-    await api("POST",{action:"comp",id:f.dataset.comp,what:fd.get("what"),days:+fd.get("days"),start:fd.get("start"),adText:fd.get("adText"),adImage,paidUsd:fd.get("paidUsd")||0,tx:(fd.get("tx")||"").trim(),ticket:fd.get("ticket")||undefined});
+    await api("POST",{action:"comp",id:f.dataset.comp,what:fd.get("what"),days:+fd.get("days"),start:fd.get("start"),spot:+fd.get("spot")||undefined,adText:fd.get("adText"),adImage,paidUsd:fd.get("paidUsd")||0,tx:(fd.get("tx")||"").trim(),ticket:fd.get("ticket")||undefined});
     const wasFix=!!fd.get("ticket");if(wasFix)fix=null;
     $("#msg").textContent=wasFix?"Done. It’s live on the Fat List and the ticket is marked as done. Let them know.":"Done. It’s live on the Fat List.";await load()}
   catch(err){$("#msg").textContent=err.message;btn.disabled=false}
@@ -516,8 +520,8 @@ $("#list").onclick=async e=>{
   if(a==="ban"&&!confirm("Ban this wallet from Hood Talk and remove all its posts?"))return;
   if(a==="pullAd"&&!confirm("Take this paid ad down now? Refunds are up to you."))return;
   b.disabled=true;
-  try{await api("POST",a==="ban"?{action:a,address:b.dataset.addr}:{action:a,id:b.dataset.id});
-    $("#msg").textContent={approve:"Approved. It’s live.",reject:"Rejected.",remove:"Taken down.",delete:"Deleted.",verify:"Blue tick added.",unverify:"Blue tick removed.",pullAd:"Ad taken down.",approveClaim:"Claim approved. The details are live.",rejectClaim:"Claim rejected.",removePost:"Post removed.",restorePost:"Post restored.",ban:"Wallet banned and its posts removed."}[a];await load()}
+  try{await api("POST",a==="ban"?{action:a,address:b.dataset.addr}:a==="setSpot"?{action:a,id:b.dataset.id,spot:+b.dataset.spot}:{action:a,id:b.dataset.id});
+    $("#msg").textContent={approve:"Approved. It’s live.",reject:"Rejected.",remove:"Taken down.",delete:"Deleted.",verify:"Blue tick added.",unverify:"Blue tick removed.",pullAd:"Ad taken down.",setSpot:"Moved. It shows in the new spot within a minute.",approveClaim:"Claim approved. The details are live.",rejectClaim:"Claim rejected.",removePost:"Post removed.",restorePost:"Post restored.",ban:"Wallet banned and its posts removed."}[a];await load()}
   catch(err){$("#msg").textContent=err.message;b.disabled=false}
 };
 // Left side banner picture: at most 600 px wide, under ~290 KB.
