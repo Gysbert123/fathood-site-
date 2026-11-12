@@ -691,7 +691,12 @@ async function showCoin(id){
   if(!c&&!DEMO){el.innerHTML=`<p class="empty">Loading…</p>`;const j=await api("/api/fatlist?coin="+encodeURIComponent(id)).catch(()=>({}));if(j.coin){c=j.coin;status=j.coin.status}}
   if(!c){el.innerHTML=`<a class="back" href="#coins">← The Fat List</a><div class="empty box">That coin isn’t on the Fat List.</div>`;return}
   const live=status==="approved";
-  const chart=c.pairAddress&&!DEMO?`<iframe class="chart" title="${esc(c.name)} price chart" loading="lazy" src="https://dexscreener.com/${esc(c.chain)}/${esc(c.pairAddress)}?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=60"></iframe>`:`<div class="chart" style="display:grid;place-items:center;font-weight:700">${DEMO?"Live DexScreener chart shows here":"No trading pair found yet"}</div>`;
+  // DEX Screener's chart when it lists the coin, otherwise GeckoTerminal's; no chart box at all when neither has a trading pool yet
+  const GTN={robinhood:"robinhood",solana:"solana",ethereum:"eth",base:"base",bsc:"bsc",arbitrum:"arbitrum",polygon:"polygon_pos",avalanche:"avax",sui:"sui-network",ton:"ton",tron:"tron",hyperevm:"hyperevm"};
+  const chart=DEMO?`<div class="chart" style="display:grid;place-items:center;font-weight:700">Live DexScreener chart shows here</div>`
+    :c.pairAddress&&/dexscreener\.com/.test(c.url||"")?`<iframe class="chart" title="${esc(c.name)} price chart" loading="lazy" src="https://dexscreener.com/${esc(c.chain)}/${esc(c.pairAddress)}?embed=1&loadChartSettings=0&trades=0&tabs=0&info=0&chartLeftToolbar=0&chartTheme=light&theme=light&chartStyle=1&chartType=usd&interval=60"></iframe>`
+    :c.pairAddress&&GTN[c.chain]?`<iframe class="chart" title="${esc(c.name)} price chart" loading="lazy" src="https://www.geckoterminal.com/${GTN[c.chain]}/pools/${esc(c.pairAddress)}?embed=1&info=0&swaps=0&grayscale=0&light_chart=1"></iframe>`
+    :"";
   el.innerHTML=`<a class="back" href="#coins">← The Fat List</a>
     <div class="coinhead">${av(c)}<div><h1>${esc(c.name)}${vb(c)}</h1><div style="font-weight:700;margin-top:6px">$${esc(c.symbol)} on ${esc(chainName(c.chain))}${c.promo?' <span class="badge">Promoted</span>':""}${c.boosts?` <span class="boost">⚡${c.boosts} boosts</span>`:""}${!live?' <span class="badge" style="background:var(--soft)">In review</span>':""}</div></div>
       ${live?`<button class="vote num" id="cv" aria-pressed="${voted.has(c.id)}" title="${voted.has(c.id)?"You voted. Right-click (or press and hold) to take your vote back.":"Vote"}" style="margin-left:auto;font-size:18px;padding:8px 14px">▲ ${c.votes||0}</button>`:""}</div>
@@ -699,7 +704,7 @@ async function showCoin(id){
     <div class="grid5 num"><div class="stat"><span>Price</span><b>${fP(c.price)}</b></div><div class="stat"><span>24h</span><b class="${(c.change||0)>=0?"up":"down"}">${fC(c.change)}</b></div>
       <div class="stat"><span>Market cap</span><b>${fM(c.mcap)}</b></div><div class="stat"><span>Liquidity</span><b>${fM(c.liquidity)}</b></div><div class="stat"><span>24h volume</span><b>${fM(c.volume)}</b></div></div>
     <div class="two"><div>
-      <div class="box panel">${chart}</div>
+      ${chart?`<div class="box panel">${chart}</div>`:""}
       <div class="box panel"><h2>About ${esc(c.name)}</h2><p style="white-space:pre-line;margin:0 0 14px">${esc(c.description||"No description yet.")}</p>
         <label>Contract address</label><div class="addr"><code>${esc(c.address)}</code><button class="mini" id="cp">Copy</button></div>
         <div class="links">${link(c.url,"DexScreener")}${link(c.website,"Website")}${link(c.x,"X")}${link(c.telegram,"Telegram")}${link(c.discord,"Discord")}</div>

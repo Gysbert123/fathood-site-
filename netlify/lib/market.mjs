@@ -1,5 +1,5 @@
 import { sql, toCoin, VISIBLE, LIVE_EXTRAS, liveAds, liveSide } from "./db.mjs";
-import { db, cleanUrl, INDEX_MIN_LIQUIDITY, fakeVolume } from "./coinlist.mjs";
+import { db, cleanUrl, INDEX_MIN_LIQUIDITY, fakeVolume, GT_NETWORK } from "./coinlist.mjs";
 
 const same = (a, b) => String(a || "").toLowerCase() === String(b || "").toLowerCase();
 
@@ -38,6 +38,10 @@ export async function refreshMarket({ budgetMs = 22000 } = {}) {
     }
   }
   await Promise.all(Array.from({ length: 6 }, worker));
+  // Coins DEX Screener doesn't list yet: try GeckoTerminal (it allows about 30 calls a minute, so only a few per run).
+  const byId = new Map(coins.map((c) => [c.id, c]));
+  const gt = await geckoPrices(updates.filter((u) => u.length === 11).map((u) => byId.get(u[0])));
+  for (const row of gt) { const i = updates.findIndex((u) => u[0] === row[0]); if (i >= 0) updates[i] = row; }
   const found = updates.filter((u) => u.length === 10).map((u) => u.map((v) => (v == null ? null : String(v))));
   const missing = updates.filter((u) => u.length === 11).map((u) => u[0]);
   if (found.length) {
@@ -53,6 +57,38 @@ export async function refreshMarket({ budgetMs = 22000 } = {}) {
   return { checked: coins.length, updated: found.length, missing: missing.length, fake: fakes.length, ms: Date.now() - t0 };
 }
 const num = (v) => (v == null || v === "" || isNaN(Number(v)) ? null : Number(v));
+
+// Prices from GeckoTerminal for up to 4×30 coins. Returns rows in the same shape as the DEX Screener ones
+// (with no DEX Screener link, so the coin page shows GeckoTerminal's chart instead).
+async function geckoPrices(list, maxCalls = 4) {
+  const out = [], byChain = {};
+  for (const c of list) if (c && GT_NETWORK[c.chain]) (byChain[c.chain] ||= []).push(c);
+  let calls = 0;
+  for (const [chain, cs] of Object.entries(byChain)) {
+    for (let i = 0; i < cs.length && calls < maxCalls; i += 30, calls++) {
+      const chunk = cs.slice(i, i + 30);
+      try {
+        const r = await fetch(`https://api.geckoterminal.com/api/v2/networks/${GT_NETWORK[chain]}/tokens/multi/${chunk.map((c) => c.address).join(",")}?include=top_pools`,
+          { headers: { accept: "application/json" }, signal: AbortSignal.timeout(8000) });
+        if (r.status === 429) return out;
+        if (!r.ok) continue;
+        const j = await r.json();
+        const pools = Object.fromEntries((j.included || []).filter((x) => x.type === "pool").map((x) => [x.id, x.attributes || {}]));
+        for (const t of j.data || []) {
+          const a = t.attributes || {}, c = chunk.find((x) => same(x.address, a.address));
+          if (!c) continue;
+          const pool = pools[t.relationships?.top_pools?.data?.[0]?.id];
+          const price = num(a.price_usd) ?? (pool ? num(pool.base_token_price_usd) : null);
+          if (price == null && !num(a.total_reserve_in_usd)) continue; // nothing useful yet
+          const img = cleanUrl(a.image_url);
+          out.push([c.id, price, pool ? num(pool.price_change_percentage?.h24) : null, num(a.market_cap_usd) ?? num(a.fdv_usd), num(a.total_reserve_in_usd),
+            num(a.volume_usd?.h24), pool?.pool_created_at || null, pool?.address || null, null, img && !/missing/i.test(img) ? img : null]);
+        }
+      } catch {}
+    }
+  }
+  return out;
+}
 
 // The board everybody loads: top coins by trending score, plus top gainers, newest and most voted.
 export async function buildSnapshot() {
