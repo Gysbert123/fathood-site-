@@ -46,46 +46,71 @@ export default async (req, context) => {
       const like = `%${q.replace(/[%_\\]/g, "\\$&")}%`;
       const liveQ = () => q ? sql()`select * from coins where status in ('approved', 'indexed') and (address_lc = ${q.toLowerCase()} or symbol ilike ${like} or name ilike ${like}) order by liquidity desc nulls last limit 100`
         : sql()`select * from coins where status = 'approved' order by coalesce(approved_at, created_at) desc limit 200`;
-      // coin search on its own: small and fast
-      if (sp.get("only") === "live") return json({ listings: (await liveQ()).map(listing) });
-      // everything at once, timed: if the database is slow, say which part instead of hitting Netlify's 10-second limit
-      const T0 = Date.now(), took = {};
-      const t = (k, p) => Promise.resolve(p).then((v) => { took[k] = Date.now() - T0; return v; });
-      let timer;
-      const all = Promise.all([
-        t("coins to review", sql()`select * from coins where status = 'pending' or (verify_paid and not verified and status not in ('rejected', 'removed')) order by verify_paid desc, created_at desc limit 300`),
-        t("live coins", liveQ()),
-        t("claims", sql()`select cl.*, c.name as coin_name, c.symbol as coin_symbol, c.chain, c.address, c.image as coin_image, c.liquidity from claims cl join coins c on c.id = cl.coin_id where cl.status = 'pending' order by cl.created_at`),
-        t("payments", sql()`select * from orders where status = 'paid' order by paid_at desc limit 300`),
-        t("Hood Talk", sql()`select id, title, author, reports, removed, created_at, disclosure, left(body, 300) as excerpt from posts order by reports desc, created_at desc limit 150`),
-        t("totals", sql()`select (select count(*) from coins where status = 'approved')::int as approved, (select count(*) from coins where status = 'indexed')::int as indexed,
-               (select coalesce(sum(usd), 0) from orders where status = 'paid' and not comped and paid_at > now() - interval '30 days')::float as revenue30`),
-        t("help tickets", ensureTickets().then(() => sql()`(select * from tickets where status = 'open' order by created_at limit 200)
-          union all (select * from tickets where status <> 'open' order by closed_at desc nulls last limit 100)`)),
-        t("visits", ensureVisits().then(() => Promise.all([
-          sql()`select to_char(day, 'YYYY-MM-DD') as day, visits, visitors from visit_days where day > current_date - 30 order by day`,
-          sql()`select kind, name, sum(n)::int as n from visit_src where day > current_date - 30 group by kind, name order by n desc limit 40`,
-        ]))),
-        t("test prices", testPrices()),
-      ]);
-      const NAMES = ["coins to review", "live coins", "claims", "payments", "Hood Talk", "totals", "help tickets", "visits", "test prices"];
-      const res = await Promise.race([all, new Promise((r) => { timer = setTimeout(() => r(null), 8000); })]);
-      clearTimeout(timer);
-      if (!res) {
-        const slow = NAMES.filter((k) => !(k in took));
-        console.error("admin load slow", took, slow);
-        all.catch(() => {});
-        return json({ error: `The database is slow right now (still waiting for: ${slow.join(", ")}). Press Try again.`, slow, took }, 503);
+      // coin search on its own: small and fast. Finds coins in every state, including taken-down ones, so they can be put back.
+      if (sp.get("only") === "live") {
+        if (!q) return json({ listings: (await liveQ()).map(listing) });
+        const rows = await sql()`select * from coins where (address_lc = ${q.toLowerCase()} or symbol ilike ${like} or name ilike ${like})
+          order by (status in ('approved', 'indexed')) desc, liquidity desc nulls last limit 100`;
+        return json({ listings: rows.map(listing) });
       }
-      const [pending, live, claims, orders, posts, [stats], tickets, [vdays, vsrc], tp] = res;
-      return json({
-        visits: { days: vdays, sources: vsrc.filter((r) => r.kind === "src").slice(0, 12), pages: vsrc.filter((r) => r.kind === "page") },
-        testPrices: tp ? { on: true, until: tp.until } : { on: false }, testHours: TEST_PRICE_HOURS,
-        listings: [...pending, ...live].map(listing), stats,
-        claims: claims.map((c) => ({ id: c.id, coinId: c.coin_id, name: c.coin_name, symbol: c.coin_symbol, chain: c.chain, address: c.address, liquidity: c.liquidity, image: c.coin_image, data: c.data, createdAt: ms(c.created_at) })),
-        orders: orders.map(order), tickets: tickets.map(ticket),
-        posts: posts.map((p) => ({ id: p.id, title: p.title, author: p.author, reports: p.reports, removed: p.removed, createdAt: ms(p.created_at), disclosure: p.disclosure, excerpt: p.excerpt })),
-      });
+      // The admin page loads in three parts at once (?part=coins|orders|extra), each its own request,
+      // so one slow part can't stop the rest. Each part is timed and answers before Netlify's 10-second limit.
+      const JOBS = {
+        coins: {
+          pending: () => sql()`(select * from coins where status = 'pending' order by created_at desc limit 300)
+            union all (select * from coins where verify_paid and not verified and status in ('approved', 'indexed') limit 100)`,
+          live: liveQ,
+          claims: () => sql()`select cl.*, c.name as coin_name, c.symbol as coin_symbol, c.chain, c.address, c.image as coin_image, c.liquidity from claims cl join coins c on c.id = cl.coin_id where cl.status = 'pending' order by cl.created_at`,
+          stats: () => sql()`select (select count(*) from coins where status = 'approved')::int as approved, (select count(*) from coins where status = 'indexed')::int as indexed,
+               (select coalesce(sum(usd), 0) from orders where status = 'paid' and not comped and paid_at > now() - interval '30 days')::float as revenue30`,
+          rejected: () => sql()`select * from coins where status in ('rejected', 'removed') and source <> 'indexed' order by created_at desc limit 100`,
+        },
+        orders: {
+          orders: () => sql()`select * from orders where status = 'paid' order by paid_at desc limit 300`,
+          posts: () => sql()`select id, title, author, reports, removed, created_at, disclosure, left(body, 300) as excerpt from posts order by reports desc, created_at desc limit 150`,
+          tp: () => testPrices(),
+        },
+        extra: {
+          tickets: () => ensureTickets().then(() => sql()`(select * from tickets where status = 'open' order by created_at limit 200)
+            union all (select * from tickets where status <> 'open' order by closed_at desc nulls last limit 100)`),
+          visits: () => ensureVisits().then(() => Promise.all([
+            sql()`select to_char(day, 'YYYY-MM-DD') as day, visits, visitors from visit_days where day > current_date - 30 order by day`,
+            sql()`select kind, name, sum(n)::int as n from visit_src where day > current_date - 30 group by kind, name order by n desc limit 40`,
+          ])),
+        },
+      };
+      const LABEL = { pending: "coins to review", live: "live coins", claims: "claims", stats: "totals", rejected: "rejected coins", orders: "payments", posts: "Hood Talk", tp: "test prices", tickets: "help tickets", visits: "visits" };
+      const part = sp.get("part");
+      const jobs = JOBS[part] || Object.assign({}, ...Object.values(JOBS));
+      const T0 = Date.now(), took = {}, out = {};
+      const all = Promise.all(Object.entries(jobs).map(([k, f]) => f().then((v) => { out[k] = v; took[k] = Date.now() - T0; })));
+      let timer;
+      const done = await Promise.race([all.then(() => true), new Promise((r) => { timer = setTimeout(() => r(false), 8500); })]);
+      clearTimeout(timer);
+      if (!done) {
+        all.catch(() => {});
+        const slow = Object.keys(jobs).filter((k) => !(k in took));
+        console.error("admin load slow", part, took, slow);
+        return json({ error: `The database is slow right now (still waiting for: ${slow.map((k) => LABEL[k]).join(", ")}).`, slow, took }, 503);
+      }
+      const r = {};
+      if ("pending" in out) {
+        const seen = new Set();
+        r.listings = [...out.pending, ...out.live, ...out.rejected].filter((c) => !seen.has(c.id) && seen.add(c.id)).map(listing);
+        r.stats = out.stats[0];
+        r.claims = out.claims.map((c) => ({ id: c.id, coinId: c.coin_id, name: c.coin_name, symbol: c.coin_symbol, chain: c.chain, address: c.address, liquidity: c.liquidity, image: c.coin_image, data: c.data, createdAt: ms(c.created_at) }));
+      }
+      if ("orders" in out) {
+        r.orders = out.orders.map(order);
+        r.posts = out.posts.map((p) => ({ id: p.id, title: p.title, author: p.author, reports: p.reports, removed: p.removed, createdAt: ms(p.created_at), disclosure: p.disclosure, excerpt: p.excerpt }));
+        r.testPrices = out.tp ? { on: true, until: out.tp.until } : { on: false }; r.testHours = TEST_PRICE_HOURS;
+      }
+      if ("tickets" in out) {
+        r.tickets = out.tickets.map(ticket);
+        const [vdays, vsrc] = out.visits;
+        r.visits = { days: vdays, sources: vsrc.filter((x) => x.kind === "src").slice(0, 12), pages: vsrc.filter((x) => x.kind === "page") };
+      }
+      return json(r);
     }
     if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
     const b = await req.json().catch(() => ({}));

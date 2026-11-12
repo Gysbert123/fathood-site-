@@ -60,6 +60,7 @@ async function submit(b, context) {
   const existing = CHAIN_NAMES[chain] || found.found ? await findExisting(chain, addr) : null;
   if (existing) {
     // Coins we indexed automatically can be claimed by their team; the Fathood team reviews claims.
+    if (existing.status === "rejected" || existing.status === "removed") return json({ error: "That coin was taken off the Fat List by the team. If you think that’s a mistake, send us a ticket from Contact & help.", takenDown: true }, 409);
     if (existing.status !== "indexed") return json({ error: "That coin is already on the Fat List.", existing: existing.id }, 409);
     if (await claimPending(existing.id)) return json({ error: "Someone already asked to claim this coin. The team is reviewing it.", existing: existing.id }, 409);
     const id = newId();
@@ -148,7 +149,8 @@ export default async (req, context) => {
         const d = await resolve(a);
         if (d.found) {
           const ex = await findExisting(d.chain, d.address);
-          if (ex) { d.existing = ex.id; d.claimable = ex.status === "indexed" && !(await claimPending(ex.id)); d.claimPending = ex.status === "indexed" && !d.claimable; }
+          if (ex && (ex.status === "rejected" || ex.status === "removed")) d.takenDown = true;
+          else if (ex) { d.existing = ex.id; d.claimable = ex.status === "indexed" && !(await claimPending(ex.id)); d.claimPending = ex.status === "indexed" && !d.claimable; }
         }
         return json({ ...d, chainName: d.found ? chainName(d.chain) : "" });
       }

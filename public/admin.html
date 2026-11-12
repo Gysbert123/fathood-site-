@@ -341,7 +341,8 @@ window.FH=(function(){
 (function(){
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
-let data={listings:[],orders:[],claims:[],posts:[]},tab="add",liveQ="",loading=null;
+let data={listings:[],orders:[],claims:[],posts:[],tickets:[],visits:{days:[],sources:[],pages:[]},stats:{approved:0,indexed:0,revenue30:0}},tab="add",liveQ="",loading=null,searchIds=new Set();
+const LIVE_ST=l=>l.status==="approved"||l.status==="indexed";
 async function api(method,body,qs,again){
   const r=await fetch("/api/fatlist-admin"+(qs?"?"+qs:""),{method,headers:{"x-admin-key":FH.key,"content-type":"application/json"},body:body?JSON.stringify(body):undefined});
   const j=await r.json().catch(()=>({}));if(r.status===401){FH.logout("Wrong password.")}
@@ -356,7 +357,14 @@ async function load(){
   loading=(async()=>{try{
     // wake the server first (a cold start plus the big load could pass Netlify's time limit)
     if(!data.loaded)await fetch("/api/fatlist-admin?ping=1",{headers:{"x-admin-key":FH.key}}).catch(()=>{});
-    data=await api("GET",undefined,liveQ?"q="+encodeURIComponent(liveQ):"");data.loaded=true;$("#fl-off").hidden=true;$("#fl-app").hidden=false;FH.setTest(data.testPrices,data.testHours);render();renderTickets();renderVisits()}
+    const qs=liveQ?"&q="+encodeURIComponent(liveQ):"",parts=["coins","orders","extra"];
+    const res=await Promise.allSettled(parts.map(p=>api("GET",undefined,"part="+p+qs)));
+    const bad=[];res.forEach((x,i)=>{if(x.status==="fulfilled")Object.assign(data,x.value);else bad.push(x.reason&&x.reason.message||"Request failed")});
+    if(res.some(x=>x.status==="fulfilled"))data.loaded=true;
+    if(liveQ)searchIds=new Set(data.listings.filter(l=>LIVE_ST(l)).map(l=>l.id));
+    $("#fl-app").hidden=false;
+    if(bad.length){$("#fl-off").hidden=false;$("#fl-off").innerHTML=esc(bad.join(" "))+' Everything else loaded. <button type="button" class="ghost" id="fl-retry">Try again</button>';$("#fl-retry").onclick=()=>load()}else $("#fl-off").hidden=true;
+    if(data.testPrices)FH.setTest(data.testPrices,data.testHours);render();renderTickets();renderVisits()}
   catch(e){
     // keep the page usable (Add a coin, search) even when the full load fails
     $("#fl-app").hidden=false;$("#fl-off").hidden=false;$("#fl-off").innerHTML=esc(e.message)+' <button type="button" class="ghost" id="fl-retry">Try again</button>';$("#fl-retry").onclick=()=>load();$("#tp-msg").textContent=e.message;render()}
@@ -466,7 +474,7 @@ function render(){
       <div class="row" style="margin-top:10px">${p.removed?`<button class="ghost" data-a="restorePost" data-id="${p.id}">Restore</button>`:`<button class="no" data-a="removePost" data-id="${p.id}">Remove post</button>`}<button class="ghost" data-a="ban" data-addr="${esc(p.author)}">Ban this wallet</button></div></div>`).join(""):`<div class="empty">No posts yet.</div>`;
     return;
   }
-  const ls=data.listings.filter(l=>tab==="pending"?(l.status==="pending"||(l.verifyPaid&&!l.verified&&l.status!=="rejected"&&l.status!=="removed")):tab==="rejected"?(l.status==="rejected"||l.status==="removed"):(tab==="approved"?(l.status==="approved"||l.status==="indexed"):l.status===tab));
+  const ls=data.listings.filter(l=>tab==="approved"&&liveQ&&searchIds.has(l.id)?true:tab==="pending"?(l.status==="pending"||(l.verifyPaid&&!l.verified&&l.status!=="rejected"&&l.status!=="removed")):tab==="rejected"?(l.status==="rejected"||l.status==="removed"):(tab==="approved"?(l.status==="approved"||l.status==="indexed"):l.status===tab));
   const fixBar=tab==="approved"&&fix?`<div class="fixbar"><span>Fixing ticket #${esc(fix.code)}: find their coin, then press <u>Add what they paid for</u>.</span><button type="button" class="ghost" data-fixstop>Stop</button></div>`:"";
   const searchBox=fixBar; // the coin search box sits above the tabs (#gsf)
   if(!ls.length){el.innerHTML=searchBox+`<div class="empty">${tab==="pending"?"Nothing waiting. Nice.":"Nothing here."}</div>`;wireSearch();return}
@@ -477,7 +485,8 @@ function render(){
     <p class="meta">${[l.website,l.x,l.telegram,l.discord].filter(Boolean).map(esc).join(" · ")||"No links"}${l.contact?` · contact ${esc(l.contact)}`:""} · added ${ago(l.createdAt)}</p>
     <div class="row" style="margin-top:10px">${
       tab==="pending"?`${l.status!=="approved"?`<button class="ok" data-a="approve" data-id="${l.id}">Approve</button>`:""}${l.verifyPaid&&!l.verified?`<button class="ok" data-a="verify" data-id="${l.id}">Give blue tick</button>`:""}<button class="no" data-a="reject" data-id="${l.id}">Reject</button>`:
-      tab==="approved"?`<button class="ok" data-givefree="${l.id}">${fix?"Add what they paid for":"Give free boost or spot"}</button><button class="ghost" data-edit-open="${l.id}">Edit details</button><label class="ghost" style="display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border:3px solid var(--ink);border-radius:12px;font-weight:700;cursor:pointer;background:#fff">Change logo<input type="file" accept="image/png,image/jpeg,image/webp" data-setlogo="${l.id}" style="position:absolute;opacity:0;width:1px"></label>${l.verified?`<button class="ghost" data-a="unverify" data-id="${l.id}">Remove blue tick</button>`:`<button class="ghost" data-a="verify" data-id="${l.id}">Give blue tick</button>`}<button class="no" data-a="remove" data-id="${l.id}">Take down</button>`:
+      tab==="approved"&&!LIVE_ST(l)?`<span class="tag" style="background:#C8221C;color:#fff">${l.status==="pending"?"WAITING FOR REVIEW":"TAKEN DOWN"}</span> <button class="ok" data-a="approve" data-id="${l.id}">Put it back live</button>`:
+      tab==="approved"?`<button class="ok" data-givefree="${l.id}">${fix?"Add what they paid for":"Give free boost or spot"}</button><button class="ghost" data-edit-open="${l.id}">Edit details</button><label class="ghost" style="display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border:3px solid var(--ink);border-radius:12px;font-weight:700;cursor:pointer;background:#fff">Change logo<input type="file" accept="image/png,image/jpeg,image/webp" data-setlogo="${l.id}" style="position:absolute;opacity:0;width:1px"></label>${l.verified?`<button class="ghost" data-a="unverify" data-id="${l.id}">Remove blue tick</button>`:`<button class="ghost" data-a="verify" data-id="${l.id}">Give blue tick</button>`}<button class="no" data-a="remove" data-id="${l.id}">Take coin off the Fat List</button>`:
       `<button class="ok" data-a="approve" data-id="${l.id}">Approve after all</button><button class="no" data-a="delete" data-id="${l.id}">Delete for good</button>`}</div></div>`).join("");
 }
 $("#list").addEventListener("change",async e=>{
@@ -503,7 +512,8 @@ async function searchLive(q){
   liveQ=q;tab="approved";document.querySelectorAll("#tabs button").forEach(x=>x.setAttribute("aria-selected",String(x.dataset.t==="approved")));
   $("#gSearch").value=q;$("#list").innerHTML='<div class="empty">Searching…</div>';
   try{const j=await api("GET",undefined,"only=live&q="+encodeURIComponent(q));
-    data.listings=[...(data.listings||[]).filter(l=>l.status!=="approved"&&l.status!=="indexed"),...j.listings];$("#msg").textContent=q?`${j.listings.length} coin${j.listings.length===1?"":"s"} found for “${q}”.`:""}
+    const ids=new Set(j.listings.map(l=>l.id));searchIds=ids;
+    data.listings=[...(data.listings||[]).filter(l=>!ids.has(l.id)&&!LIVE_ST(l)),...j.listings];$("#msg").textContent=q?`${j.listings.length} coin${j.listings.length===1?"":"s"} found for “${q}”.`:""}
   catch(err){$("#msg").textContent=err.message}
   render();
 }
@@ -518,10 +528,11 @@ $("#list").onclick=async e=>{
   const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a;
   if(a==="delete"&&!confirm("Delete this listing for good? The same contract can then be added again."))return;
   if(a==="ban"&&!confirm("Ban this wallet from Hood Talk and remove all its posts?"))return;
+  if(a==="remove"&&!confirm("Take this coin off the Fat List completely? (To stop just an ad or Spotlight card, use Ads & spots instead.) You can put it back later by searching for it."))return;
   if(a==="pullAd"&&!confirm("Take this paid ad down now? Refunds are up to you."))return;
   b.disabled=true;
   try{await api("POST",a==="ban"?{action:a,address:b.dataset.addr}:a==="setSpot"?{action:a,id:b.dataset.id,spot:+b.dataset.spot}:{action:a,id:b.dataset.id});
-    $("#msg").textContent={approve:"Approved. It’s live.",reject:"Rejected.",remove:"Taken down.",delete:"Deleted.",verify:"Blue tick added.",unverify:"Blue tick removed.",pullAd:"Ad taken down.",setSpot:"Moved. It shows in the new spot within a minute.",approveClaim:"Claim approved. The details are live.",rejectClaim:"Claim rejected.",removePost:"Post removed.",restorePost:"Post restored.",ban:"Wallet banned and its posts removed."}[a];await load()}
+    $("#msg").textContent={approve:"It’s live on the Fat List.",reject:"Rejected.",remove:"Taken down.",delete:"Deleted.",verify:"Blue tick added.",unverify:"Blue tick removed.",pullAd:"Ad taken down.",setSpot:"Moved. It shows in the new spot within a minute.",approveClaim:"Claim approved. The details are live.",rejectClaim:"Claim rejected.",removePost:"Post removed.",restorePost:"Post restored.",ban:"Wallet banned and its posts removed."}[a];await load()}
   catch(err){$("#msg").textContent=err.message;b.disabled=false}
 };
 // Left side banner picture: at most 600 px wide, under ~290 KB.

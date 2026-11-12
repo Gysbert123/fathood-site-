@@ -754,6 +754,7 @@ $("#findForm").onsubmit=async e=>{
     let j;
     if(DEMO)j={found:true,chain:"robinhood",chainName:"Robinhood Chain",address:addr,name:"Grease Monkey",symbol:"GREASE",image:"",liquidity:18400,description:"Grease Monkey keeps the Robinhood Chain fryers running. Community-owned, liquidity locked, no team tokens.",website:"https://example.com",x:"https://x.com/example",telegram:"https://t.me/example",discord:""};
     else{j=await api("/api/fatlist?lookup="+encodeURIComponent(addr));if(!j.ok){msg.textContent=j.error||"Couldn’t look that up. Try again.";msg.hidden=false;return}}
+    if(j.takenDown){msg.innerHTML=`That coin was taken off the Fat List by the team. If you think that’s a mistake, <a href="/contact.html?topic=listing&amp;coin=${encodeURIComponent(addr)}">send us a ticket</a>.`;msg.hidden=false;return}
     if(j.existing&&!j.claimable){msg.innerHTML=j.claimPending?`Someone already asked to claim this coin. The team is reviewing it. <a href="#coin/${esc(j.existing)}">See its page</a>.`:`That coin is already on the Fat List. <a href="#coin/${esc(j.existing)}">Go to its page</a>.`;msg.hidden=false;return}
     found=j;fillAdd(j,addr);
   }catch(_){msg.textContent="Couldn’t reach the server. Check your connection and try again.";msg.hidden=false}
