@@ -66,6 +66,14 @@ export async function liveSide() {
     price: r.price == null ? null : Number(r.price), change: r.change24 == null ? null : Number(r.change24) } : null;
 }
 
+// The Spotlight spot this coin already holds on those dates (paid, not taken down), or 0. A coin gets one spot at a time.
+export async function coinSpotlight(coinId, start, end) {
+  const [r] = await sql()`select coalesce((to_jsonb(orders) ->> 'spot')::int, 1) as spot from orders
+    where kind = 'promo' and pkg = 'spotlight' and coin_id = ${coinId} and status = 'paid' and not pulled
+      and start_at < ${new Date(end)} and end_at > ${new Date(start)} limit 1`;
+  return r ? r.spot : 0;
+}
+
 // spot (1-3) only for the Spotlight: counts bookings in that one spot. Old bookings without a spot count as spot 1.
 export async function slotsTaken(pkg, start, end, spot = null) {
   const inSpot = spot ? sql()`and coalesce((to_jsonb(orders) ->> 'spot')::int, 1) = ${spot}` : sql()``;

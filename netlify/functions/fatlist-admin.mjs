@@ -1,7 +1,7 @@
 import { sql } from "../lib/db.mjs";
 import { lookup } from "../lib/lookup.mjs";
 import { parseLogo, saveLogo, testPrices, setTestPrices, TEST_PRICE_HOURS, db, json, newId, ID_RE, DAY, ipOf, isAdmin, clean, cleanUrl, addrOk, CHAIN_NAMES, PACKAGES, BOOSTS, PAY_CHAINS } from "../lib/coinlist.mjs";
-import { slotsTaken } from "../lib/db.mjs";
+import { slotsTaken, coinSpotlight } from "../lib/db.mjs";
 import { TOPICS, ensureTickets, getPic, deletePics } from "../lib/tickets.mjs";
 import { ensureVisits } from "../lib/visits.mjs";
 
@@ -199,6 +199,9 @@ export default async (req, context) => {
           // free Spotlight: the spot the admin picked, or the first spot with room
           let spot = 0;
           const want = Number(b.spot) || 0;
+          // one coin, one Spotlight spot at a time (use Ads & spots to move it instead)
+          const has = await coinSpotlight(c.id, start, end);
+          if (has) return json({ error: `${c.name} already has Spotlight spot ${has} on those dates. To change spots, use Move in Ads & spots.` }, 409);
           if (want) {
             if (!(want >= 1 && want <= PACKAGES.spotlight.spots)) return json({ error: "Pick spot 1, 2 or 3." }, 400);
             if (await slotsTaken("spotlight", start, end, want) >= PACKAGES.spotlight.perSpot) return json({ error: `Spot ${want} is full on those dates. Pick another spot.` }, 409);

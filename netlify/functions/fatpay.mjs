@@ -1,4 +1,4 @@
-import { sql, hit, slotsTaken } from "../lib/db.mjs";
+import { sql, hit, slotsTaken, coinSpotlight } from "../lib/db.mjs";
 import { db, json, newId, ID_RE, DAY, ipOf, clean, priceFor, prices, testPrices, parseLogo, saveLogo, PACKAGES, PAY_CHAINS, ORDER_MINUTES } from "../lib/coinlist.mjs";
 
 export const config = { path: "/api/fatpay" };
@@ -102,6 +102,9 @@ async function quote(b, context) {
     if (b.pkg === "spotlight") {
       const spot = Number(b.spot), S = PACKAGES.spotlight;
       if (!(spot >= 1 && spot <= S.spots)) return json({ error: "Pick spot 1, 2 or 3." }, 400);
+      // one coin, one Spotlight spot at a time
+      const has = await coinSpotlight(coin.id, start, end);
+      if (has) return json({ error: `This coin already has Spotlight spot ${has} on those dates. Pick a start date after it ends.` }, 409);
       if (await slotsTaken("spotlight", start, end, spot) >= S.perSpot)
         return json({ error: `Spot ${spot} is full for those dates. Pick another spot or a later start date.` }, 409);
       await ensureCols();

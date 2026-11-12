@@ -56,7 +56,9 @@ const num = (v) => (v == null || v === "" || isNaN(Number(v)) ? null : Number(v)
 
 // The board everybody loads: top coins by trending score, plus top gainers, newest and most voted.
 export async function buildSnapshot() {
-  const v = sql()`select c.*, coalesce(b.boosts, 0) as boosts, p.promo, p.spot from coins c ${LIVE_EXTRAS()} where ${VISIBLE(INDEX_MIN_LIQUIDITY)}`;
+  // paid placements and boosts always show, even for a coin below the auto-list liquidity line
+  const v = sql()`select c.*, coalesce(b.boosts, 0) as boosts, p.promo, p.spot from coins c ${LIVE_EXTRAS()}
+    where (${VISIBLE(INDEX_MIN_LIQUIDITY)} or (c.status in ('approved', 'indexed') and (p.promo is not null or coalesce(b.boosts, 0) > 0)))`;
   const rows = await sql()`with v as (${v})
     (select * from v order by (promo is not null) desc,
        boosts desc,
