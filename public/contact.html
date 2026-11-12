@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Contact &amp; help | $FATHOOD</title>
+<meta name="description" content="Paid for a boost or ad that didn’t show up, or need help with your coin on the Fat List? Send the $FATHOOD team a ticket.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bowlby+One&family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/site-nav.css">
+<style>
+:root{color-scheme:light;--lime:#D4F53C;--cream:#FFF8E7;--ink:#111111;--paper:#FFFFFF;--mute:#5A5548;--red:#C8221C;
+  box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);background:var(--cream)}
+*,*::before,*::after{box-sizing:inherit}
+[hidden]{display:none!important}
+body{margin:0;background:var(--cream);color:var(--ink);font:400 16px/1.5 'Space Grotesk',system-ui,-apple-system,sans-serif}
+a{color:inherit}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--ink);outline-offset:3px}
+h1,h2{font-family:'Bowlby One',Impact,sans-serif;font-weight:400;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding:30px 16px 70px}
+h1{font-size:clamp(2rem,6vw,3rem);line-height:1.05}
+.lead{font-size:18px;margin:10px 0 22px}
+.box{background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:6px 6px 0 var(--ink);padding:20px}
+.f{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+.f label{font-weight:700}
+.f .hint{font-size:14px;color:var(--mute)}
+input,select,textarea{min-height:48px;border:3px solid var(--ink);border-radius:12px;padding:10px 14px;background:var(--cream);width:100%;min-width:0}
+textarea{min-height:140px;resize:vertical}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media (max-width:600px){.g2{grid-template-columns:1fr}}
+.f.bad input,.f.bad textarea{border-color:var(--red);background:#FFF0EE}
+.pick{display:flex;align-items:center;justify-content:center;min-height:58px;border:3px dashed var(--ink);border-radius:12px;background:var(--cream);font-weight:700;cursor:pointer;text-align:center;padding:10px;position:relative}
+.pick input{position:absolute;opacity:0;width:1px;height:1px;min-height:0}
+.pick:focus-within{outline:3px solid #1F4FD1;outline-offset:3px}
+.thumbs{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+.thumbs div{position:relative;width:96px;height:96px;border:3px solid var(--ink);border-radius:10px;overflow:hidden;background:#eee}
+.thumbs img{width:100%;height:100%;object-fit:cover;display:block}
+.thumbs button{position:absolute;top:4px;right:4px;width:28px;height:28px;border-radius:50%;border:2px solid var(--ink);background:#fff;font-weight:700;line-height:1;cursor:pointer;padding:0}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:54px;padding:12px 22px;border:3px solid var(--ink);border-radius:12px;background:var(--lime);color:var(--ink);font-weight:700;font-size:18px;cursor:pointer;text-decoration:none;box-shadow:4px 4px 0 var(--ink)}
+.btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
+.btn[disabled]{opacity:.6;cursor:wait}
+.msg{font-weight:700;margin:12px 0 0}
+.msg.bad{color:var(--red)}
+.done{text-align:center}
+.done .code{display:inline-block;font:400 32px 'Bowlby One',Impact,sans-serif;background:var(--lime);border:3px solid var(--ink);border-radius:12px;padding:4px 16px;margin:10px 0}
+.side{margin-top:22px;font-size:15px;color:var(--mute)}
+.hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+footer{background:var(--ink);color:var(--cream);padding:24px 16px 34px;font-size:14px;text-align:center}
+</style>
+</head>
+<body>
+<header class="sn">
+  <div class="sn-in">
+    <a class="sn-logo" href="/"><img src="/fathood-logo.jpg" alt="" width="42" height="42"><span>$FATHOOD</span></a>
+    <button type="button" class="sn-menu" aria-expanded="false" aria-controls="sn-panel"><i aria-hidden="true"></i>Menu</button>
+    <nav class="sn-panel" id="sn-panel" aria-label="Main">
+      <ul class="sn-links">
+        <li><a class="sn-a" href="/fatlist.html" data-sn="fatlist">Fat List</a></li>
+        <li><a class="sn-a sn-play" href="/#play">Play the game</a></li>
+        <li><button type="button" class="sn-g" aria-expanded="false">Memes</button>
+          <ul class="sn-sub">
+            <li><a href="/#booth">Meme Booth<small>Make your own Fathood meme</small></a></li>
+            <li><a href="/#wall">Wall of Fat<small>Memes from the hood</small></a></li>
+          </ul></li>
+        <li><a class="sn-a" href="/fatlist.html#talk" data-sn="talk">Hood Talk</a></li>
+        <li><button type="button" class="sn-g" aria-expanded="false">More</button>
+          <ul class="sn-sub">
+            <li><a href="/#buy">How to buy</a></li>
+            <li><a href="/#tokenomics">Tokenomics</a></li>
+            <li><a href="/#roadmap">Roadmap</a></li>
+            <li><a href="/#torchpad">Launch</a></li>
+            <li><a href="/#lore">Lore</a></li>
+            <li><a href="/#rules">The rules</a></li>
+            <li><a href="/#safe">Stay safe</a></li>
+            <li><a href="/contact.html" aria-current="page">Contact &amp; help</a></li>
+          </ul></li>
+      </ul>
+      <a class="sn-cta" href="https://t.me/fathood">Join Telegram</a>
+    </nav>
+    <a class="sn-cta sn-top" href="https://t.me/fathood">Join Telegram</a>
+  </div>
+</header>
+
+<main class="wrap">
+  <h1>Contact &amp; help</h1>
+  <p class="lead">Paid for a boost, ad or blue tick that didn’t show up? Need your coin’s details changed? Send us a ticket and the team will get back to you.</p>
+
+  <form class="box" id="tf" novalidate>
+    <div class="f"><label for="t-topic">What’s it about?</label>
+      <select id="t-topic">
+        <option value="payment">I paid but it didn’t show up</option>
+        <option value="ad">Advertising or a promotion</option>
+        <option value="profile">My coin’s details or logo</option>
+        <option value="listing">Adding or removing a coin</option>
+        <option value="other">Something else</option>
+      </select></div>
+    <div class="g2">
+      <div class="f"><label for="t-name">Your name (optional)</label><input id="t-name" maxlength="60" autocomplete="name"></div>
+      <div class="f" id="f-contact"><label for="t-contact">How do we reach you?</label><input id="t-contact" maxlength="120" placeholder="@telegram, @x or email"><span class="hint">We reply here. The team will never DM you first or ask for your seed phrase.</span></div>
+    </div>
+    <div class="f"><label for="t-coin">Coin (name, $SYMBOL or contract address)</label><input id="t-coin" maxlength="120" spellcheck="false"></div>
+    <div class="f" id="f-tx"><label for="t-tx">Transaction hash (if you paid)</label><input id="t-tx" maxlength="140" placeholder="0x… or Solana signature" spellcheck="false"><span class="hint">Find it in your wallet’s activity. This lets us find your payment quickly.</span></div>
+    <div class="f" id="f-body"><label for="t-body">What happened?</label><textarea id="t-body" maxlength="3000" placeholder="Tell us what you bought, when, and what you expected to see."></textarea></div>
+    <div class="f"><label for="t-links">Links (optional, one per line)</label><textarea id="t-links" style="min-height:80px" placeholder="https://x.com/yourcoin&#10;https://t.me/yourcoin" spellcheck="false"></textarea><span class="hint">Your coin’s website, X, Telegram or chart. Up to 6.</span></div>
+    <div class="f" id="f-pics"><span style="font-weight:700">Pictures (optional, up to 3)</span>
+      <label class="pick">Add a screenshot or picture<input type="file" id="t-pics" accept="image/png,image/jpeg,image/webp" multiple></label>
+      <div class="thumbs" id="thumbs"></div></div>
+    <div class="hp" aria-hidden="true"><label for="t-website2">Leave empty</label><input id="t-website2" tabindex="-1" autocomplete="off"></div>
+    <button class="btn" id="t-go" style="width:100%">Send ticket</button>
+    <p class="msg" id="t-msg" role="status"></p>
+  </form>
+
+  <div class="box done" id="ok" hidden>
+    <h2>Got it. Thanks!</h2>
+    <p>Your ticket number is</p>
+    <div class="code" id="ok-code"></div>
+    <p>We’ll reply on <b id="ok-contact"></b>, usually within 24 hours. Keep this number in case you need it.</p>
+    <p><a class="btn" href="/fatlist.html">Back to the Fat List</a></p>
+  </div>
+
+  <p class="side">Prefer chatting? Find us on <a href="https://t.me/fathood">Telegram</a>. Admins will never message you first, and never ask for your seed phrase or private key.</p>
+</main>
+<footer>© 2026 $FATHOOD. Crypto is risky. Nothing here is financial advice.</footer>
+
+<script src="/site-nav.js" defer></script>
+<script>
+(function(){
+  var $=function(s){return document.querySelector(s)};
+  var pics=[];
+  // Fill in from the link (for example from the payment screen: ?topic=payment&tx=0x…&coin=…)
+  var qs=new URLSearchParams(location.search);
+  ["topic","coin","tx"].forEach(function(k){var v=qs.get(k);if(v)$("#t-"+k).value=v.slice(0,140)});
+  var orderId=(qs.get("order")||"").slice(0,40);
+
+  // Shrink each picture to at most 1400 px and about 400 KB so it uploads fast on a phone.
+  function shrink(file){
+    return new Promise(function(ok,no){
+      if(!/^image\/(png|jpeg|webp)$/.test(file.type))return no(new Error("Use PNG, JPG or WebP pictures."));
+      var url=URL.createObjectURL(file),img=new Image();
+      img.onload=function(){
+        var s=Math.min(1,1400/Math.max(img.naturalWidth,img.naturalHeight)),w=Math.round(img.naturalWidth*s),h=Math.round(img.naturalHeight*s);
+        var c=document.createElement("canvas");c.width=w;c.height=h;var cx=c.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,w,h);cx.drawImage(img,0,0,w,h);
+        URL.revokeObjectURL(url);
+        var qs=[.82,.7,.55,.4,.3];for(var i=0;i<qs.length;i++){var d=c.toDataURL("image/jpeg",qs[i]);if(d.length*.75<420000)return ok(d)}
+        no(new Error("That picture is too big."))};
+      img.onerror=function(){URL.revokeObjectURL(url);no(new Error("Couldn’t read that picture."))};
+      img.src=url});
+  }
+  function drawThumbs(){
+    $("#thumbs").innerHTML=pics.map(function(d,i){return '<div><img alt="Picture '+(i+1)+'" src="'+d+'"><button type="button" data-rm="'+i+'" aria-label="Remove picture '+(i+1)+'">×</button></div>'}).join("");
+    $(".pick").hidden=pics.length>=3;
+  }
+  $("#t-pics").addEventListener("change",async function(e){
+    var files=[].slice.call(e.target.files||[]);e.target.value="";$("#f-pics").classList.remove("bad");
+    for(var i=0;i<files.length&&pics.length<3;i++){try{pics.push(await shrink(files[i]))}catch(err){$("#t-msg").className="msg bad";$("#t-msg").textContent=err.message}}
+    drawThumbs()});
+  $("#thumbs").addEventListener("click",function(e){var b=e.target.closest("[data-rm]");if(b){pics.splice(+b.dataset.rm,1);drawThumbs()}});
+
+  $("#tf").addEventListener("input",function(e){var f=e.target.closest(".f");if(f&&f.classList.contains("bad")){f.classList.remove("bad");$("#t-msg").textContent=""}});
+  $("#tf").addEventListener("submit",async function(e){
+    e.preventDefault();
+    document.querySelectorAll(".f.bad").forEach(function(f){f.classList.remove("bad")});
+    var v=function(k){return $("#t-"+k).value.trim()},msg=$("#t-msg"),go=$("#t-go");
+    msg.className="msg";
+    if(v("contact").length<3){$("#f-contact").classList.add("bad");msg.className="msg bad";msg.textContent="Tell us how to reach you (Telegram, X or email).";$("#t-contact").focus();return}
+    if(v("body").length<10){$("#f-body").classList.add("bad");msg.className="msg bad";msg.textContent="Describe the problem in a sentence or two.";$("#t-body").focus();return}
+    go.disabled=true;go.textContent="Sending…";msg.textContent="";
+    try{
+      var r=await fetch("/api/tickets",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({
+        topic:v("topic"),name:v("name"),contact:v("contact"),coin:v("coin"),tx:v("tx"),orderId:orderId,body:v("body"),links:v("links").split(/\s+/).filter(Boolean),pics:pics,website2:v("website2")})});
+      var j=await r.json().catch(function(){return{}});
+      if(!r.ok)throw Object.assign(new Error(j.error||(r.status===404?"Tickets only work on the live site.":"Something went wrong. Try again.")),{field:j.field});
+      $("#tf").hidden=true;$("#ok").hidden=false;$("#ok-code").textContent="#"+j.ticket;$("#ok-contact").textContent=v("contact");window.scrollTo(0,0);
+    }catch(err){
+      if(err.field)$("#f-"+err.field)&&$("#f-"+err.field).classList.add("bad");
+      msg.className="msg bad";msg.textContent=err.message||"Something went wrong. Try again.";go.disabled=false;go.textContent="Send ticket"}
+  });
+})();
+</script>
+</body>
+</html>

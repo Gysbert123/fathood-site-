@@ -51,6 +51,7 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
 .f textarea{min-height:90px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 @media (max-width:560px){.g2{grid-template-columns:1fr}}
+.g2>*{min-width:0}.f input,.f select,.f textarea{width:100%;min-width:0}
 .comp{margin-top:12px;padding-top:12px;border-top:2px dashed var(--ink)}
 .chk{display:flex;gap:10px;align-items:center;font-weight:700;margin-bottom:12px}.chk input{width:22px;height:22px;min-height:0}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,210px),1fr));gap:16px}
@@ -67,6 +68,14 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
 .steps{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
 .state{display:inline-block;padding:4px 12px;border:3px solid var(--ink);border-radius:999px;font-weight:700}
 .state.on{background:var(--red);color:#fff}.state.off{background:var(--lime)}
+.sections{grid-template-columns:repeat(4,1fr)}
+@media (max-width:560px){.sections{grid-template-columns:repeat(2,1fr)}}
+.sections .cnt{display:inline-block;min-width:24px;padding:0 6px;border-radius:99px;background:var(--red);color:#fff;font:700 14px/22px 'Space Grotesk',sans-serif;margin-left:4px}
+.pics{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
+.pics a{display:block;width:120px;height:120px;border:3px solid var(--ink);border-radius:10px;overflow:hidden;background:#eee}
+.pics img{width:100%;height:100%;object-fit:cover;display:block}
+.tkbody{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--cream);border:2px solid var(--ink);border-radius:10px;padding:10px 12px;margin:8px 0}
+.fixbar{background:var(--lime);border:3px solid var(--ink);border-radius:12px;padding:10px 14px;font-weight:700;display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between}
 </style>
 </head>
 <body>
@@ -84,6 +93,7 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
     <div class="sections" role="tablist" id="sections">
       <button type="button" role="tab" data-sec="wall" aria-selected="true">Wall of Fat<small>Memes</small></button>
       <button type="button" role="tab" data-sec="fat" aria-selected="false">Fat List<small>Coins, payments, Hood Talk</small></button>
+      <button type="button" role="tab" data-sec="tickets" aria-selected="false"><span>Help tickets<span class="cnt" id="tk-cnt" hidden></span></span><small>People who contacted you</small></button>
       <button type="button" role="tab" data-sec="test" aria-selected="false">Test &amp; tools<small>$1 test, reset votes</small></button>
     </div>
 
@@ -134,6 +144,24 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
       </div>
     </section>
 
+    <!-- HELP TICKETS -->
+    <section id="sec-tickets" hidden style="display:flex;flex-direction:column;gap:14px">
+      <div class="card">
+        <h2>Help tickets</h2>
+        <p class="meta" style="margin-top:6px">Messages people send from <a href="/contact.html" target="_blank">fathood.org/contact.html</a>. Reply to them on the contact they left (Telegram, X or email), then press <b>Mark as done</b>.</p>
+        <p class="meta">Paid but it didn’t show up? Check the transaction link first. If the money arrived, press <b>Find the coin and fix it</b> to add what they paid for by hand.</p>
+      </div>
+      <div class="bar" style="justify-content:space-between">
+        <div class="tabs" role="tablist" id="tktabs">
+          <button type="button" class="ghost" role="tab" data-k="open" aria-selected="true">Open <span id="tk-nopen"></span></button>
+          <button type="button" class="ghost" role="tab" data-k="done" aria-selected="false">Done</button>
+        </div>
+        <button type="button" class="ghost" id="tk-refresh">Refresh</button>
+      </div>
+      <p class="msg" id="tk-msg" role="status"></p>
+      <div id="tk-list" style="display:flex;flex-direction:column;gap:16px"></div>
+    </section>
+
     <!-- TEST PRICES -->
     <section id="sec-test" hidden style="display:flex;flex-direction:column;gap:18px">
       <div class="card">
@@ -174,8 +202,8 @@ window.FH=(function(){
   FH.logout=function(m){FH.key="";try{sessionStorage.removeItem("fh-admin")}catch(e){}$("#app").hidden=true;$("#logout").hidden=true;$("#testbar").hidden=true;$("#login").hidden=false;$("#loginmsg").textContent=m||""};
   FH.show=function(){$("#login").hidden=true;$("#app").hidden=false;$("#logout").hidden=false;FH.openSection(FH.section||"wall");if(FH.loadFatList)FH.loadFatList()};
   FH.openSection=function(s){FH.section=s;document.querySelectorAll("#sections button").forEach(function(b){b.setAttribute("aria-selected",String(b.dataset.sec===s))});
-    ["wall","fat","test"].forEach(function(x){$("#sec-"+x).hidden=x!==s});
-    if(s==="wall"&&FH.loadWall)FH.loadWall();if((s==="fat"||s==="test")&&FH.loadFatList)FH.loadFatList()};
+    ["wall","fat","tickets","test"].forEach(function(x){$("#sec-"+x).hidden=x!==s});
+    if(s==="wall"&&FH.loadWall)FH.loadWall();if((s==="fat"||s==="test"||s==="tickets")&&FH.loadFatList)FH.loadFatList()};
   FH.setTest=function(tp,hours){
     var on=!!(tp&&tp.on);FH.test=on;
     $("#testbar").hidden=!on;
@@ -292,7 +320,7 @@ async function api(method,body,q){
 async function load(){
   if(!FH.key)return;
   if(loading)return loading;
-  loading=(async()=>{try{data=await api("GET",undefined,liveQ);$("#fl-off").hidden=true;$("#fl-app").hidden=false;FH.setTest(data.testPrices,data.testHours);render()}
+  loading=(async()=>{try{data=await api("GET",undefined,liveQ);$("#fl-off").hidden=true;$("#fl-app").hidden=false;FH.setTest(data.testPrices,data.testHours);render();renderTickets()}
   catch(e){$("#fl-app").hidden=true;$("#fl-off").hidden=false;$("#fl-off").textContent=e.message;$("#tp-msg").textContent=e.message}
   finally{loading=null}})();
   return loading;
@@ -345,13 +373,27 @@ function wireAdd(){
     catch(err){$("#msg").textContent=err.message}finally{btn.disabled=false}};
 }
 const today=()=>new Date().toISOString().slice(0,10);
+let fix=null; // the help ticket being fixed, if any
 const compForm=id=>`<form class="comp" data-comp="${id}" novalidate><div class="g2"><div class="f"><label>Give for free</label><select name="what">
   <option value="b10">10 boosts (12h)</option><option value="b30">30 boosts (24h)</option><option value="b100">100 boosts (48h)</option>
   <option value="spotlight">Spotlight card</option><option value="row">Promoted row</option><option value="banner">Banner ad</option><option value="side">Left side banner (3 days, 100 boosts, 50 votes)</option></select></div>
   <div class="f"><label>Days (placements and ads)</label><input name="days" type="number" min="1" max="90" value="7"></div></div>
   <div class="g2"><div class="f"><label>Start date</label><input name="start" type="date" value="${today()}" min="${today()}"></div>
   <div class="f"><label>Banner message (ads only)</label><input name="adText" maxlength="70"></div></div>
+  <div class="f" data-sideimg hidden><label>Left side banner picture (optional, tall works best)</label><input type="file" accept="image/png,image/jpeg,image/webp" data-adimg></div>
+  <details ${fix?"open":""} style="margin-bottom:12px"><summary style="font-weight:700;cursor:pointer">They already paid? (from a help ticket)</summary>
+   <p class="meta">Fill this in when someone paid but it didn’t show up. It then counts as a sale, and the same transaction can’t be used again.</p>
+   <div class="g2"><div class="f"><label>They paid ($)</label><input name="paidUsd" type="number" min="0" step="0.01" placeholder="e.g. 24.99"></div>
+   <div class="f"><label>Transaction hash</label><input name="tx" value="${esc(fix&&fix.tx||"")}" placeholder="0x… or Solana signature" spellcheck="false"></div></div>
+   ${fix?`<input type="hidden" name="ticket" value="${esc(fix.id)}"><p class="meta">Ticket #${esc(fix.code)} is marked as done when you press Give it.</p>`:""}</details>
   <div class="row"><button class="ok">Give it</button><button type="button" class="ghost" data-cancel>Cancel</button></div></form>`;
+const editForm=l=>`<form class="comp" data-edit="${l.id}" novalidate><h3 style="font-size:1.1rem">Edit the coin’s details</h3>
+  <div class="g2"><div class="f"><label>Name</label><input name="name" maxlength="40" value="${esc(l.name)}"></div><div class="f"><label>Symbol</label><input name="symbol" maxlength="12" value="${esc(l.symbol)}"></div></div>
+  <div class="f"><label>Description</label><textarea name="description" maxlength="1000">${esc(l.description)}</textarea></div>
+  <div class="g2"><div class="f"><label>Website</label><input name="website" value="${esc(l.website)}" placeholder="https://"></div><div class="f"><label>X</label><input name="x" value="${esc(l.x)}" placeholder="https://x.com/…"></div></div>
+  <div class="g2"><div class="f"><label>Telegram</label><input name="telegram" value="${esc(l.telegram)}" placeholder="https://t.me/…"></div><div class="f"><label>Discord</label><input name="discord" value="${esc(l.discord)}" placeholder="https://discord.gg/…"></div></div>
+  <div class="f"><label>Team contact (only you see this)</label><input name="contact" maxlength="120" value="${esc(l.contact)}"></div>
+  <div class="row"><button class="ok">Save details</button><button type="button" class="ghost" data-cancel>Cancel</button></div></form>`;
 function render(){
   const el=$("#list");
   if(data.stats)$("#stats").textContent=`${data.stats.approved.toLocaleString()} coins listed · ${data.stats.indexed.toLocaleString()} auto-listed · $${Math.round(data.stats.revenue30).toLocaleString()} paid in the last 30 days`;
@@ -383,7 +425,8 @@ function render(){
     return;
   }
   const ls=data.listings.filter(l=>tab==="pending"?(l.status==="pending"||(l.verifyPaid&&!l.verified&&l.status!=="rejected"&&l.status!=="removed")):tab==="rejected"?(l.status==="rejected"||l.status==="removed"):(tab==="approved"?(l.status==="approved"||l.status==="indexed"):l.status===tab));
-  const searchBox=tab==="approved"?`<form class="row" id="lsf" style="margin-bottom:6px"><input id="liveSearch" value="${esc(liveQ)}" placeholder="Search any coin, including auto-listed" style="flex:1;min-width:0"><button class="ghost">Search</button></form>`:"";
+  const fixBar=tab==="approved"&&fix?`<div class="fixbar"><span>Fixing ticket #${esc(fix.code)}: find their coin, then press <u>Add what they paid for</u>.</span><button type="button" class="ghost" data-fixstop>Stop</button></div>`:"";
+  const searchBox=fixBar+(tab==="approved"?`<form class="row" id="lsf" style="margin-bottom:6px"><input id="liveSearch" value="${esc(liveQ)}" placeholder="Search any coin, including auto-listed" style="flex:1;min-width:0"><button class="ghost">Search</button></form>`:"");
   if(!ls.length){el.innerHTML=searchBox+`<div class="empty">${tab==="pending"?"Nothing waiting. Nice.":"Nothing here."}</div>`;wireSearch();return}
   setTimeout(wireSearch);
   el.innerHTML=searchBox+ls.map(l=>`<div class="card">${l.image?`<img src="${esc(l.image)}" alt="" style="width:44px;height:44px;border-radius:50%;border:2px solid var(--ink);object-fit:cover;float:right">`:""}<h3>${esc(l.name)} ($${esc(l.symbol)})${l.status==="indexed"?'<span class="tag" style="background:#eee">AUTO-LISTED</span>':""}${l.verifyPaid&&!l.verified?'<span class="tag">BLUE TICK PAID</span>':""}${l.verified?'<span class="tag" style="background:#1D6FE0;color:#fff">VERIFIED</span>':""}${l.status==="approved"&&tab==="pending"?'<span class="tag" style="background:#eee">ALREADY LIVE</span>':""}</h3>
@@ -392,23 +435,33 @@ function render(){
     <p class="meta">${[l.website,l.x,l.telegram,l.discord].filter(Boolean).map(esc).join(" · ")||"No links"}${l.contact?` · contact ${esc(l.contact)}`:""} · added ${ago(l.createdAt)}</p>
     <div class="row" style="margin-top:10px">${
       tab==="pending"?`${l.status!=="approved"?`<button class="ok" data-a="approve" data-id="${l.id}">Approve</button>`:""}${l.verifyPaid&&!l.verified?`<button class="ok" data-a="verify" data-id="${l.id}">Give blue tick</button>`:""}<button class="no" data-a="reject" data-id="${l.id}">Reject</button>`:
-      tab==="approved"?`<button class="ok" data-givefree="${l.id}">Give free boost or spot</button><label class="ghost" style="display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border:3px solid var(--ink);border-radius:12px;font-weight:700;cursor:pointer;background:#fff">Change logo<input type="file" accept="image/png,image/jpeg,image/webp" data-setlogo="${l.id}" style="position:absolute;opacity:0;width:1px"></label>${l.verified?`<button class="ghost" data-a="unverify" data-id="${l.id}">Remove blue tick</button>`:`<button class="ghost" data-a="verify" data-id="${l.id}">Give blue tick</button>`}<button class="no" data-a="remove" data-id="${l.id}">Take down</button>`:
+      tab==="approved"?`<button class="ok" data-givefree="${l.id}">${fix?"Add what they paid for":"Give free boost or spot"}</button><button class="ghost" data-edit-open="${l.id}">Edit details</button><label class="ghost" style="display:inline-flex;align-items:center;min-height:44px;padding:8px 16px;border:3px solid var(--ink);border-radius:12px;font-weight:700;cursor:pointer;background:#fff">Change logo<input type="file" accept="image/png,image/jpeg,image/webp" data-setlogo="${l.id}" style="position:absolute;opacity:0;width:1px"></label>${l.verified?`<button class="ghost" data-a="unverify" data-id="${l.id}">Remove blue tick</button>`:`<button class="ghost" data-a="verify" data-id="${l.id}">Give blue tick</button>`}<button class="no" data-a="remove" data-id="${l.id}">Take down</button>`:
       `<button class="ok" data-a="approve" data-id="${l.id}">Approve after all</button><button class="no" data-a="delete" data-id="${l.id}">Delete for good</button>`}</div></div>`).join("");
 }
 $("#list").addEventListener("change",async e=>{
+  const w=e.target.closest("select[name=what]");if(w){const f=w.closest("form");f.querySelector("[data-sideimg]").hidden=w.value!=="side";return}
   const i=e.target.closest("[data-setlogo]");if(!i||!i.files[0])return;
   try{const logo=await shrinkLogo(i.files[0]);await api("POST",{action:"setLogo",id:i.dataset.setlogo,logo});$("#msg").textContent="Logo updated.";await load()}
   catch(err){$("#msg").textContent=err.message}
 });
 $("#list").addEventListener("submit",async e=>{
+  const ef=e.target.closest("[data-edit]");
+  if(ef){e.preventDefault();const fd=new FormData(ef),btn=ef.querySelector("button.ok");btn.disabled=true;
+    try{await api("POST",Object.assign({action:"editCoin",id:ef.dataset.edit},Object.fromEntries(fd)));$("#msg").textContent="Details saved. They show on the Fat List within a minute.";await load()}
+    catch(err){$("#msg").textContent=err.message;btn.disabled=false}return}
   const f=e.target.closest("[data-comp]");if(!f)return;e.preventDefault();const fd=new FormData(f);const btn=f.querySelector("button.ok");btn.disabled=true;
-  try{await api("POST",{action:"comp",id:f.dataset.comp,what:fd.get("what"),days:+fd.get("days"),start:fd.get("start"),adText:fd.get("adText")});$("#msg").textContent="Done. It’s live on the Fat List.";await load()}
+  try{let adImage;const fi=f.querySelector("[data-adimg]");if(fd.get("what")==="side"&&fi.files[0])adImage=await shrinkBanner(fi.files[0]);
+    await api("POST",{action:"comp",id:f.dataset.comp,what:fd.get("what"),days:+fd.get("days"),start:fd.get("start"),adText:fd.get("adText"),adImage,paidUsd:fd.get("paidUsd")||0,tx:(fd.get("tx")||"").trim(),ticket:fd.get("ticket")||undefined});
+    const wasFix=!!fd.get("ticket");if(wasFix)fix=null;
+    $("#msg").textContent=wasFix?"Done. It’s live on the Fat List and the ticket is marked as done. Let them know.":"Done. It’s live on the Fat List.";await load()}
   catch(err){$("#msg").textContent=err.message;btn.disabled=false}
 });
 function wireSearch(){const f=$("#lsf");if(f)f.onsubmit=async e=>{e.preventDefault();liveQ=$("#liveSearch").value.trim();await load()}}
 $("#list").onclick=async e=>{
   const gf=e.target.closest("[data-givefree]");if(gf){const card=gf.closest(".card");if(!card.querySelector(".comp"))card.insertAdjacentHTML("beforeend",compForm(gf.dataset.givefree));return}
   const cx=e.target.closest("[data-cancel]");if(cx){cx.closest(".comp").remove();return}
+  const eo=e.target.closest("[data-edit-open]");if(eo){const card=eo.closest(".card");if(!card.querySelector("[data-edit]")){const l=data.listings.find(x=>x.id===eo.dataset.editOpen);if(l)card.insertAdjacentHTML("beforeend",editForm(l))}return}
+  if(e.target.closest("[data-fixstop]")){fix=null;render();return}
   const b=e.target.closest("[data-a]");if(!b)return;const a=b.dataset.a;
   if(a==="delete"&&!confirm("Delete this listing for good? The same contract can then be added again."))return;
   if(a==="ban"&&!confirm("Ban this wallet from Hood Talk and remove all its posts?"))return;
@@ -418,6 +471,56 @@ $("#list").onclick=async e=>{
     $("#msg").textContent={approve:"Approved. It’s live.",reject:"Rejected.",remove:"Taken down.",delete:"Deleted.",verify:"Blue tick added.",unverify:"Blue tick removed.",pullAd:"Ad taken down.",approveClaim:"Claim approved. The details are live.",rejectClaim:"Claim rejected.",removePost:"Post removed.",restorePost:"Post restored.",ban:"Wallet banned and its posts removed."}[a];await load()}
   catch(err){$("#msg").textContent=err.message;b.disabled=false}
 };
+// Left side banner picture: at most 600 px wide, under ~290 KB.
+async function shrinkBanner(file){
+  if(!/^image\/(png|jpeg|webp)$/.test(file.type))throw new Error("Upload a PNG, JPG or WebP picture.");
+  const url=URL.createObjectURL(file);
+  try{const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=()=>no(new Error("Couldn’t read that picture."));i.src=url});
+    const w=Math.min(600,img.naturalWidth),h=Math.round(img.naturalHeight*w/img.naturalWidth),c=document.createElement("canvas");c.width=w;c.height=h;
+    const cx=c.getContext("2d");cx.fillStyle="#fff";cx.fillRect(0,0,w,h);cx.drawImage(img,0,0,w,h);
+    for(const q of [.85,.7,.55,.4]){const d=c.toDataURL("image/jpeg",q);if(d.length*.75<290000)return d}
+    throw new Error("That picture is too big. Try a smaller one.")}
+  finally{URL.revokeObjectURL(url)}
+}
+
+// ---- HELP TICKETS
+let tkTab="open";const tkUrls=[];
+const txLink=t=>/^0x[a-fA-F0-9]{64}$/.test(t)?`<a href="https://robinhoodchain.blockscout.com/tx/${t}" target="_blank" rel="noopener">${esc(t.slice(0,10))}…${esc(t.slice(-6))}</a> (Robinhood Chain)`:
+  /^[1-9A-HJ-NP-Za-km-z]{64,90}$/.test(t)?`<a href="https://solscan.io/tx/${t}" target="_blank" rel="noopener">${esc(t.slice(0,10))}…${esc(t.slice(-6))}</a> (Solana)`:esc(t);
+function renderTickets(){
+  const all=data.tickets||[],open=all.filter(t=>t.status==="open");
+  $("#tk-cnt").hidden=!open.length;$("#tk-cnt").textContent=open.length;$("#tk-nopen").textContent=open.length?"("+open.length+")":"";
+  if(FH.section!=="tickets")return;
+  tkUrls.splice(0).forEach(URL.revokeObjectURL);
+  const ts=all.filter(t=>tkTab==="open"?t.status==="open":t.status!=="open"),el=$("#tk-list");
+  el.innerHTML=ts.length?ts.map(t=>`<div class="card" data-tk="${t.id}"><h3>#${esc(t.code)} · ${esc(t.topicName)}${t.status!=="open"?'<span class="tag" style="background:#eee">DONE</span>':""}</h3>
+    <p class="meta">${ago(t.createdAt)} · from <b>${esc(t.name||"no name")}</b> · reach them on <b>${esc(t.contact)}</b></p>
+    ${t.coin?`<p class="meta">Coin: <b>${esc(t.coin)}</b></p>`:""}
+    ${t.tx?`<p class="meta">Payment: ${txLink(t.tx)}</p>`:""}${t.orderId?`<p class="meta">Order: ${esc(t.orderId)}</p>`:""}
+    <div class="tkbody">${esc(t.body)}</div>
+    ${t.links.length?`<p class="meta">Links: ${t.links.map(u=>`<a href="${esc(u)}" target="_blank" rel="noopener noreferrer">${esc(u)}</a>`).join(" · ")}</p>`:""}
+    ${t.pics?`<div class="pics">${Array.from({length:t.pics},(_,n)=>`<a href="#" data-pic="${t.id}/${n}" aria-label="Open picture ${n+1}"><img alt="Picture ${n+1}" data-src="${t.id}/${n}"></a>`).join("")}</div>`:""}
+    <div class="f" style="margin-top:8px"><label for="tn-${t.id}">Your notes (only you see these)</label><textarea id="tn-${t.id}" data-note="${t.id}" maxlength="2000" style="min-height:60px">${esc(t.note)}</textarea></div>
+    <div class="row">${t.status==="open"?`<button class="ok" data-tkfix="${t.id}">Find the coin and fix it</button><button class="ghost" data-tka="ticketDone" data-id="${t.id}">Mark as done</button>`:`<button class="ghost" data-tka="ticketOpen" data-id="${t.id}">Reopen</button>`}<button class="ghost" data-tknote="${t.id}">Save notes</button><button class="no" data-tka="ticketDelete" data-id="${t.id}">Delete</button></div></div>`).join("")
+    :`<div class="empty">${tkTab==="open"?"No open tickets. All caught up.":"No finished tickets yet."}</div>`;
+  el.querySelectorAll("img[data-src]").forEach(im=>fetch("/api/fatlist-admin?timg="+im.dataset.src,{headers:{"x-admin-key":FH.key}}).then(r=>r.ok?r.blob():null).then(b=>{if(b){const u=URL.createObjectURL(b);tkUrls.push(u);im.src=u;im.closest("a").dataset.url=u}}).catch(()=>{}));
+}
+$("#tk-list").onclick=async e=>{
+  const pic=e.target.closest("[data-pic]");if(pic){e.preventDefault();if(pic.dataset.url)window.open(pic.dataset.url,"_blank");return}
+  const fx=e.target.closest("[data-tkfix]");
+  if(fx){const t=data.tickets.find(x=>x.id===fx.dataset.tkfix);fix={id:t.id,code:t.code,tx:t.tx&&/^(0x[a-fA-F0-9]{64}|[1-9A-HJ-NP-Za-km-z]{64,90})$/.test(t.tx)?t.tx:""};
+    liveQ=(t.coin||"").replace(/^\$/,"").trim();tab="approved";document.querySelectorAll("#tabs button").forEach(x=>x.setAttribute("aria-selected",String(x.dataset.t==="approved")));
+    FH.openSection("fat");return}
+  const nb=e.target.closest("[data-tknote]");
+  if(nb){nb.disabled=true;try{await api("POST",{action:"ticketNote",id:nb.dataset.tknote,note:$("#tn-"+nb.dataset.tknote).value});$("#tk-msg").textContent="Notes saved.";await load()}catch(err){$("#tk-msg").textContent=err.message}finally{nb.disabled=false}return}
+  const b=e.target.closest("[data-tka]");if(!b)return;const a=b.dataset.tka;
+  if(a==="ticketDelete"&&!confirm("Delete this ticket and its pictures for good?"))return;
+  b.disabled=true;
+  try{await api("POST",{action:a,id:b.dataset.id});$("#tk-msg").textContent={ticketDone:"Marked as done.",ticketOpen:"Reopened.",ticketDelete:"Ticket deleted."}[a];await load()}
+  catch(err){$("#tk-msg").textContent=err.message;b.disabled=false}
+};
+$("#tktabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;tkTab=b.dataset.k;document.querySelectorAll("#tktabs button").forEach(x=>x.setAttribute("aria-selected",String(x===b)));renderTickets()};
+$("#tk-refresh").onclick=()=>load();
 $("#tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.t;document.querySelectorAll("#tabs button").forEach(x=>x.setAttribute("aria-selected",String(x===b)));$("#msg").textContent="";render()};
 })();
 </script>

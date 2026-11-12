@@ -1,13 +1,13 @@
 // ============================================================
 // THE FAT LIST: settings you can change
 // ============================================================
-// PROMOTE: placements booked by the day (US dollars per day).
+// PROMOTE: placements priced per 3 days (per3, US dollars). 1 day = a third of that; 7 days get 10% off and 14 days 15% off (DISCOUNTS).
 // ADVERTISE: the banner ad at the top of every Fat List and Hood Talk page.
 export const PACKAGES = {
   // Spotlight: 3 card spots at the top. Each spot rotates between up to `perSpot` coins, `rotateSeconds` each. Buyers pick their spot.
-  spotlight: { group: "promote",   name: "Spotlight card", perDay: 74, spots: 3, perSpot: 4, rotateSeconds: 10, maxAtOnce: 12,
+  spotlight: { group: "promote",   name: "Spotlight card", per3: 74, perDay: 74 / 3, spots: 3, perSpot: 4, rotateSeconds: 10, maxAtOnce: 12,
                blurb: "A big card at the top of the Fat List. Pick spot 1, 2 or 3. Each spot takes turns between up to 4 coins, 10 seconds each." },
-  row:       { group: "promote",   name: "Promoted row",   perDay: 24.99,  maxAtOnce: 10, blurb: "Pinned above the Trending list with a lime highlight." },
+  row:       { group: "promote",   name: "Promoted row",   per3: 24.99, perDay: 24.99 / 3, maxAtOnce: 10, blurb: "Pinned above the Trending list with a lime highlight." },
   banner:    { group: "advertise", name: "Banner ad",      perDay: 199, maxAtOnce: 2,  blurb: "Your coin and a one-line message across the top of every page, including Hood Talk." },
   // A fixed package: one coin at a time gets the whole left side of every Fat List page for 3 days, plus boosts and votes.
   side:      { group: "advertise", name: "Left side banner", fixedUsd: 250, fixedDays: 3, perDay: 250, boosts: 100, votes: 50, maxAtOnce: 1,
@@ -115,7 +115,8 @@ export async function setTestPrices(on) {
 export function prices(test) {
   if (!test) return { packages: PACKAGES, boosts: BOOSTS, verifyUsd: VERIFY_USD, claimUsd: CLAIM_USD, testPrices: false };
   const one = (o, k) => Object.fromEntries(Object.entries(o).map(([id, v]) => [id, { ...v, [k]: TEST_PRICE_USD }]));
-  return { packages: one(PACKAGES, "perDay"), boosts: one(BOOSTS, "usd"), verifyUsd: TEST_PRICE_USD, claimUsd: TEST_PRICE_USD, testPrices: true };
+  const pk = Object.fromEntries(Object.entries(PACKAGES).map(([id, v]) => [id, { ...v, perDay: TEST_PRICE_USD, ...(v.per3 ? { per3: TEST_PRICE_USD } : {}) }]));
+  return { packages: pk, boosts: one(BOOSTS, "usd"), verifyUsd: TEST_PRICE_USD, claimUsd: TEST_PRICE_USD, testPrices: true };
 }
 
 export const clean = (s, n) => String(s ?? "").replace(/[\u0000-\u0008\u000b-\u001f<>]/g, "").trim().slice(0, n);

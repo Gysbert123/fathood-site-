@@ -117,3 +117,11 @@ do $$ declare t text; begin
     execute format('alter table %I enable row level security', t);
   end loop;
 end $$;
+
+-- Help tickets from /contact.html (the site also creates this table by itself the first time it's needed)
+create table if not exists tickets (
+  id text primary key, topic text not null, name text, contact text not null, coin text, tx text, order_id text,
+  body text not null, links text[] not null default '{}', pics integer not null default 0,
+  status text not null default 'open', note text, ip text,
+  created_at timestamptz not null default now(), closed_at timestamptz);
+alter table tickets enable row level security;

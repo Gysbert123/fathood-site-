@@ -302,6 +302,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
             <li><a href="/#lore">Lore</a></li>
             <li><a href="/#rules">The rules</a></li>
             <li><a href="/#safe">Stay safe</a></li>
+            <li><a href="/contact.html">Contact &amp; help</a></li>
           </ul></li>
       </ul>
       <a class="sn-cta" href="https://t.me/fathood">Join Telegram</a>
@@ -440,10 +441,11 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
       </div>
       <div class="g2" id="g-dates">
         <div class="f"><label for="g-start">Start date (UTC)</label><input id="g-start" type="date"><div class="err">Pick a start date from today onwards.</div></div>
-        <div class="f"><label for="g-days">How long</label><select id="g-days"><option value="1">1 day</option><option value="3">3 days</option><option value="7" selected>7 days (10% off)</option><option value="14">14 days (15% off)</option></select></div>
+        <div class="f"><label for="g-days">How long</label><select id="g-days"><option value="1">1 day</option><option value="3" selected>3 days</option><option value="7">7 days (10% off)</option><option value="14">14 days (15% off)</option></select></div>
       </div>
       <div class="sum"><div><div class="hint" id="g-line"></div><div class="total num" id="g-total">$0</div></div><button class="btn" type="submit" id="g-go">Continue to payment</button></div>
     </form>
+    <p class="small" style="margin-top:16px">Paid but it didn’t show up? <a href="/contact.html?topic=payment">Send us a ticket</a> with your transaction hash and we’ll sort it out.</p>
   </div>
 </section>
 
@@ -488,7 +490,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 </section>
 </main>
 
-<footer><div class="wrap"><span>© 2026 $FATHOOD. Crypto is risky. Nothing here is financial advice.</span><span><a href="/">Home</a> &nbsp; <a href="#talk">Hood Talk</a> &nbsp; <a href="#grow">Grow</a> &nbsp; <a href="#add">Add coin</a></span></div></footer>
+<footer><div class="wrap"><span>© 2026 $FATHOOD. Crypto is risky. Nothing here is financial advice.</span><span><a href="/">Home</a> &nbsp; <a href="#talk">Hood Talk</a> &nbsp; <a href="#grow">Grow</a> &nbsp; <a href="#add">Add coin</a> &nbsp; <a href="/contact.html">Contact &amp; help</a></span></div></footer>
 
 <div class="toast" id="toast" role="status" hidden></div>
 <dialog id="payDlg"><div class="md" id="payMd"></div></dialog>
@@ -538,7 +540,7 @@ const DEMO_COINS=[["Fathood","FATHOOD","robinhood",0.000412,38.2,4.1e6,310e3,3,1
  ["Fry Guy","FRY","robinhood",0.000912,112.4,0.88e6,60e3,1,1720,null,100,false],["Buffet","BUFF","base",0.0193,-2.7,1.9e6,120e3,11,214,null,0,false]]
  .map((d,i)=>({id:"1700000000000-0000000"+i,name:d[0],symbol:d[1],chain:d[2],address:"0x"+(i+1).toString(16).padStart(40,"a"),price:d[3],change:d[4],mcap:d[5],liquidity:d[6],volume:d[6]*1.7,
   pairCreatedAt:Date.now()-d[7]*DAY-3600e3,votes:d[8],promo:d[9],boosts:d[10],verified:d[11],unclaimed:i===7,description:`${d[0]} is a sample coin used in this preview. On the real site this text comes from the project’s own description.`,website:"https://example.com",x:"https://x.com/example",telegram:"https://t.me/example",discord:""}));
-const DEMO_SETTINGS={packages:{spotlight:{group:"promote",name:"Spotlight card",perDay:74,spots:3,perSpot:4,rotateSeconds:10,maxAtOnce:12,blurb:"A big card at the top of the Fat List. Pick spot 1, 2 or 3. Each spot takes turns between up to 4 coins, 10 seconds each."},row:{group:"promote",name:"Promoted row",perDay:24.99,maxAtOnce:10,blurb:"Pinned above the Trending list with a lime highlight."},banner:{group:"advertise",name:"Banner ad",perDay:199,maxAtOnce:2,blurb:"Your coin and a one-line message across the top of every page, including Hood Talk."},side:{group:"advertise",name:"Left side banner",fixedUsd:250,fixedDays:3,perDay:250,boosts:100,votes:50,maxAtOnce:1,blurb:"Your banner down the whole left side of every Fat List and Hood Talk page for 3 days. Includes 100 boosts and 50 votes."}},
+const DEMO_SETTINGS={packages:{spotlight:{group:"promote",name:"Spotlight card",per3:74,perDay:74/3,spots:3,perSpot:4,rotateSeconds:10,maxAtOnce:12,blurb:"A big card at the top of the Fat List. Pick spot 1, 2 or 3. Each spot takes turns between up to 4 coins, 10 seconds each."},row:{group:"promote",name:"Promoted row",per3:24.99,perDay:24.99/3,maxAtOnce:10,blurb:"Pinned above the Trending list with a lime highlight."},banner:{group:"advertise",name:"Banner ad",perDay:199,maxAtOnce:2,blurb:"Your coin and a one-line message across the top of every page, including Hood Talk."},side:{group:"advertise",name:"Left side banner",fixedUsd:250,fixedDays:3,perDay:250,boosts:100,votes:50,maxAtOnce:1,blurb:"Your banner down the whole left side of every Fat List and Hood Talk page for 3 days. Includes 100 boosts and 50 votes."}},
  boosts:{b10:{name:"10 boosts",boosts:10,hours:12,usd:4.99},b30:{name:"30 boosts",boosts:30,hours:24,usd:9.99},b100:{name:"100 boosts",boosts:100,hours:48,usd:19.99}},
  discounts:{1:0,3:0,7:.1,14:.15},verifyUsd:49,claimUsd:1.99,autoListMin:5000,chains:{robinhood:"Robinhood Chain",solana:"Solana",ethereum:"Ethereum",base:"Base",bsc:"BNB Chain",arbitrum:"Arbitrum",polygon:"Polygon",avalanche:"Avalanche",sui:"Sui",ton:"TON",tron:"Tron",hyperevm:"HyperEVM"},
  payChains:{robinhood:{name:"Robinhood Chain",chainId:4663,tokens:["ETH","USDG","USDC"]},ethereum:{name:"Ethereum",chainId:1,tokens:["ETH","USDG","USDT","USDC"]}},paymentsOn:false};
@@ -802,7 +804,7 @@ $("#addForm").onsubmit=async e=>{
       <div class="foot" style="justify-content:flex-start">${claim?`<button class="btn" id="pc">Pay $${S.claimUsd}</button>`:""}${(live||claim)&&!DEMO?`<a class="btn white" href="#coin/${esc(j.id)}">See its page</a>`:""}<button class="btn dark" id="dv">Get the blue tick · $${S.verifyUsd}</button></div></div>
       ${live||claim?`<h2 style="margin:30px 0 12px;font-size:26px">Now grow it</h2><div class="pkgs">
         <button class="box pkg" data-g="boost"><h3>⚡ Boost</h3><p>Jump up Trending for 12 to 48 hours. From $${Math.min(...Object.values(S.boosts).map(b=>b.usd))}.</p></button>
-        <button class="box pkg" data-g="promote"><h3>Promote</h3><p>A Spotlight card or pinned row on the Fat List. From $${S.packages.row.perDay}/day.</p></button>
+        <button class="box pkg" data-g="promote"><h3>Promote</h3><p>A Spotlight card or pinned row on the Fat List. From $${fUsd(S.packages.row.per3)} for 3 days.</p></button>
         <button class="box pkg" data-g="advertise"><h3>Advertise</h3><p>A banner across every page, including Hood Talk. $${S.packages.banner.perDay}/day.</p></button></div>`:""}`;
     $("#dv").onclick=()=>openPay({kind:"verify",listingId:j.id,title:`Blue tick check for ${name}`,usd:S.verifyUsd});
     if(claim){$("#pc").onclick=payClaim;payClaim()}
@@ -861,7 +863,7 @@ function renderGrow(){
   $("#g-blurb").textContent=GROW_BLURB[growTab];
   let cards;
   if(growTab==="boost")cards=Object.entries(S.boosts).map(([k,b])=>[k,`<h3>⚡ ${esc(b.name)}</h3><div class="price num">$${b.usd}</div><p>Lasts ${b.hours} hours from payment.</p>`]);
-  else cards=Object.entries(S.packages).filter(([,p])=>p.group===growTab).map(([k,p])=>[k,`<h3>${esc(p.name)}</h3><div class="price num">${p.fixedDays?`$${S.testPrices?p.perDay:p.fixedUsd}<small> / ${p.fixedDays} days</small>`:`$${p.perDay}<small> / day</small>`}</div><p>${esc(p.blurb)}</p><div class="left">${p.spots?`${p.spots} spots, up to ${p.perSpot} coins each`:p.maxAtOnce===1?"Only one at a time":`${p.maxAtOnce} at a time`}</div>`]);
+  else cards=Object.entries(S.packages).filter(([,p])=>p.group===growTab).map(([k,p])=>[k,`<h3>${esc(p.name)}</h3><div class="price num">${p.fixedDays?`$${S.testPrices?p.perDay:p.fixedUsd}<small> / ${p.fixedDays} days</small>`:p.per3?`$${fUsd(p.per3)}<small> / 3 days</small>`:`$${p.perDay}<small> / day</small>`}</div><p>${esc(p.blurb)}</p><div class="left">${p.spots?`${p.spots} spots, up to ${p.perSpot} coins each`:p.maxAtOnce===1?"Only one at a time":`${p.maxAtOnce} at a time`}</div>`]);
   if(!cards.some(([k])=>k===growPick[growTab]))growPick[growTab]=cards[0][0];
   $("#g-pkgs").innerHTML=cards.map(([k,h])=>`<button type="button" class="box pkg" data-p="${k}" aria-pressed="${k===growPick[growTab]}">${h}</button>`).join("");
   $("#g-pkgs").style.display=cards.length>1?"":"none";
@@ -891,7 +893,11 @@ function growPrice(){
   return {usd:Math.round(p.perDay*d*(1-(S.discounts[d]||0))*100)/100,line:`${p.name}, ${d} day${d>1?"s":""}${S.discounts[d]?` (${S.discounts[d]*100}% off)`:""}`};
 }
 const fUsd=v=>Number.isInteger(v)?v.toLocaleString():v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});
-function updGrow(){const g=growPrice();$("#g-total").textContent="$"+fUsd(g.usd);$("#g-line").textContent=g.line}
+function updGrow(){const g=growPrice();$("#g-total").textContent="$"+fUsd(g.usd);$("#g-line").textContent=g.line;
+  // show the price next to each "How long" choice
+  const p=growTab!=="boost"&&S.packages[growPick[growTab]];
+  if(p&&!p.fixedDays)[...$("#g-days").options].forEach(o=>{const d=+o.value,off=S.discounts[d]||0;
+    o.textContent=`${d} day${d>1?"s":""} · $${fUsd(S.testPrices?p.perDay:Math.round(p.perDay*d*(1-off)*100)/100)}${off?` (${off*100}% off)`:""}`})}
 $("#growForm").onsubmit=e=>{
   e.preventDefault();const f=e.target;f.querySelectorAll(".f").forEach(x=>x.classList.remove("bad"));
   const coin=coins.find(x=>x.id===growCoin),today=new Date().toISOString().slice(0,10),bad=[];
@@ -932,7 +938,7 @@ function renderPay(state){
   }else if(P.order.status==="paid"){
     const o=P.order,what={claim:" The team checks it’s really your coin, usually within 24 hours, then your details go live.",promo:" It goes live on your start date and shows automatically.",boost:" Your boosts are live now.",verify:" The team checks your coin and adds the blue tick, usually within a few hours."}[P.kind]||"";
     h+=`<p class="payamt">Paid. You’re in.</p><p>${esc(o.label)} for ${esc(o.coin)} is confirmed.${what}</p>
-      ${o.explorer?`<p class="small"><a href="${esc(o.explorer)}" target="_blank" rel="noopener">See the payment on the explorer</a>. Order ${esc(o.id)}</p>`:""}<div class="foot"><button class="btn" data-x>Done</button></div>`;
+      ${o.explorer?`<p class="small"><a href="${esc(o.explorer)}" target="_blank" rel="noopener">See the payment on the explorer</a>. Order ${esc(o.id)}</p>`:""}<p class="small">Something not right? <a href="/contact.html?topic=payment&amp;order=${encodeURIComponent(o.id)}${o.txHash?"&amp;tx="+encodeURIComponent(o.txHash):""}&amp;coin=${encodeURIComponent(o.coin||"")}">Send us a ticket</a>.</p><div class="foot"><button class="btn" data-x>Done</button></div>`;
   }else{
     const o=P.order,left=Math.max(0,Math.round((o.expiresAt-Date.now())/6e4));
     h+=`<p class="step">Send exactly</p><div class="payamt num">${esc(o.amount)} ${esc(o.token)}</div>

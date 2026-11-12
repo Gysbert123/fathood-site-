@@ -2,6 +2,7 @@ import { sql } from "../lib/db.mjs";
 import { lookup } from "../lib/lookup.mjs";
 import { parseLogo, saveLogo, testPrices, setTestPrices, TEST_PRICE_HOURS, db, json, newId, ID_RE, DAY, ipOf, isAdmin, clean, cleanUrl, addrOk, CHAIN_NAMES, PACKAGES, BOOSTS, PAY_CHAINS } from "../lib/coinlist.mjs";
 import { slotsTaken } from "../lib/db.mjs";
+import { TOPICS, ensureTickets, getPic, deletePics } from "../lib/tickets.mjs";
 
 export const config = { path: "/api/fatlist-admin" };
 const ms = (d) => (d ? new Date(d).getTime() : null);
@@ -10,8 +11,12 @@ const listing = (r) => ({ id: r.id, name: r.name, symbol: r.symbol, chain: r.cha
   verified: r.verified, verifyPaid: r.verify_paid, createdAt: ms(r.created_at), liquidityAtListing: r.liquidity_at_listing, liquidity: r.liquidity });
 const order = (o) => ({ id: o.id, kind: o.kind, pkg: o.pkg, label: o.label, coin: o.coin_label, usd: Number(o.usd), start: ms(o.start_at), end: ms(o.end_at),
   adText: o.ad_text, amount: o.amount, token: o.token, chain: o.chain, payer: o.payer, paidAt: ms(o.paid_at), comped: o.comped, pulled: o.pulled,
-  explorer: o.tx_hash ? PAY_CHAINS[o.chain].explorer + o.tx_hash : null, live: !o.pulled && ms(o.start_at) <= Date.now() && ms(o.end_at) > Date.now() });
+  explorer: o.tx_hash ? (PAY_CHAINS[o.chain]?.explorer || "https://solscan.io/tx/") + o.tx_hash : null, live: !o.pulled && ms(o.start_at) <= Date.now() && ms(o.end_at) > Date.now() });
 const bust = () => db().delete("snapshot/board");
+const ticket = (t) => ({ id: t.id, code: t.id.slice(-6).toUpperCase(), topic: t.topic, topicName: TOPICS[t.topic] || t.topic, name: t.name, contact: t.contact,
+  coin: t.coin, tx: t.tx, orderId: t.order_id, body: t.body, links: t.links || [], pics: t.pics, status: t.status, note: t.note,
+  createdAt: ms(t.created_at), closedAt: ms(t.closed_at) });
+const TX_RE = /^0x[a-fA-F0-9]{64}$|^[1-9A-HJ-NP-Za-km-z]{64,90}$/;
 
 export default async (req, context) => {
   if (!process.env.DATABASE_URL) return json({ error: "The Fat List database isn’t connected yet. Add DATABASE_URL in Netlify.", noDb: true }, 503);
@@ -24,6 +29,15 @@ export default async (req, context) => {
   }
   try {
     if (req.method === "GET") {
+      // a ticket picture: ?timg=<ticket id>/<n>
+      const timg = new URL(req.url).searchParams.get("timg");
+      if (timg) {
+        const [tid, n] = timg.split("/");
+        const p = ID_RE.test(tid) && /^[0-2]$/.test(n) ? await getPic(tid, Number(n)) : null;
+        if (!p) return new Response("Not found", { status: 404 });
+        return new Response(Uint8Array.from(atob(p.b64), (c) => c.charCodeAt(0)), { headers: { "content-type": `image/${p.type}`, "cache-control": "private, max-age=3600",
+          "x-content-type-options": "nosniff", "content-security-policy": "default-src 'none'" } });
+      }
       const q = clean(new URL(req.url).searchParams.get("q"), 90).replace(/^\$/, "");
       const like = `%${q.replace(/[%_\\]/g, "\\$&")}%`;
       const [pending, live, claims, orders, posts, [stats]] = await Promise.all([
@@ -36,12 +50,15 @@ export default async (req, context) => {
         sql()`select (select count(*) from coins where status = 'approved')::int as approved, (select count(*) from coins where status = 'indexed')::int as indexed,
                (select coalesce(sum(usd), 0) from orders where status = 'paid' and not comped and paid_at > now() - interval '30 days')::float as revenue30`,
       ]);
+      await ensureTickets();
+      const tickets = await sql()`(select * from tickets where status = 'open' order by created_at limit 200)
+        union all (select * from tickets where status <> 'open' order by closed_at desc nulls last limit 100)`;
       const tp = await testPrices();
       return json({
         testPrices: tp ? { on: true, until: tp.until } : { on: false }, testHours: TEST_PRICE_HOURS,
         listings: [...pending, ...live].map(listing), stats,
         claims: claims.map((c) => ({ id: c.id, coinId: c.coin_id, name: c.coin_name, symbol: c.coin_symbol, chain: c.chain, address: c.address, liquidity: c.liquidity, image: c.coin_image, data: c.data, createdAt: ms(c.created_at) })),
-        orders: orders.map(order),
+        orders: orders.map(order), tickets: tickets.map(ticket),
         posts: posts.map((p) => ({ id: p.id, title: p.title, author: p.author, reports: p.reports, removed: p.removed, createdAt: ms(p.created_at), disclosure: p.disclosure, excerpt: p.excerpt })),
       });
     }
@@ -57,6 +74,24 @@ export default async (req, context) => {
       await sql()`delete from votes`;
       await sql()`update coins set votes = 0 where votes <> 0`;
       await bust();
+      return json({ ok: true });
+    }
+    if (b.action === "ticketDone" || b.action === "ticketOpen") {
+      await ensureTickets();
+      const r = await sql()`update tickets set status = ${b.action === "ticketDone" ? "done" : "open"}, closed_at = ${b.action === "ticketDone" ? new Date() : null}
+        where id = ${id} returning 1`;
+      return r.length ? json({ ok: true }) : json({ error: "Unknown ticket." }, 404);
+    }
+    if (b.action === "ticketNote") {
+      await ensureTickets();
+      const r = await sql()`update tickets set note = ${clean(b.note, 2000) || null} where id = ${id} returning 1`;
+      return r.length ? json({ ok: true }) : json({ error: "Unknown ticket." }, 404);
+    }
+    if (b.action === "ticketDelete") {
+      await ensureTickets();
+      const [t] = await sql()`delete from tickets where id = ${id} returning pics`;
+      if (!t) return json({ error: "Unknown ticket." }, 404);
+      await deletePics(id, t.pics);
       return json({ ok: true });
     }
     if (b.action === "lookup") {
@@ -93,6 +128,16 @@ export default async (req, context) => {
       if (!c || !["approved", "indexed"].includes(c.status)) return json({ error: "That coin isn’t live." }, 404);
       const now = Date.now();
       const o = { id: newId(), coin_id: c.id, coin_label: `${c.name} (${c.symbol})`, status: "paid", comped: true, usd: 0, chain: "robinhood", token: "FREE", amount: "0", payer: "admin", paid_at: new Date() };
+      // "They paid but it didn't show up": record what they paid so it counts as a sale and the same payment can't be used again.
+      const paidUsd = Math.round(Number(b.paidUsd || 0) * 100) / 100, tx = clean(b.tx, 140);
+      if (isNaN(paidUsd) || paidUsd < 0 || paidUsd > 100000) return json({ error: "Enter what they paid in dollars, or leave it empty." }, 400);
+      if (tx && !TX_RE.test(tx)) return json({ error: "That doesn’t look like a transaction hash. Paste just the hash, or leave it empty." }, 400);
+      if (tx) {
+        const [used] = await sql()`select id from orders where tx_hash = ${tx}`;
+        if (used) return json({ error: "That transaction is already linked to an order. Check Payments: it may have gone through after all." }, 409);
+        Object.assign(o, { chain: tx.startsWith("0x") ? "robinhood" : "solana", tx_hash: tx });
+      }
+      if (paidUsd > 0) Object.assign(o, { comped: false, usd: paidUsd, token: "MANUAL", amount: String(paidUsd), payer: "admin (paid, added by hand)" });
       if (BOOSTS[b.what]) {
         const p = BOOSTS[b.what];
         Object.assign(o, { kind: "boost", pack: b.what, boosts: p.boosts, hours: p.hours, start_at: new Date(now), end_at: new Date(now + p.hours * 3600000), label: `${p.name} for ${p.hours} hours (free)` });
@@ -110,9 +155,19 @@ export default async (req, context) => {
         } else if (await slotsTaken(b.what, start, end) >= PACKAGES[b.what].maxAtOnce) return json({ error: `All ${PACKAGES[b.what].name.toLowerCase()} slots are taken on those dates.` }, 409);
         Object.assign(o, { kind: "promo", pkg: b.what, days, start_at: new Date(start), end_at: new Date(end), label: `${PACKAGES[b.what].name}, ${days} day${days > 1 ? "s" : ""} (free)` });
         if (b.what === "banner") { o.ad_text = clean(b.adText, 70); if (o.ad_text.length < 8) return json({ error: "Write a banner message of 8 to 70 characters." }, 400); }
-        if (b.what === "side") { o.ad_text = clean(b.adText, 70) || null; o.boosts = PACKAGES.side.boosts; await sql()`update coins set votes = votes + ${PACKAGES.side.votes} where id = ${c.id}`; }
+        if (b.what === "side") {
+          o.ad_text = clean(b.adText, 70) || null; o.boosts = PACKAGES.side.boosts;
+          if (b.adImage) { const img = parseLogo(b.adImage); if (!img) return json({ error: "The banner picture couldn’t be read. Use PNG, JPG or WebP under 300 KB." }, 400);
+            await sql()`alter table orders add column if not exists ad_image text`; o.ad_image = await saveLogo(o.id, img); }
+        }
       } else return json({ error: "Pick what to give." }, 400);
-      await sql()`insert into orders ${sql()(o)}`; await bust();
+      await sql()`insert into orders ${sql()(o)}`;
+      if (b.what === "side") await sql()`update coins set votes = votes + ${PACKAGES.side.votes} where id = ${c.id}`;
+      if (ID_RE.test(String(b.ticket || ""))) {
+        await ensureTickets();
+        await sql()`update tickets set status = 'done', closed_at = now(), note = concat_ws(E'\n', note, ${"Added " + o.label + " for " + o.coin_label + "."}) where id = ${b.ticket}`;
+      }
+      await bust();
       return json({ ok: true });
     }
     if (b.action === "pullAd") { await sql()`update orders set pulled = true where id = ${id}`; await bust(); return json({ ok: true }); }
@@ -142,6 +197,16 @@ export default async (req, context) => {
     }
 
     if (!ID_RE.test(id)) return json({ error: "Unknown coin." }, 400);
+    if (b.action === "editCoin") {
+      const upd = { name: clean(b.name, 40), symbol: clean(b.symbol, 12).replace(/^\$/, "").toUpperCase(), description: clean(b.description, 1000),
+        website: cleanUrl(b.website) || null, x: cleanUrl(b.x) || null, telegram: cleanUrl(b.telegram) || null, discord: cleanUrl(b.discord) || null, contact: clean(b.contact, 120) || null };
+      if (upd.name.length < 2 || !/^[A-Z0-9]{2,12}$/.test(upd.symbol)) return json({ error: "Enter a name and a symbol of 2–12 letters or numbers." }, 400);
+      // Saving details by hand makes it a team-approved listing, so the auto-lister never hides it.
+      const r = await sql()`update coins set ${sql()(upd)}, status = case when status = 'indexed' then 'approved' else status end,
+        approved_at = coalesce(approved_at, now()) where id = ${id} returning 1`;
+      if (!r.length) return json({ error: "Unknown coin." }, 404);
+      await bust(); return json({ ok: true });
+    }
     if (b.action === "setLogo") {
       const logo = parseLogo(b.logo); if (!logo) return json({ error: "Upload a PNG, JPG or WebP logo." }, 400);
       await sql()`update coins set image = ${await saveLogo(id, logo)} where id = ${id}`; await bust(); return json({ ok: true });
