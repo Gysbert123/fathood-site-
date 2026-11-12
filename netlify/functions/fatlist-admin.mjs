@@ -39,26 +39,45 @@ export default async (req, context) => {
         return new Response(Uint8Array.from(atob(p.b64), (c) => c.charCodeAt(0)), { headers: { "content-type": `image/${p.type}`, "cache-control": "private, max-age=3600",
           "x-content-type-options": "nosniff", "content-security-policy": "default-src 'none'" } });
       }
-      const q = clean(new URL(req.url).searchParams.get("q"), 90).replace(/^\$/, "");
+      const sp = new URL(req.url).searchParams;
+      // a quick "wake up" call the admin page makes before loading, so the big load doesn't start cold
+      if (sp.get("ping")) return json({ ok: true });
+      const q = clean(sp.get("q"), 90).replace(/^\$/, "");
       const like = `%${q.replace(/[%_\\]/g, "\\$&")}%`;
-      // everything at once: one slow step after another ran past Netlify's 10-second limit
-      const [pending, live, claims, orders, posts, [stats], tickets, [vdays, vsrc], tp] = await Promise.all([
-        sql()`select * from coins where status = 'pending' or (verify_paid and not verified and status not in ('rejected', 'removed')) order by verify_paid desc, created_at desc limit 300`,
-        q ? sql()`select * from coins where status in ('approved', 'indexed') and (address_lc = ${q.toLowerCase()} or symbol ilike ${like} or name ilike ${like}) order by liquidity desc nulls last limit 100`
-          : sql()`select * from coins where status = 'approved' order by coalesce(approved_at, created_at) desc limit 200`,
-        sql()`select cl.*, c.name as coin_name, c.symbol as coin_symbol, c.chain, c.address, c.image as coin_image, c.liquidity from claims cl join coins c on c.id = cl.coin_id where cl.status = 'pending' order by cl.created_at`,
-        sql()`select * from orders where status = 'paid' order by paid_at desc limit 300`,
-        sql()`select id, title, author, reports, removed, created_at, disclosure, left(body, 300) as excerpt from posts order by reports desc, created_at desc limit 150`,
-        sql()`select (select count(*) from coins where status = 'approved')::int as approved, (select count(*) from coins where status = 'indexed')::int as indexed,
-               (select coalesce(sum(usd), 0) from orders where status = 'paid' and not comped and paid_at > now() - interval '30 days')::float as revenue30`,
-        ensureTickets().then(() => sql()`(select * from tickets where status = 'open' order by created_at limit 200)
-          union all (select * from tickets where status <> 'open' order by closed_at desc nulls last limit 100)`),
-        ensureVisits().then(() => Promise.all([
+      const liveQ = () => q ? sql()`select * from coins where status in ('approved', 'indexed') and (address_lc = ${q.toLowerCase()} or symbol ilike ${like} or name ilike ${like}) order by liquidity desc nulls last limit 100`
+        : sql()`select * from coins where status = 'approved' order by coalesce(approved_at, created_at) desc limit 200`;
+      // coin search on its own: small and fast
+      if (sp.get("only") === "live") return json({ listings: (await liveQ()).map(listing) });
+      // everything at once, timed: if the database is slow, say which part instead of hitting Netlify's 10-second limit
+      const T0 = Date.now(), took = {};
+      const t = (k, p) => Promise.resolve(p).then((v) => { took[k] = Date.now() - T0; return v; });
+      let timer;
+      const all = Promise.all([
+        t("coins to review", sql()`select * from coins where status = 'pending' or (verify_paid and not verified and status not in ('rejected', 'removed')) order by verify_paid desc, created_at desc limit 300`),
+        t("live coins", liveQ()),
+        t("claims", sql()`select cl.*, c.name as coin_name, c.symbol as coin_symbol, c.chain, c.address, c.image as coin_image, c.liquidity from claims cl join coins c on c.id = cl.coin_id where cl.status = 'pending' order by cl.created_at`),
+        t("payments", sql()`select * from orders where status = 'paid' order by paid_at desc limit 300`),
+        t("Hood Talk", sql()`select id, title, author, reports, removed, created_at, disclosure, left(body, 300) as excerpt from posts order by reports desc, created_at desc limit 150`),
+        t("totals", sql()`select (select count(*) from coins where status = 'approved')::int as approved, (select count(*) from coins where status = 'indexed')::int as indexed,
+               (select coalesce(sum(usd), 0) from orders where status = 'paid' and not comped and paid_at > now() - interval '30 days')::float as revenue30`),
+        t("help tickets", ensureTickets().then(() => sql()`(select * from tickets where status = 'open' order by created_at limit 200)
+          union all (select * from tickets where status <> 'open' order by closed_at desc nulls last limit 100)`)),
+        t("visits", ensureVisits().then(() => Promise.all([
           sql()`select to_char(day, 'YYYY-MM-DD') as day, visits, visitors from visit_days where day > current_date - 30 order by day`,
           sql()`select kind, name, sum(n)::int as n from visit_src where day > current_date - 30 group by kind, name order by n desc limit 40`,
-        ])),
-        testPrices(),
+        ]))),
+        t("test prices", testPrices()),
       ]);
+      const NAMES = ["coins to review", "live coins", "claims", "payments", "Hood Talk", "totals", "help tickets", "visits", "test prices"];
+      const res = await Promise.race([all, new Promise((r) => { timer = setTimeout(() => r(null), 8000); })]);
+      clearTimeout(timer);
+      if (!res) {
+        const slow = NAMES.filter((k) => !(k in took));
+        console.error("admin load slow", took, slow);
+        all.catch(() => {});
+        return json({ error: `The database is slow right now (still waiting for: ${slow.join(", ")}). Press Try again.`, slow, took }, 503);
+      }
+      const [pending, live, claims, orders, posts, [stats], tickets, [vdays, vsrc], tp] = res;
       return json({
         visits: { days: vdays, sources: vsrc.filter((r) => r.kind === "src").slice(0, 12), pages: vsrc.filter((r) => r.kind === "page") },
         testPrices: tp ? { on: true, until: tp.until } : { on: false }, testHours: TEST_PRICE_HOURS,

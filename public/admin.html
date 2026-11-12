@@ -140,6 +140,7 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
     <section id="sec-fat" hidden>
       <div class="empty" id="fl-off">Loading the Fat List…</div>
       <div id="fl-app" hidden>
+        <form class="row" id="gsf" role="search" style="margin-bottom:12px"><input id="gSearch" type="search" placeholder="Find a coin: name, $SYMBOL or contract address" aria-label="Find a coin" style="flex:1;min-width:0"><button class="ok">Search</button></form>
         <div class="tabs" role="tablist" id="tabs">
           <button role="tab" data-t="add" aria-selected="true">Add a coin</button>
           <button role="tab" data-t="pending" aria-selected="false">To review</button>
@@ -341,18 +342,24 @@ window.FH=(function(){
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 let data={listings:[],orders:[],claims:[],posts:[]},tab="add",liveQ="",loading=null;
-async function api(method,body,q,again){
-  const r=await fetch("/api/fatlist-admin"+(q?"?q="+encodeURIComponent(q):""),{method,headers:{"x-admin-key":FH.key,"content-type":"application/json"},body:body?JSON.stringify(body):undefined});
+async function api(method,body,qs,again){
+  const r=await fetch("/api/fatlist-admin"+(qs?"?"+qs:""),{method,headers:{"x-admin-key":FH.key,"content-type":"application/json"},body:body?JSON.stringify(body):undefined});
   const j=await r.json().catch(()=>({}));if(r.status===401){FH.logout("Wrong password.")}
   // the server was waking up and timed out: loading is safe to repeat, so try once more
-  if(r.status>=500&&!j.error&&method==="GET"&&!again)return api(method,body,q,true);
+  // the server was waking up and timed out: wake it with a tiny call, then try once more
+  if(r.status>=500&&!j.error&&method==="GET"&&!again){await fetch("/api/fatlist-admin?ping=1",{headers:{"x-admin-key":FH.key}}).catch(()=>{});return api(method,body,qs,true)}
   if(!r.ok)throw new Error(j.error||(r.status===404?"The Fat List only works on the live site.":r.status>=500?"The server was too slow to answer. Press Refresh to try again.":"Request failed"));return j;
 }
 async function load(){
   if(!FH.key)return;
   if(loading)return loading;
-  loading=(async()=>{try{data=await api("GET",undefined,liveQ);$("#fl-off").hidden=true;$("#fl-app").hidden=false;FH.setTest(data.testPrices,data.testHours);render();renderTickets();renderVisits()}
-  catch(e){$("#fl-app").hidden=true;$("#fl-off").hidden=false;$("#fl-off").textContent=e.message;$("#tp-msg").textContent=e.message}
+  loading=(async()=>{try{
+    // wake the server first (a cold start plus the big load could pass Netlify's time limit)
+    if(!data.loaded)await fetch("/api/fatlist-admin?ping=1",{headers:{"x-admin-key":FH.key}}).catch(()=>{});
+    data=await api("GET",undefined,liveQ?"q="+encodeURIComponent(liveQ):"");data.loaded=true;$("#fl-off").hidden=true;$("#fl-app").hidden=false;FH.setTest(data.testPrices,data.testHours);render();renderTickets();renderVisits()}
+  catch(e){
+    // keep the page usable (Add a coin, search) even when the full load fails
+    $("#fl-app").hidden=false;$("#fl-off").hidden=false;$("#fl-off").innerHTML=esc(e.message)+' <button type="button" class="ghost" id="fl-retry">Try again</button>';$("#fl-retry").onclick=()=>load();$("#tp-msg").textContent=e.message;render()}
   finally{loading=null}})();
   return loading;
 }
@@ -457,7 +464,7 @@ function render(){
   }
   const ls=data.listings.filter(l=>tab==="pending"?(l.status==="pending"||(l.verifyPaid&&!l.verified&&l.status!=="rejected"&&l.status!=="removed")):tab==="rejected"?(l.status==="rejected"||l.status==="removed"):(tab==="approved"?(l.status==="approved"||l.status==="indexed"):l.status===tab));
   const fixBar=tab==="approved"&&fix?`<div class="fixbar"><span>Fixing ticket #${esc(fix.code)}: find their coin, then press <u>Add what they paid for</u>.</span><button type="button" class="ghost" data-fixstop>Stop</button></div>`:"";
-  const searchBox=fixBar+(tab==="approved"?`<form class="row" id="lsf" style="margin-bottom:6px"><input id="liveSearch" value="${esc(liveQ)}" placeholder="Search any coin, including auto-listed" style="flex:1;min-width:0"><button class="ghost">Search</button></form>`:"");
+  const searchBox=fixBar; // the coin search box sits above the tabs (#gsf)
   if(!ls.length){el.innerHTML=searchBox+`<div class="empty">${tab==="pending"?"Nothing waiting. Nice.":"Nothing here."}</div>`;wireSearch();return}
   setTimeout(wireSearch);
   el.innerHTML=searchBox+ls.map(l=>`<div class="card">${l.image?`<img src="${esc(l.image)}" alt="" style="width:44px;height:44px;border-radius:50%;border:2px solid var(--ink);object-fit:cover;float:right">`:""}<h3>${esc(l.name)} ($${esc(l.symbol)})${l.status==="indexed"?'<span class="tag" style="background:#eee">AUTO-LISTED</span>':""}${l.verifyPaid&&!l.verified?'<span class="tag">BLUE TICK PAID</span>':""}${l.verified?'<span class="tag" style="background:#1D6FE0;color:#fff">VERIFIED</span>':""}${l.status==="approved"&&tab==="pending"?'<span class="tag" style="background:#eee">ALREADY LIVE</span>':""}</h3>
@@ -487,7 +494,18 @@ $("#list").addEventListener("submit",async e=>{
     $("#msg").textContent=wasFix?"Done. It’s live on the Fat List and the ticket is marked as done. Let them know.":"Done. It’s live on the Fat List.";await load()}
   catch(err){$("#msg").textContent=err.message;btn.disabled=false}
 });
-function wireSearch(){const f=$("#lsf");if(f)f.onsubmit=async e=>{e.preventDefault();liveQ=$("#liveSearch").value.trim();await load()}}
+// coin search: a small request of its own, so it works even when the full load is slow
+async function searchLive(q){
+  liveQ=q;tab="approved";document.querySelectorAll("#tabs button").forEach(x=>x.setAttribute("aria-selected",String(x.dataset.t==="approved")));
+  $("#gSearch").value=q;$("#list").innerHTML='<div class="empty">Searching…</div>';
+  try{const j=await api("GET",undefined,"only=live&q="+encodeURIComponent(q));
+    data.listings=[...(data.listings||[]).filter(l=>l.status!=="approved"&&l.status!=="indexed"),...j.listings];$("#msg").textContent=q?`${j.listings.length} coin${j.listings.length===1?"":"s"} found for “${q}”.`:""}
+  catch(err){$("#msg").textContent=err.message}
+  render();
+}
+FH.searchLive=searchLive;
+function wireSearch(){const f=$("#lsf");if(f)f.onsubmit=e=>{e.preventDefault();searchLive($("#liveSearch").value.trim())}}
+$("#gsf").onsubmit=e=>{e.preventDefault();searchLive($("#gSearch").value.trim())};
 $("#list").onclick=async e=>{
   const gf=e.target.closest("[data-givefree]");if(gf){const card=gf.closest(".card");if(!card.querySelector(".comp"))card.insertAdjacentHTML("beforeend",compForm(gf.dataset.givefree));return}
   const cx=e.target.closest("[data-cancel]");if(cx){cx.closest(".comp").remove();return}
