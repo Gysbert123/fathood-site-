@@ -183,7 +183,9 @@ export default async (req, context) => {
       const fresh = new Map((await sql()`select id, votes from coins where votes > 0`).map((r) => [r.id, r.votes]));
       s.coins = s.coins.map((c) => ({ ...c, votes: fresh.get(c.id) || 0 }));
       return json({ coins: s.coins, ads: s.ads, side: s.side || null, total: s.total, settings: await settings() }, 200,
-        { "cache-control": "public, max-age=15", "netlify-cdn-cache-control": "public, s-maxage=20, stale-while-revalidate=60" });
+        // Netlify keeps one shared copy for a minute and keeps handing it out (while refreshing it in the background) for 10 more,
+        // so visitors almost never wait for this function.
+        { "cache-control": "public, max-age=15", "netlify-cdn-cache-control": "public, durable, s-maxage=60, stale-while-revalidate=600" });
     }
     if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
     const b = await req.json().catch(() => ({}));

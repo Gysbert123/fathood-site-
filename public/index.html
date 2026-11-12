@@ -558,7 +558,7 @@ body{position:relative}
   <section id="torchpad" style="background: #0B0B0B; color: #FFF8E7; padding: 88px 24px; border-top: 4px solid #111111; overflow: hidden">
     <div style="max-width: 1100px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; gap: 48px">
       <div style="flex: 0 1 300px; min-width: 0; margin: 0 auto; max-width: 300px">
-        <img class="fh-flame" src="/media/img-4c55b979ac.webp" alt="The green Torchpad flame">
+        <img class="fh-flame" src="/media/img-4c55b979ac.webp" alt="The green Torchpad flame" loading="lazy">
       </div>
       <div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 18px">
         <p style="margin: 0; font-weight: 700; font-size: 15px; letter-spacing: 2px; text-transform: uppercase; color: #7CF25E">The launch</p>
@@ -885,7 +885,7 @@ document.querySelectorAll('.fh-copy').forEach(function(b){
     var sc=function(c){return (c.votes||0)*3+Math.log10((c.volume||0)+1)*20+Math.log10((c.liquidity||0)+1)*8};
     var l=j.coins.slice().sort(function(a,b){return ((b.boosts||0)-(a.boosts||0))||(sc(b)-sc(a))}).slice(0,3);
     box.innerHTML=l.map(function(c,i){var ch=c.change,ini=String(c.name||"").replace(/\$/g,"").slice(0,2).toUpperCase();
-      return '<li><span class="n">'+(i+1)+'</span><span class="lg">'+(c.image?'<img src="'+esc(c.image)+'" alt="" loading="lazy">':esc(ini))+'</span><span class="sym">$'+esc(c.symbol)+(c.boosts?' <span style="color:#D4F53C">⚡'+c.boosts+'</span>':'')+'</span>'+
+      return '<li><span class="n">'+(i+1)+'</span><span class="lg">'+(c.image?'<img src="'+esc(String(c.image).replace(/^(https:\/\/cdn\.dexscreener\.com\/[^?]+\?)width=\d+&height=\d+(&quality=\d+)?/,"$1width=128&height=128&quality=80").replace(/(coin-images\.coingecko\.com\/coins\/images\/\d+\/)large\//,"$1small/"))+'" alt="" loading="lazy">':esc(ini))+'</span><span class="sym">$'+esc(c.symbol)+(c.boosts?' <span style="color:#D4F53C">⚡'+c.boosts+'</span>':'')+'</span>'+
         (ch==null?'':'<span class="'+(ch>=0?"up":"down")+'">'+(ch>=0?"+":"")+Number(ch).toFixed(1)+'%</span>')+'</li>'}).join("");
     box.hidden=false}).catch(function(){})}
   if("requestIdleCallback" in window)requestIdleCallback(go,{timeout:2500});else setTimeout(go,800);

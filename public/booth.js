@@ -599,12 +599,19 @@ function bootBooth(M) {
   window.addEventListener('resize', draw);
 }
 
-(function () {
+// Start something only when its section is close to the screen, so the top of the page loads first.
+function whenNear(el, fn) {
+  if (!el || !('IntersectionObserver' in window)) { fn(); return; }
+  var io = new IntersectionObserver(function (es) { if (es.some(function (e) { return e.isIntersecting; })) { io.disconnect(); fn(); } }, { rootMargin: '800px 0px' });
+  io.observe(el);
+}
+
+whenNear(document.getElementById('booth'), function () {
   if (window.BOOTH_MANIFEST) { bootBooth(window.BOOTH_MANIFEST); return; }
   fetch('/booth/manifest.json').then(function (r) { return r.json(); }).then(bootBooth).catch(function () {
     var p = document.getElementById('bt-panel'); if (p) p.textContent = 'The meme pieces could not load. Refresh the page to try again.';
   });
-})();
+});
 
 /* ---------- Wall of Fat ---------- */
 (function () {
@@ -631,5 +638,5 @@ function bootBooth(M) {
   var lb = document.getElementById('wall-lightbox');
   lb.addEventListener('click', function (e) { if (e.target === lb || e.target.tagName === 'BUTTON') lb.hidden = true; });
   document.addEventListener('keydown', function (e) { if (e.key === 'Escape') lb.hidden = true; });
-  load();
+  whenNear(wall, load);
 })();

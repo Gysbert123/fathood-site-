@@ -44,7 +44,40 @@ export async function lookup(address) {
       } catch {}
     }
   }
+  // Not on DEX Screener yet (common for brand-new coins, e.g. still on a launchpad like Torchpad): try GeckoTerminal,
+  // which picks up new Robinhood Chain coins sooner.
+  if (!data.found) data = await geckoLookup(address);
   await setJSON(ck, { at: Date.now(), data });
   return data;
+}
+
+const num = (v) => (v == null || v === "" || isNaN(Number(v)) ? 0 : Number(v));
+async function geckoLookup(address) {
+  const nets = /^0x[a-fA-F0-9]{40}$/.test(address) ? [["robinhood", "robinhood"], ["base", "base"], ["ethereum", "eth"], ["bsc", "bsc"]]
+    : /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address) ? [["solana", "solana"]] : [];
+  for (const [chain, net] of nets) {
+    try {
+      const t = (await get(`https://api.geckoterminal.com/api/v2/networks/${net}/tokens/${encodeURIComponent(address)}`))?.data?.attributes;
+      if (!t || !t.symbol) continue;
+      const data = { found: true, chain, address: t.address || address, name: clean(t.name, 40), symbol: clean(t.symbol, 12).replace(/^\$/, ""),
+        image: /missing/i.test(t.image_url || "") ? "" : cleanUrl(t.image_url), liquidity: num(t.total_reserve_in_usd), pairAddress: null,
+        description: "", website: "", x: "", telegram: "", discord: "" };
+      try {
+        const pool = (await get(`https://api.geckoterminal.com/api/v2/networks/${net}/tokens/${encodeURIComponent(address)}/pools?page=1`))?.data?.[0];
+        if (pool?.attributes?.address) data.pairAddress = pool.attributes.address;
+      } catch {}
+      try {
+        const a = (await get(`https://api.geckoterminal.com/api/v2/networks/${net}/tokens/${encodeURIComponent(address)}/info`))?.data?.attributes || {};
+        data.description = clean(a.description, 1000);
+        data.image ||= /missing/i.test(a.image_url || "") ? "" : cleanUrl(a.image_url);
+        data.website = cleanUrl((a.websites || [])[0]);
+        if (a.twitter_handle) data.x = cleanUrl("https://x.com/" + a.twitter_handle);
+        if (a.telegram_handle) data.telegram = cleanUrl("https://t.me/" + a.telegram_handle);
+        data.discord = cleanUrl(a.discord_url);
+      } catch {}
+      return data;
+    } catch {}
+  }
+  return { found: false };
 }
 

@@ -518,7 +518,9 @@ const ageOf=c=>{const t=c.pairCreatedAt||c.launchedAt;return t?Math.max(0,(Date.
 const fA=d=>d==null?"—":d<1?Math.max(1,Math.round(d*24))+"h":d<60?Math.round(d)+"d":Math.round(d/30)+"mo";
 const ago=t=>{const m=(Date.now()-t)/6e4;return m<1?"just now":m<60?Math.round(m)+"m ago":m<1440?Math.round(m/60)+"h ago":m<43200?Math.round(m/1440)+"d ago":new Date(t).toLocaleDateString()};
 const ini=n=>String(n).replace(/\$/g,"").split(/\s+/).map(w=>w[0]||"").join("").slice(0,2).toUpperCase();
-const av=c=>`<span class="av" aria-hidden="true">${c.image?`<img src="${esc(c.image)}" alt="" loading="lazy" data-i="${esc(ini(c.name))}" onerror="this.parentNode.textContent=this.dataset.i">`:esc(ini(c.name))}</span>`;
+// small versions of coin logos (they show tiny, but DEX Screener sends 800px pictures by default)
+const smallImg=u=>String(u||"").replace(/^(https:\/\/cdn\.dexscreener\.com\/[^?]+\?)width=\d+&height=\d+(&quality=\d+)?/,"$1width=128&height=128&quality=80").replace(/(coin-images\.coingecko\.com\/coins\/images\/\d+\/)large\//,"$1small/");
+const av=c=>`<span class="av" aria-hidden="true">${c.image?`<img src="${esc(smallImg(c.image))}" alt="" loading="lazy" data-i="${esc(ini(c.name))}" onerror="this.parentNode.textContent=this.dataset.i">`:esc(ini(c.name))}</span>`;
 const pav=a=>{const h=parseInt(String(a).slice(2,8),16)%360||0;return `<span class="pav" style="background:conic-gradient(hsl(${h} 80% 60%),hsl(${(h+120)%360} 80% 60%),hsl(${(h+240)%360} 80% 60%),hsl(${h} 80% 60%))" aria-hidden="true"></span>`};
 const chainName=k=>(S&&S.chains[k])||(k?k[0].toUpperCase()+k.slice(1):"");
 const vb=c=>c.verified?'<span class="vbadge" title="Checked by the Fathood team" aria-label="Verified">✓</span>':"";
@@ -1003,7 +1005,7 @@ async function poll(hash){
   }
   P.polling=false;if(!P.closed)renderPay({bad:1,msg:`Still not confirmed. Your payment is safe. Message the team on Telegram with this hash: <code style="word-break:break-all">${esc(hash)}</code>`});
 }
-async function refresh(){if(DEMO)return;try{const j=await api("/api/fatlist");coins=j.coins;ads=j.ads||[];side=j.side||null;total=j.total||coins.length;renderTick();renderSide();renderAd();buildChips();renderSpots();renderRows()}catch(_){}}
+async function refresh(){if(DEMO)return;try{const j=await api("/api/fatlist?fresh="+Date.now());coins=j.coins;ads=j.ads||[];side=j.side||null;total=j.total||coins.length;renderTick();renderSide();renderAd();buildChips();renderSpots();renderRows()}catch(_){}}
 
 // ---------- Hood Talk
 let talkSort="latest",talkNext=null;

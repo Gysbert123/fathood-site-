@@ -76,7 +76,9 @@ export async function buildSnapshot() {
   return snap;
 }
 
-export async function getSnapshot(maxAgeMs = 180000) {
+// The board is rebuilt every 15 minutes by market-refresh, and straight away after any payment or admin change
+// (those delete the saved copy). So a visitor only rebuilds it if both of those somehow missed.
+export async function getSnapshot(maxAgeMs = 20 * 60000) {
   const raw = await db().get("snapshot/board");
   const s = raw ? JSON.parse(raw) : null;
   if (s && Date.now() - s.at < maxAgeMs) return s;
