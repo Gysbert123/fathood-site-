@@ -68,8 +68,19 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
 .steps{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
 .state{display:inline-block;padding:4px 12px;border:3px solid var(--ink);border-radius:999px;font-weight:700}
 .state.on{background:var(--red);color:#fff}.state.off{background:var(--lime)}
-.sections{grid-template-columns:repeat(4,1fr)}
-@media (max-width:560px){.sections{grid-template-columns:repeat(2,1fr)}}
+.sections{grid-template-columns:repeat(5,1fr)}
+@media (max-width:560px){.sections{grid-template-columns:repeat(2,1fr)}.sections button:last-child{grid-column:1/-1}}
+.vstats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media (max-width:560px){.vstats{grid-template-columns:repeat(2,1fr)}}
+.vstat{background:#fff;border:3px solid var(--ink);border-radius:14px;padding:12px;box-shadow:4px 4px 0 var(--ink)}
+.vstat b{display:block;font:400 30px/1.1 'Bowlby One',Impact,sans-serif}
+.vstat span{font-size:14px;font-weight:700;color:#555}
+.vchart{display:flex;align-items:flex-end;gap:3px;height:160px;padding:8px 0 0;border-bottom:3px solid var(--ink)}
+.vchart div{flex:1;background:var(--lime);border:2px solid var(--ink);border-bottom:0;border-radius:4px 4px 0 0;min-height:2px;position:relative}
+.vchart div.today{background:#1F4FD1}
+.vaxis{display:flex;justify-content:space-between;font-size:13px;color:#555;margin-top:4px}
+.vlist{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.vlist div{display:flex;justify-content:space-between;gap:10px;border-bottom:1px dashed #bbb;padding:4px 0}
 .sections .cnt{display:inline-block;min-width:24px;padding:0 6px;border-radius:99px;background:var(--red);color:#fff;font:700 14px/22px 'Space Grotesk',sans-serif;margin-left:4px}
 .pics{display:flex;flex-wrap:wrap;gap:10px;margin:10px 0}
 .pics a{display:block;width:120px;height:120px;border:3px solid var(--ink);border-radius:10px;overflow:hidden;background:#eee}
@@ -94,6 +105,7 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
       <button type="button" role="tab" data-sec="wall" aria-selected="true">Wall of Fat<small>Memes</small></button>
       <button type="button" role="tab" data-sec="fat" aria-selected="false">Fat List<small>Coins, payments, Hood Talk</small></button>
       <button type="button" role="tab" data-sec="tickets" aria-selected="false"><span>Help tickets<span class="cnt" id="tk-cnt" hidden></span></span><small>People who contacted you</small></button>
+      <button type="button" role="tab" data-sec="visits" aria-selected="false">Visits<small>Who came to the site</small></button>
       <button type="button" role="tab" data-sec="test" aria-selected="false">Test &amp; tools<small>$1 test, reset votes</small></button>
     </div>
 
@@ -162,6 +174,22 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
       <div id="tk-list" style="display:flex;flex-direction:column;gap:16px"></div>
     </section>
 
+    <!-- VISITS -->
+    <section id="sec-visits" hidden style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <h2>Visits</h2>
+        <p class="meta" style="margin-top:6px">A <b>visit</b> is one person opening the site (several pages in one go count once). <b>Visitors</b> are different people per day. Bots and your own devices are not counted.</p>
+        <p class="meta" id="v-me"></p>
+        <div class="row" style="margin-top:8px"><button type="button" class="ghost" id="v-metoggle"></button><button type="button" class="ghost" id="v-refresh">Refresh</button></div>
+      </div>
+      <div class="vstats" id="v-stats"></div>
+      <div class="card"><h3>Visitors per day (last 30 days)</h3><div class="vchart" id="v-chart" role="img"></div><div class="vaxis" id="v-axis"></div></div>
+      <div class="g2">
+        <div class="card"><h3>Where they came from</h3><div class="vlist" id="v-src"></div></div>
+        <div class="card"><h3>First page they opened</h3><div class="vlist" id="v-pages"></div></div>
+      </div>
+    </section>
+
     <!-- TEST PRICES -->
     <section id="sec-test" hidden style="display:flex;flex-direction:column;gap:18px">
       <div class="card">
@@ -200,10 +228,10 @@ window.FH=(function(){
   var FH={key:""};
   try{FH.key=sessionStorage.getItem("fh-admin")||""}catch(e){}
   FH.logout=function(m){FH.key="";try{sessionStorage.removeItem("fh-admin")}catch(e){}$("#app").hidden=true;$("#logout").hidden=true;$("#testbar").hidden=true;$("#login").hidden=false;$("#loginmsg").textContent=m||""};
-  FH.show=function(){$("#login").hidden=true;$("#app").hidden=false;$("#logout").hidden=false;FH.openSection(FH.section||"wall");if(FH.loadFatList)FH.loadFatList()};
+  FH.show=function(){try{if(!localStorage.getItem("fh-me-set")){localStorage.setItem("fh-me","1");localStorage.setItem("fh-me-set","1")}}catch(e){}$("#login").hidden=true;$("#app").hidden=false;$("#logout").hidden=false;FH.openSection(FH.section||"wall");if(FH.loadFatList)FH.loadFatList()};
   FH.openSection=function(s){FH.section=s;document.querySelectorAll("#sections button").forEach(function(b){b.setAttribute("aria-selected",String(b.dataset.sec===s))});
-    ["wall","fat","tickets","test"].forEach(function(x){$("#sec-"+x).hidden=x!==s});
-    if(s==="wall"&&FH.loadWall)FH.loadWall();if((s==="fat"||s==="test"||s==="tickets")&&FH.loadFatList)FH.loadFatList()};
+    ["wall","fat","tickets","visits","test"].forEach(function(x){$("#sec-"+x).hidden=x!==s});
+    if(s==="wall"&&FH.loadWall)FH.loadWall();if((s==="fat"||s==="test"||s==="tickets"||s==="visits")&&FH.loadFatList)FH.loadFatList()};
   FH.setTest=function(tp,hours){
     var on=!!(tp&&tp.on);FH.test=on;
     $("#testbar").hidden=!on;
@@ -320,7 +348,7 @@ async function api(method,body,q){
 async function load(){
   if(!FH.key)return;
   if(loading)return loading;
-  loading=(async()=>{try{data=await api("GET",undefined,liveQ);$("#fl-off").hidden=true;$("#fl-app").hidden=false;FH.setTest(data.testPrices,data.testHours);render();renderTickets()}
+  loading=(async()=>{try{data=await api("GET",undefined,liveQ);$("#fl-off").hidden=true;$("#fl-app").hidden=false;FH.setTest(data.testPrices,data.testHours);render();renderTickets();renderVisits()}
   catch(e){$("#fl-app").hidden=true;$("#fl-off").hidden=false;$("#fl-off").textContent=e.message;$("#tp-msg").textContent=e.message}
   finally{loading=null}})();
   return loading;
@@ -482,6 +510,28 @@ async function shrinkBanner(file){
     throw new Error("That picture is too big. Try a smaller one.")}
   finally{URL.revokeObjectURL(url)}
 }
+
+// ---- VISITS
+function meOn(){try{return !!localStorage.getItem("fh-me")}catch(e){return false}}
+function renderVisits(){
+  $("#v-me").textContent=meOn()?"This device is not counted, so your own visits don’t add up. Every phone or computer you log into this admin page on is skipped too.":"This device IS counted right now.";
+  $("#v-metoggle").textContent=meOn()?"Count this device again":"Don’t count this device";
+  if(FH.section!=="visits")return;
+  const v=data.visits||{days:[],sources:[],pages:[]},by={};v.days.forEach(d=>by[d.day]=d);
+  const days=[];for(let i=29;i>=0;i--){const k=new Date(Date.now()-i*864e5).toISOString().slice(0,10);days.push({day:k,visits:(by[k]||{}).visits||0,visitors:(by[k]||{}).visitors||0})}
+  const sum=(a,f)=>a.reduce((s,d)=>s+d[f],0),t=days[29],y=days[28],w=days.slice(23),fmt=n=>n.toLocaleString();
+  $("#v-stats").innerHTML=[["Today",t.visitors,t.visits],["Yesterday",y.visitors,y.visits],["Last 7 days",sum(w,"visitors"),sum(w,"visits")],["Last 30 days",sum(days,"visitors"),sum(days,"visits")]]
+    .map(([l,a,b])=>`<div class="vstat"><span>${l}</span><b class="num">${fmt(a)}</b><span>visitors · ${fmt(b)} visits</span></div>`).join("");
+  const max=Math.max(1,...days.map(d=>d.visitors));
+  $("#v-chart").innerHTML=days.map((d,i)=>`<div class="${i===29?"today":""}" style="height:${Math.max(1,d.visitors/max*100)}%" title="${d.day}: ${d.visitors} visitors, ${d.visits} visits"></div>`).join("");
+  $("#v-chart").setAttribute("aria-label",`Visitors per day for the last 30 days. Most in one day: ${max}.`);
+  const md=s=>new Date(s+"T00:00:00Z").toLocaleDateString(undefined,{day:"numeric",month:"short",timeZone:"UTC"});
+  $("#v-axis").innerHTML=`<span>${md(days[0].day)}</span><span>Busiest day: ${fmt(Math.max(...days.map(d=>d.visitors)))} visitors</span><span>Today</span>`;
+  const list=(a,empty)=>a.length?a.map(r=>`<div><span>${esc(r.name)}</span><b class="num">${fmt(r.n)}</b></div>`).join(""):`<p class="meta">${empty}</p>`;
+  $("#v-src").innerHTML=list(v.sources,"No visits counted yet.");$("#v-pages").innerHTML=list(v.pages,"No visits counted yet.");
+}
+$("#v-metoggle").onclick=()=>{try{if(meOn())localStorage.removeItem("fh-me");else localStorage.setItem("fh-me","1")}catch(e){}renderVisits()};
+$("#v-refresh").onclick=()=>load();
 
 // ---- HELP TICKETS
 let tkTab="open";const tkUrls=[];

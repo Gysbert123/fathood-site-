@@ -3,6 +3,7 @@ import { lookup } from "../lib/lookup.mjs";
 import { parseLogo, saveLogo, testPrices, setTestPrices, TEST_PRICE_HOURS, db, json, newId, ID_RE, DAY, ipOf, isAdmin, clean, cleanUrl, addrOk, CHAIN_NAMES, PACKAGES, BOOSTS, PAY_CHAINS } from "../lib/coinlist.mjs";
 import { slotsTaken } from "../lib/db.mjs";
 import { TOPICS, ensureTickets, getPic, deletePics } from "../lib/tickets.mjs";
+import { ensureVisits } from "../lib/visits.mjs";
 
 export const config = { path: "/api/fatlist-admin" };
 const ms = (d) => (d ? new Date(d).getTime() : null);
@@ -53,8 +54,14 @@ export default async (req, context) => {
       await ensureTickets();
       const tickets = await sql()`(select * from tickets where status = 'open' order by created_at limit 200)
         union all (select * from tickets where status <> 'open' order by closed_at desc nulls last limit 100)`;
+      await ensureVisits();
+      const [vdays, vsrc] = await Promise.all([
+        sql()`select to_char(day, 'YYYY-MM-DD') as day, visits, visitors from visit_days where day > current_date - 30 order by day`,
+        sql()`select kind, name, sum(n)::int as n from visit_src where day > current_date - 30 group by kind, name order by n desc limit 40`,
+      ]);
       const tp = await testPrices();
       return json({
+        visits: { days: vdays, sources: vsrc.filter((r) => r.kind === "src").slice(0, 12), pages: vsrc.filter((r) => r.kind === "page") },
         testPrices: tp ? { on: true, until: tp.until } : { on: false }, testHours: TEST_PRICE_HOURS,
         listings: [...pending, ...live].map(listing), stats,
         claims: claims.map((c) => ({ id: c.id, coinId: c.coin_id, name: c.coin_name, symbol: c.coin_symbol, chain: c.chain, address: c.address, liquidity: c.liquidity, image: c.coin_image, data: c.data, createdAt: ms(c.created_at) })),

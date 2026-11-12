@@ -44,3 +44,16 @@
   mark();
   window.addEventListener("hashchange", mark);
 })();
+
+// Visit counter for the admin page: one count per visit (browser session), no cookies.
+// Devices that logged into the admin page are skipped ("fh-me"), so the owner's own visits don't count.
+(function () {
+  try {
+    if (!/(^|\.)fathood\.org$/.test(location.hostname) || navigator.webdriver) return;
+    if (localStorage.getItem("fh-me") || sessionStorage.getItem("fh-v")) return;
+    sessionStorage.setItem("fh-v", "1");
+    var body = JSON.stringify({ p: location.pathname, r: document.referrer });
+    if (!(navigator.sendBeacon && navigator.sendBeacon("/api/visit", body)))
+      fetch("/api/visit", { method: "POST", body: body, keepalive: true }).catch(function () {});
+  } catch (e) {}
+})();
