@@ -1073,6 +1073,9 @@ buyDlg.addEventListener("click",e=>{if(e.target===buyDlg&&!(B&&B.busy))buyDlg.cl
 function toUnits(s,d){const m=/^(\d*)(?:[.,](\d*))?$/.exec(String(s).trim());if(!m||!(m[1]||m[2]))return 0n;return BigInt(m[1]||"0")*10n**BigInt(d)+BigInt(((m[2]||"")+"0".repeat(d)).slice(0,d)||"0")}
 function fromUnits(raw,d){const s=BigInt(raw||0).toString().padStart(d+1,"0");return Number(s.slice(0,s.length-d)+"."+s.slice(s.length-d))}
 const fTok=n=>n>=1e9?(n/1e9).toFixed(2)+"B":n>=1e6?(n/1e6).toFixed(2)+"M":n>=1e3?Math.round(n).toLocaleString():n>=1?n.toFixed(2):n>0?n.toPrecision(3):"0";
+// LI.FI reports its fee and the Fathood fee as one line: show the split so buyers see who gets what
+function buyFees(q){const tot=q.fees.reduce((x,f)=>x+(f.percentage||0),0),fh=q.fathoodFee||0,lf=Math.max(0,tot-fh),pc=n=>+(n*100).toFixed(2)+"%";
+  return !tot?"none":fh?`${pc(tot)} total (${pc(fh)} Fathood + ${pc(lf)} LI.FI)`:`${pc(tot)} LI.FI`}
 const pad32=h=>h.replace(/^0x/,"").toLowerCase().padStart(64,"0");
 function renderBuy(state){
   const c=B.c,t=BUY_TOKENS[B.pay];let h=`<h2>Buy $${esc(c.symbol)}</h2><p class="small" style="margin:6px 0 0">${esc(c.name)} on Robinhood Chain · <code>${esc(short(c.address))}</code></p>`;
@@ -1088,7 +1091,7 @@ function renderBuy(state){
     <p class="small" style="margin:-6px 0 0">Coins with a buy tax need more than their tax. $FATHOOD has a 3% tax, so 5% works.</p>`;
   if(q)h+=`<div class="box" style="margin-top:14px;padding:14px;border-width:3px;box-shadow:none"><p style="margin:0">You get about</p><p class="payamt num" style="margin:4px 0">${fTok(fromUnits(q.toAmount,q.coin.decimals))} $${esc(c.symbol)}</p>
     <p class="small" style="margin:0">At least ${fTok(fromUnits(q.toAmountMin,q.coin.decimals))} if the price moves${q.fromAmountUSD?` · you pay about $${Number(q.fromAmountUSD).toFixed(2)}`:""}</p>
-    <p class="small" style="margin:6px 0 0">Fees: ${q.fees.map(f=>`${esc(f.name.replace(/^LIFI/,"LI.FI").replace(/ Fixed Fee$/," fee"))} ${(f.percentage*100).toFixed(2)}%`).join(" · ")||"none"}${q.gasUSD?` · network about $${q.gasUSD.toFixed(2)}`:""}${q.route?` · via ${esc(q.route)}`:""}</p></div>`;
+    <p class="small" style="margin:6px 0 0">Fees: ${buyFees(q)}${q.gasUSD?` · network about $${q.gasUSD.toFixed(2)}`:""}${q.route?` · via ${esc(q.route)}`:""}</p></div>`;
   h+=`${state?`<p class="msg ${state.bad?"bad":""}">${state.msg}</p>`:""}
     <div class="foot"><button class="btn white" data-bx ${B.busy?"disabled":""}>Cancel</button>${!B.account?`<button class="btn" id="bcn">Connect wallet</button>`:q?`<button class="btn" id="bgo" ${B.busy?"disabled":""}>Buy $${esc(c.symbol)}</button>`:`<button class="btn" id="bq" ${B.busy?"disabled":""}>Get price</button>`}</div>
     <p class="small" style="margin:14px 0 0">Swaps run through LI.FI from your own wallet. Fathood never holds your money. Not financial advice: anyone can add a coin and promoted spots are paid, so check the contract and liquidity yourself.</p>`;
