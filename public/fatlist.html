@@ -494,6 +494,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 
 <div class="toast" id="toast" role="status" hidden></div>
 <dialog id="payDlg"><div class="md" id="payMd"></div></dialog>
+<dialog id="buyDlg" aria-label="Buy a coin"><div class="md" id="buyMd"></div></dialog>
 
 <script>
 (function(){
@@ -700,7 +701,8 @@ async function showCoin(id){
     :"";
   el.innerHTML=`<a class="back" href="#coins">← The Fat List</a>
     <div class="coinhead">${av(c)}<div><h1>${esc(c.name)}${vb(c)}</h1><div style="font-weight:700;margin-top:6px">$${esc(c.symbol)} on ${esc(chainName(c.chain))}${c.promo?' <span class="badge">Promoted</span>':""}${c.boosts?` <span class="boost">⚡${c.boosts} boosts</span>`:""}${!live?' <span class="badge" style="background:var(--soft)">In review</span>':""}</div></div>
-      ${live?`<button class="vote num" id="cv" aria-pressed="${voted.has(c.id)}" title="${voted.has(c.id)?"You voted. Right-click (or press and hold) to take your vote back.":"Vote"}" style="margin-left:auto;font-size:18px;padding:8px 14px">▲ ${c.votes||0}</button>`:""}</div>
+      ${canBuy(c)&&status!=="rejected"&&status!=="removed"?`<button class="btn" id="cbuy" style="margin-left:auto">Buy $${esc(c.symbol)}</button>`:""}
+      ${live?`<button class="vote num" id="cv" aria-pressed="${voted.has(c.id)}" title="${voted.has(c.id)?"You voted. Right-click (or press and hold) to take your vote back.":"Vote"}" style="margin-left:${canBuy(c)?"10px":"auto"};font-size:18px;padding:8px 14px">▲ ${c.votes||0}</button>`:""}</div>
     ${c.unclaimed?`<p class="note wait" style="margin-top:16px">${c.claimPending?"Someone has asked to claim this coin. The Fathood team is reviewing it.":`This coin was added automatically. Is it yours? <a href="#add/${esc(c.address)}">Claim it for $${S.claimUsd}</a> to add your logo, description and links.`}</p>`:""}
     <div class="grid5 num"><div class="stat"><span>Price</span><b>${fP(c.price)}</b></div><div class="stat"><span>24h</span><b class="${(c.change||0)>=0?"up":"down"}">${fC(c.change)}</b></div>
       <div class="stat"><span>Market cap</span><b>${fM(c.mcap)}</b></div><div class="stat"><span>Liquidity</span><b>${fM(c.liquidity)}</b></div><div class="stat"><span>24h volume</span><b>${fM(c.volume)}</b></div></div>
@@ -717,6 +719,7 @@ async function showCoin(id){
       </div>
     </div></div>`;
   $("#cp").onclick=async e=>{try{await navigator.clipboard.writeText(c.address);e.target.textContent="Copied"}catch(_){e.target.textContent="Press and hold to copy"}};
+  const cb=$("#cbuy");if(cb)cb.onclick=()=>openBuy(c);
   const cv=$("#cv"),cvr=()=>{cv.textContent="▲ "+c.votes;cv.setAttribute("aria-pressed",String(voted.has(c.id)));cv.title=voted.has(c.id)?"You voted. Right-click (or press and hold) to take your vote back.":"Vote"};
   if(cv){cv.onclick=()=>vote(c.id,cvr);cv.oncontextmenu=e=>{if(voted.has(c.id)){e.preventDefault();vote(c.id,cvr,true)}}}
   const vf=$("#vf");if(vf)vf.onclick=()=>openPay({kind:"verify",listingId:c.id,title:`Blue tick check for ${c.name}`,usd:S.verifyUsd});
@@ -1060,6 +1063,107 @@ async function poll(hash){
 }
 async function refresh(){if(DEMO)return;try{const j=await api("/api/fatlist?fresh="+Date.now());coins=j.coins;ads=j.ads||[];side=j.side||null;total=j.total||coins.length;renderTick();renderSide();renderAd();buildChips();renderSpots();renderRows()}catch(_){}}
 
+// ---------- Buy button: swaps through LI.FI. The buyer's own wallet signs; nothing passes through Fathood.
+const BUY_TOKENS={ETH:{d:18,a:null},USDC:{d:6,a:"0x80e0e24718dbFcad49ECAA6F1e6C89A190586cA8"},USDG:{d:6,a:"0x5fc5360D0400a0Fd4f2af552ADD042D716F1d168"}};
+const buyDlg=$("#buyDlg");let B=null;
+const canBuy=c=>c&&c.chain==="robinhood"&&/^0x[a-fA-F0-9]{40}$/.test(c.address||"");
+function openBuy(c){B={c,pay:"ETH",amt:"",slip:c.symbol==="FATHOOD"?0.05:0.05,account:null,bal:null,q:null,busy:false,done:null,closed:false};renderBuy();buyDlg.showModal()}
+buyDlg.addEventListener("close",()=>{if(B)B.closed=true});
+buyDlg.addEventListener("click",e=>{if(e.target===buyDlg&&!(B&&B.busy))buyDlg.close()});
+function toUnits(s,d){const m=/^(\d*)(?:[.,](\d*))?$/.exec(String(s).trim());if(!m||!(m[1]||m[2]))return 0n;return BigInt(m[1]||"0")*10n**BigInt(d)+BigInt(((m[2]||"")+"0".repeat(d)).slice(0,d)||"0")}
+function fromUnits(raw,d){const s=BigInt(raw||0).toString().padStart(d+1,"0");return Number(s.slice(0,s.length-d)+"."+s.slice(s.length-d))}
+const fTok=n=>n>=1e9?(n/1e9).toFixed(2)+"B":n>=1e6?(n/1e6).toFixed(2)+"M":n>=1e3?Math.round(n).toLocaleString():n>=1?n.toFixed(2):n>0?n.toPrecision(3):"0";
+const pad32=h=>h.replace(/^0x/,"").toLowerCase().padStart(64,"0");
+function renderBuy(state){
+  const c=B.c,t=BUY_TOKENS[B.pay];let h=`<h2>Buy $${esc(c.symbol)}</h2><p class="small" style="margin:6px 0 0">${esc(c.name)} on Robinhood Chain · <code>${esc(short(c.address))}</code></p>`;
+  if(B.done){
+    h+=`<p class="payamt">Done. You’re in.</p><p>You bought about <b>${fTok(B.done.got)} $${esc(c.symbol)}</b>. It’s in your wallet now.</p>
+      <p class="small"><a href="https://robinhoodchain.blockscout.com/tx/${esc(B.done.hash)}" target="_blank" rel="noopener">See it on the explorer</a></p><div class="foot"><button class="btn" data-bx>Done</button></div>`;
+    $("#buyMd").innerHTML=h;$$("#buyMd [data-bx]").forEach(b=>b.onclick=()=>buyDlg.close());return}
+  const q=B.q;
+  h+=`<p class="step">1. Pay with</p><div class="opts" role="group" aria-label="Pay with">${Object.keys(BUY_TOKENS).map(k=>`<button class="opt" data-bp="${k}" aria-pressed="${k===B.pay}">${k}</button>`).join("")}</div>
+    <p class="step"><label for="bamt">2. Amount in ${B.pay}</label></p><div class="addr"><input id="bamt" inputmode="decimal" autocomplete="off" placeholder="${B.pay==="ETH"?"0.01":"10"}" value="${esc(B.amt)}" style="flex:1;border:0;min-width:0;background:none;font-size:18px;font-weight:700"><span style="font-weight:700">${B.pay}</span></div>
+    ${B.bal!=null?`<p class="small" style="margin:6px 0 0">You have ${fTok(fromUnits(B.bal,t.d))} ${B.pay}${B.pay==="ETH"?" (keep a little for network fees)":""}</p>`:""}
+    <p class="step">3. Max price move (slippage)</p><div class="opts" role="group" aria-label="Slippage">${[0.03,0.05,0.1,0.15].map(s=>`<button class="opt" data-bs="${s}" aria-pressed="${s===B.slip}">${s*100}%</button>`).join("")}</div>
+    <p class="small" style="margin:-6px 0 0">Coins with a buy tax need more than their tax. $FATHOOD has a 3% tax, so 5% works.</p>`;
+  if(q)h+=`<div class="box" style="margin-top:14px;padding:14px;border-width:3px;box-shadow:none"><p style="margin:0">You get about</p><p class="payamt num" style="margin:4px 0">${fTok(fromUnits(q.toAmount,q.coin.decimals))} $${esc(c.symbol)}</p>
+    <p class="small" style="margin:0">At least ${fTok(fromUnits(q.toAmountMin,q.coin.decimals))} if the price moves${q.fromAmountUSD?` · you pay about $${Number(q.fromAmountUSD).toFixed(2)}`:""}</p>
+    <p class="small" style="margin:6px 0 0">Fees: ${q.fees.map(f=>`${esc(f.name.replace(/^LIFI/,"LI.FI").replace(/ Fixed Fee$/," fee"))} ${(f.percentage*100).toFixed(2)}%`).join(" · ")||"none"}${q.gasUSD?` · network about $${q.gasUSD.toFixed(2)}`:""}${q.route?` · via ${esc(q.route)}`:""}</p></div>`;
+  h+=`${state?`<p class="msg ${state.bad?"bad":""}">${state.msg}</p>`:""}
+    <div class="foot"><button class="btn white" data-bx ${B.busy?"disabled":""}>Cancel</button>${!B.account?`<button class="btn" id="bcn">Connect wallet</button>`:q?`<button class="btn" id="bgo" ${B.busy?"disabled":""}>Buy $${esc(c.symbol)}</button>`:`<button class="btn" id="bq" ${B.busy?"disabled":""}>Get price</button>`}</div>
+    <p class="small" style="margin:14px 0 0">Swaps run through LI.FI from your own wallet. Fathood never holds your money. Not financial advice: anyone can add a coin and promoted spots are paid, so check the contract and liquidity yourself.</p>`;
+  $("#buyMd").innerHTML=h;
+  $$("#buyMd [data-bx]").forEach(b=>b.onclick=()=>buyDlg.close());
+  $$("[data-bp]").forEach(b=>b.onclick=()=>{B.pay=b.dataset.bp;B.q=null;B.bal=null;renderBuy();loadBal()});
+  $$("[data-bs]").forEach(b=>b.onclick=()=>{B.slip=+b.dataset.bs;B.q=null;renderBuy()});
+  const ai=$("#bamt");if(ai)ai.oninput=()=>{B.amt=ai.value;if(B.q){B.q=null;const f=$("#buyMd .foot");renderBuy();const n=$("#bamt");n.focus();n.setSelectionRange(n.value.length,n.value.length)}};
+  const cn=$("#bcn");if(cn)cn.onclick=connectBuy;
+  const qb=$("#bq");if(qb)qb.onclick=()=>getBuyQuote();
+  const gb=$("#bgo");if(gb)gb.onclick=doBuy;
+}
+async function onRH(w){
+  const want="0x"+(4663).toString(16),cur=await w.request({method:"eth_chainId"});
+  if(String(cur).toLowerCase()===want)return;
+  try{await w.request({method:"wallet_switchEthereumChain",params:[{chainId:want}]})}
+  catch(e){if(e&&(e.code===4902||e?.data?.originalError?.code===4902))await w.request({method:"wallet_addEthereumChain",params:[RH]});else throw e}
+}
+async function connectBuy(){
+  if(DEMO){B.account=DEMO_ADDR;B.bal=B.pay==="ETH"?"500000000000000000":"250000000";renderBuy();return}
+  const w=eth();if(!w){renderBuy({bad:1,msg:noWalletMsg("#coin/"+B.c.id)});return}
+  try{const a=await w.request({method:"eth_requestAccounts"});B.account=a[0];await onRH(w);renderBuy();loadBal()}
+  catch(e){renderBuy({bad:1,msg:e&&e.code===4001?"You declined in your wallet. Tap Connect wallet to try again.":"Couldn’t connect to your wallet. Unlock it, switch to Robinhood Chain and try again."})}
+}
+async function loadBal(){
+  if(!B||!B.account||DEMO)return;const w=eth(),t=BUY_TOKENS[B.pay],pay=B.pay;
+  try{const r=t.a?await w.request({method:"eth_call",params:[{to:t.a,data:"0x70a08231"+pad32(B.account)},"latest"]}):await w.request({method:"eth_getBalance",params:[B.account,"latest"]});
+    if(B.pay===pay&&!B.busy){B.bal=BigInt(r).toString();const keep=$("#bamt")&&$("#bamt").value;renderBuy();if(keep!=null)$("#bamt").value=keep}}catch(_){}
+}
+async function getBuyQuote(silent){
+  const t=BUY_TOKENS[B.pay],raw=toUnits(B.amt,t.d);
+  if(raw<=0n){renderBuy({bad:1,msg:"Enter how much "+B.pay+" to spend."});return false}
+  if(B.bal!=null&&raw>BigInt(B.bal)){renderBuy({bad:1,msg:"That’s more "+B.pay+" than you have in this wallet."});return false}
+  if(DEMO){B.q={coin:{decimals:18},toAmount:(raw*123456789n).toString(),toAmountMin:(raw*117283949n).toString(),fromAmountUSD:null,fees:[{name:"Fathood fee",percentage:.0025},{name:"LIFI Fixed Fee",percentage:.0025}],gasUSD:.01,route:"Demo",approvalAddress:null,tx:{},at:Date.now()};renderBuy({msg:"This is the preview: on fathood.org your wallet opens to confirm."});return true}
+  B.busy=true;if(!silent)renderBuy({msg:"Finding the best price…"});
+  try{const j=await api("/api/buy",{body:{chain:"robinhood",pay:B.pay,token:B.c.address,from:B.account,amount:raw.toString(),slippage:B.slip}});
+    B.busy=false;if(!j.ok){renderBuy({bad:1,msg:esc(j.error||"Couldn’t get a price. Try again.")});return false}
+    B.q=j.quote;renderBuy();return true}
+  catch(_){B.busy=false;renderBuy({bad:1,msg:"Couldn’t reach the server. Check your connection and try again."});return false}
+}
+async function waitTx(w,hash){
+  const until=Date.now()+3*6e4;
+  while(Date.now()<until&&!B.closed){const r=await w.request({method:"eth_getTransactionReceipt",params:[hash]}).catch(()=>null);if(r)return r;await new Promise(z=>setTimeout(z,2500))}
+  return null;
+}
+async function doBuy(){
+  if(DEMO){B.done={got:fromUnits(B.q.toAmount,18),hash:"0x"+"0".repeat(64)};renderBuy();return}
+  const w=eth();
+  try{
+    // prices move fast: get a fresh price if this one is older than 45 seconds
+    if(Date.now()-B.q.at>45000){const old=B.q.toAmount;if(!(await getBuyQuote(true)))return;if(B.q.toAmount!==old){renderBuy({msg:"The price changed. Check the new amount, then tap Buy again."});return}}
+    B.busy=true;await onRH(w);
+    const [acct]=await w.request({method:"eth_requestAccounts"});
+    if(acct.toLowerCase()!==B.account.toLowerCase()){B.busy=false;B.account=acct;B.q=null;renderBuy({bad:1,msg:"Your wallet switched account. Get a new price for this account."});return}
+    const q=B.q,t=BUY_TOKENS[B.pay],raw=toUnits(B.amt,t.d);
+    if(q.approvalAddress&&t.a){
+      const al=BigInt(await w.request({method:"eth_call",params:[{to:t.a,data:"0xdd62ed3e"+pad32(acct)+pad32(q.approvalAddress)},"latest"]}));
+      if(al<raw){
+        renderBuy({msg:`Step 1 of 2: allow the swap to use your ${B.pay}. Confirm in your wallet…`});
+        const ah=await w.request({method:"eth_sendTransaction",params:[{from:acct,to:t.a,data:"0x095ea7b3"+pad32(q.approvalAddress)+raw.toString(16).padStart(64,"0")}]});
+        renderBuy({msg:"Waiting for the network to confirm…"});const ar=await waitTx(w,ah);
+        if(!ar||ar.status!=="0x1"){B.busy=false;renderBuy({bad:1,msg:"The approval didn’t go through. Nothing was bought. Try again."});return}
+      }
+    }
+    renderBuy({msg:(q.approvalAddress&&t.a?"Step 2 of 2: ":"")+"Confirm the buy in your wallet…"});
+    const tx={from:acct,to:q.tx.to,data:q.tx.data,value:q.tx.value||"0x0"};if(q.tx.gasLimit)tx.gas=q.tx.gasLimit;
+    const hash=await w.request({method:"eth_sendTransaction",params:[tx]});
+    renderBuy({msg:"Buying… waiting for the network to confirm."});
+    const r=await waitTx(w,hash);B.busy=false;
+    if(!r){renderBuy({bad:1,msg:`Still confirming. Check your wallet or <a href="https://robinhoodchain.blockscout.com/tx/${esc(hash)}" target="_blank" rel="noopener">the explorer</a>.`});return}
+    if(r.status!=="0x1"){B.q=null;renderBuy({bad:1,msg:"The buy failed on-chain, usually because the price moved more than your slippage. Nothing was bought except the network fee. Try a higher slippage."});return}
+    B.done={got:fromUnits(q.toAmount,q.coin.decimals),hash};renderBuy();
+  }catch(e){B.busy=false;renderBuy({bad:1,msg:e&&e.code===4001?"You cancelled in your wallet. Nothing was bought.":"Your wallet couldn’t send it. Check you have enough "+esc(B.pay)+" plus a little ETH for network fees."})}
+}
+
 // ---------- Hood Talk
 let talkSort="latest",talkNext=null;
 function renderWho(){
@@ -1197,6 +1301,10 @@ function route(){
   $$(".fltabs a").forEach(a=>{if(a.dataset.r===navKey)a.setAttribute("aria-current","page");else a.removeAttribute("aria-current")});
   window.scrollTo(0,0);
   if(!S)return;
+  if(r==="buy"){(async()=>{const a=decodeURIComponent(arg||"").toLowerCase();let c=coins.find(x=>String(x.address).toLowerCase()===a);
+    if(!c&&!DEMO){const j=await api("/api/fatlist?q="+encodeURIComponent(a)).catch(()=>({}));c=(j.coins||[]).find(x=>String(x.address).toLowerCase()===a)}
+    if(!c&&DEMO)c=coins[0];
+    if(c){history.replaceState(null,"","#coin/"+c.id);await showCoin(c.id);$("#v-coins").hidden=true;$("#v-coin").hidden=false;if(canBuy(c))openBuy(c)}else location.replace("#coins")})();return}
   if(v==="coin")showCoin(arg);
   if(v==="grow")renderGrowAsync();
   if(v==="add"){resetAdd();if(arg){$("#f-addr").value=decodeURIComponent(arg);$("#findForm").requestSubmit()}}
