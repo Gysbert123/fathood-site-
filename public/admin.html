@@ -34,6 +34,7 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
 .sections button{min-height:76px;font:400 18px/1.15 'Bowlby One',Impact,sans-serif;background:#fff;color:var(--ink);box-shadow:4px 4px 0 var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
 .sections button small{font:700 13px 'Space Grotesk',sans-serif;opacity:.7}
 .sections button[aria-selected=true]{background:var(--lime)}
+button.ghost[aria-pressed=true]{background:var(--lime)}
 @media (max-width:560px){.sections{gap:8px}.sections button{min-height:68px;font-size:15px;padding:8px 6px}.sections button small{display:none}}
 .testbar{position:sticky;top:0;z-index:20;background:var(--red);color:#fff;border-bottom:4px solid var(--ink);padding:12px 16px}
 .testbar .in{max-width:1000px;margin:0 auto;display:flex;flex-wrap:wrap;gap:10px 16px;align-items:center;justify-content:space-between}
@@ -68,8 +69,8 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
 .steps{margin:8px 0 0;padding-left:22px;display:flex;flex-direction:column;gap:8px}
 .state{display:inline-block;padding:4px 12px;border:3px solid var(--ink);border-radius:999px;font-weight:700}
 .state.on{background:var(--red);color:#fff}.state.off{background:var(--lime)}
-.sections{grid-template-columns:repeat(5,1fr)}
-@media (max-width:560px){.sections{grid-template-columns:repeat(2,1fr)}.sections button:last-child{grid-column:1/-1}}
+.sections{grid-template-columns:repeat(6,1fr)}
+@media (max-width:560px){.sections{grid-template-columns:repeat(2,1fr)}.sections button:last-child:nth-child(odd){grid-column:1/-1}}
 .vstats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 @media (max-width:560px){.vstats{grid-template-columns:repeat(2,1fr)}}
 .vstat{background:#fff;border:3px solid var(--ink);border-radius:14px;padding:12px;box-shadow:4px 4px 0 var(--ink)}
@@ -106,6 +107,7 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
       <button type="button" role="tab" data-sec="fat" aria-selected="false">Fat List<small>Coins, payments, Hood Talk</small></button>
       <button type="button" role="tab" data-sec="tickets" aria-selected="false"><span>Help tickets<span class="cnt" id="tk-cnt" hidden></span></span><small>People who contacted you</small></button>
       <button type="button" role="tab" data-sec="visits" aria-selected="false">Visits<small>Who came to the site</small></button>
+      <button type="button" role="tab" data-sec="money" aria-selected="false">Earnings<small>Fees and ad sales</small></button>
       <button type="button" role="tab" data-sec="test" aria-selected="false">Test &amp; tools<small>$1 test, reset votes</small></button>
     </div>
 
@@ -191,6 +193,26 @@ button.big:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
       </div>
     </section>
 
+    <!-- EARNINGS -->
+    <section id="sec-money" hidden style="display:flex;flex-direction:column;gap:16px">
+      <div class="card">
+        <h2>Earnings</h2>
+        <p class="meta" style="margin-top:6px">Everything that came in: your <b>0.25% swap fee</b> from the Buy and Sell buttons (Robinhood Chain and Solana) and every <b>paid</b> ad, boost, blue tick and claim. Free ones you gave away aren’t counted.</p>
+        <div class="row" style="margin-top:10px" role="group" aria-label="Period" id="m-periods">
+          <button type="button" class="ghost" data-mp="1">Today</button><button type="button" class="ghost" data-mp="7">7 days</button><button type="button" class="ghost" data-mp="30">30 days</button><button type="button" class="ghost" data-mp="0">All time</button>
+          <button type="button" class="ghost" id="m-refresh">Refresh</button>
+        </div>
+        <p class="meta" id="m-msg" style="margin-top:8px"></p>
+      </div>
+      <div class="vstats" id="m-stats"></div>
+      <div class="g2">
+        <div class="card"><h3>Ad sales by type</h3><div class="vlist" id="m-types"></div></div>
+        <div class="card"><h3>Swaps</h3><div class="vlist" id="m-swapsum"></div></div>
+      </div>
+      <div class="card"><h3>Every entry</h3><div class="vlist" id="m-list"></div></div>
+      <p class="meta">Swap fees are valued at the price when the swap happened. On sells, your fee is paid in the coin being sold, so your fee wallets also collect memecoins. Ad sales marked TEST were $1 test-price payments.</p>
+    </section>
+
     <!-- TEST PRICES -->
     <section id="sec-test" hidden style="display:flex;flex-direction:column;gap:18px">
       <div class="card">
@@ -231,7 +253,8 @@ window.FH=(function(){
   FH.logout=function(m){FH.key="";try{sessionStorage.removeItem("fh-admin")}catch(e){}$("#app").hidden=true;$("#logout").hidden=true;$("#testbar").hidden=true;$("#login").hidden=false;$("#loginmsg").textContent=m||""};
   FH.show=function(){try{if(!localStorage.getItem("fh-me-set")){localStorage.setItem("fh-me","1");localStorage.setItem("fh-me-set","1")}}catch(e){}$("#login").hidden=true;$("#app").hidden=false;$("#logout").hidden=false;FH.openSection(FH.section||"wall");if(FH.loadFatList)FH.loadFatList()};
   FH.openSection=function(s){FH.section=s;document.querySelectorAll("#sections button").forEach(function(b){b.setAttribute("aria-selected",String(b.dataset.sec===s))});
-    ["wall","fat","tickets","visits","test"].forEach(function(x){$("#sec-"+x).hidden=x!==s});
+    ["wall","fat","tickets","visits","money","test"].forEach(function(x){$("#sec-"+x).hidden=x!==s});
+    if(s==="money"&&FH.loadMoney)FH.loadMoney();
     if(s==="wall"&&FH.loadWall)FH.loadWall();if((s==="fat"||s==="test"||s==="tickets"||s==="visits")&&FH.loadFatList)FH.loadFatList()};
   FH.setTest=function(tp,hours){
     var on=!!(tp&&tp.on);FH.test=on;
@@ -546,6 +569,39 @@ async function shrinkBanner(file){
     throw new Error("That picture is too big. Try a smaller one.")}
   finally{URL.revokeObjectURL(url)}
 }
+
+// ---- EARNINGS
+let money=null,mPeriod=30,mLoading=false;
+const usd=n=>"$"+(n>=1000?Math.round(n).toLocaleString():n>=1?n.toFixed(2):n>0?n.toFixed(4):"0.00");
+async function loadMoney(){
+  if(mLoading)return;mLoading=true;$("#m-msg").textContent="Loading…";
+  try{money=await api("GET",undefined,"part=money");$("#m-msg").textContent=money.swapsOk?"":"Couldn’t reach LI.FI just now, so swap fees are missing. Press Refresh in a minute."}
+  catch(e){$("#m-msg").textContent=e.message}
+  mLoading=false;renderMoney();
+}
+FH.loadMoney=loadMoney;
+function renderMoney(){
+  document.querySelectorAll("[data-mp]").forEach(b=>b.setAttribute("aria-pressed",String(+b.dataset.mp===mPeriod)));
+  if(!money)return;
+  const from=mPeriod?(mPeriod===1?new Date(new Date().toISOString().slice(0,10)+"T00:00:00Z").getTime():Date.now()-mPeriod*864e5):0;
+  const sales=money.sales.filter(x=>x.at>=from),sw=money.swaps.filter(x=>x.at>=from);
+  const sum=(a,k)=>a.reduce((s,x)=>s+(x[k]||0),0);
+  const swSol=sw.filter(x=>x.chain==="solana"),swRh=sw.filter(x=>x.chain==="robinhood");
+  const fSol=sum(swSol,"feeUSD"),fRh=sum(swRh,"feeUSD"),ads=sum(sales,"usd"),tot=fSol+fRh+ads;
+  $("#m-stats").innerHTML=[["Swap fees · Solana",fSol,`${swSol.length} swap${swSol.length===1?"":"s"}`],["Swap fees · Robinhood",fRh,`${swRh.length} swap${swRh.length===1?"":"s"}`],
+    ["Ad sales",ads,`${sales.length} sale${sales.length===1?"":"s"}`],["Total",tot,"everything"]]
+    .map(([l,v,n],i)=>`<div class="vstat"${i===3?' style="background:var(--lime)"':""}><span>${l}</span><b class="num">${usd(v)}</b><span>${n}</span></div>`).join("");
+  const types={};sales.forEach(x=>{const t=types[x.type]||(types[x.type]={n:0,usd:0});t.n++;t.usd+=x.usd});
+  $("#m-types").innerHTML=Object.keys(types).length?Object.entries(types).sort((a,b)=>b[1].usd-a[1].usd).map(([k,v])=>`<div><span>${esc(k)} <small class="meta">×${v.n}</small></span><b class="num">${usd(v.usd)}</b></div>`).join("")
+    +`<div><span><b>All ad sales</b></span><b class="num">${usd(ads)}</b></div>`:`<p class="meta">No ad sales in this period.</p>`;
+  $("#m-swapsum").innerHTML=`<div><span>Swaps made</span><b class="num">${sw.length}</b></div><div><span>Volume traded</span><b class="num">${usd(sum(sw,"volumeUSD"))}</b></div>
+    <div><span>Your fees · Solana</span><b class="num">${usd(fSol)}</b></div><div><span>Your fees · Robinhood Chain</span><b class="num">${usd(fRh)}</b></div><div><span><b>All swap fees</b></span><b class="num">${usd(fSol+fRh)}</b></div>`;
+  const rows=[...sales.map(x=>({at:x.at,kind:"Ad sale",what:`${x.type}: ${x.coin||""}${x.test?" (TEST)":""}${x.manual?" (added by hand)":""}`,amt:x.usd,link:null})),
+    ...sw.map(x=>({at:x.at,kind:x.chain==="solana"?"Swap fee · Solana":"Swap fee · Robinhood",what:`${x.from} → ${x.to}, ${usd(x.volumeUSD)} traded`,amt:x.feeUSD,link:x.link}))].sort((a,b)=>b.at-a.at).slice(0,300);
+  $("#m-list").innerHTML=rows.length?rows.map(r=>`<div><span><small class="meta">${new Date(r.at).toLocaleString([],{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"})}</small> <b>${esc(r.kind)}</b> · ${esc(r.what)}${r.link?` · <a href="${esc(r.link)}" target="_blank" rel="noopener">tx</a>`:""}</span><b class="num">${usd(r.amt)}</b></div>`).join(""):`<p class="meta">Nothing in this period yet.</p>`;
+}
+document.querySelectorAll("[data-mp]").forEach(b=>b.onclick=()=>{mPeriod=+b.dataset.mp;renderMoney()});
+$("#m-refresh").onclick=()=>loadMoney();
 
 // ---- VISITS
 function meOn(){try{return !!localStorage.getItem("fh-me")}catch(e){return false}}

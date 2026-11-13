@@ -4,6 +4,7 @@ import { parseLogo, saveLogo, testPrices, setTestPrices, TEST_PRICE_HOURS, db, j
 import { slotsTaken, coinSpotlight } from "../lib/db.mjs";
 import { TOPICS, ensureTickets, getPic, deletePics } from "../lib/tickets.mjs";
 import { ensureVisits } from "../lib/visits.mjs";
+import { earnings } from "../lib/earnings.mjs";
 
 export const config = { path: "/api/fatlist-admin" };
 const ms = (d) => (d ? new Date(d).getTime() : null);
@@ -42,6 +43,8 @@ export default async (req, context) => {
       const sp = new URL(req.url).searchParams;
       // a quick "wake up" call the admin page makes before loading, so the big load doesn't start cold
       if (sp.get("ping")) return json({ ok: true });
+      // the Earnings page: swap fees (from LI.FI) and ad sales (paid orders)
+      if (sp.get("part") === "money") return json(await earnings());
       const q = clean(sp.get("q"), 90).replace(/^\$/, "");
       const like = `%${q.replace(/[%_\\]/g, "\\$&")}%`;
       const liveQ = () => q ? sql()`select * from coins where status in ('approved', 'indexed') and (address_lc = ${q.toLowerCase()} or symbol ilike ${like} or name ilike ${like}) order by liquidity desc nulls last limit 100`
