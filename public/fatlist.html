@@ -37,6 +37,8 @@ h1,h2,h3,.disp{font-family:'Bowlby One',Impact,sans-serif;font-weight:400;letter
 .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:46px;padding:10px 18px;border:3px solid var(--ink);border-radius:12px;background:var(--lime);color:var(--ink);font-weight:700;cursor:pointer;text-decoration:none;box-shadow:4px 4px 0 var(--ink)}
 .btn:active{transform:translate(2px,2px);box-shadow:2px 2px 0 var(--ink)}
 .btn.dark{background:var(--ink);color:var(--cream)}
+.btn.red{background:var(--down);color:#fff}
+.opt.sellopt[aria-pressed="true"]{background:var(--down);color:#fff}
 .btn.white{background:var(--paper)}
 .btn[disabled]{opacity:.5;cursor:not-allowed;transform:none}
 .box{background:var(--paper);border:3px solid var(--ink);border-radius:16px;box-shadow:6px 6px 0 var(--ink)}
@@ -701,7 +703,7 @@ async function showCoin(id){
     :"";
   el.innerHTML=`<a class="back" href="#coins">← The Fat List</a>
     <div class="coinhead">${av(c)}<div><h1>${esc(c.name)}${vb(c)}</h1><div style="font-weight:700;margin-top:6px">$${esc(c.symbol)} on ${esc(chainName(c.chain))}${c.promo?' <span class="badge">Promoted</span>':""}${c.boosts?` <span class="boost">⚡${c.boosts} boosts</span>`:""}${!live?' <span class="badge" style="background:var(--soft)">In review</span>':""}</div></div>
-      ${canBuy(c)&&status!=="rejected"&&status!=="removed"?`<button class="btn" id="cbuy" style="margin-left:auto">Buy $${esc(c.symbol)}</button><button class="btn white" id="csell" style="margin-left:8px">Sell</button>`:""}
+      ${canBuy(c)&&status!=="rejected"&&status!=="removed"?`<button class="btn" id="cbuy" style="margin-left:auto">Buy $${esc(c.symbol)}</button><button class="btn red" id="csell" style="margin-left:8px">Sell</button>`:""}
       ${live?`<button class="vote num" id="cv" aria-pressed="${voted.has(c.id)}" title="${voted.has(c.id)?"You voted. Right-click (or press and hold) to take your vote back.":"Vote"}" style="margin-left:${canBuy(c)?"10px":"auto"};font-size:18px;padding:8px 14px">▲ ${c.votes||0}</button>`:""}</div>
     ${c.unclaimed?`<p class="note wait" style="margin-top:16px">${c.claimPending?"Someone has asked to claim this coin. The Fathood team is reviewing it.":`This coin was added automatically. Is it yours? <a href="#add/${esc(c.address)}">Claim it for $${S.claimUsd}</a> to add your logo, description and links.`}</p>`:""}
     <div class="grid5 num"><div class="stat"><span>Price</span><b>${fP(c.price)}</b></div><div class="stat"><span>24h</span><b class="${(c.change||0)>=0?"up":"down"}">${fC(c.change)}</b></div>
@@ -1099,7 +1101,7 @@ function renderBuy(state){
     h+=`<p class="small"><a href="${ch.explorer}${esc(B.done.hash)}" target="_blank" rel="noopener">See it on the explorer</a></p><div class="foot"><button class="btn" data-bx>Done</button></div>`;
     $("#buyMd").innerHTML=h;$$("#buyMd [data-bx]").forEach(b=>b.onclick=()=>buyDlg.close());return}
   const q=B.q;
-  h+=`<div class="opts" role="group" aria-label="Buy or sell" style="margin:14px 0 0">${["buy","sell"].map(s=>`<button class="opt" data-bside="${s}" aria-pressed="${s===B.side}">${s==="buy"?"Buy":"Sell"}</button>`).join("")}</div>
+  h+=`<div class="opts" role="group" aria-label="Buy or sell" style="margin:14px 0 0">${["buy","sell"].map(s=>`<button class="opt${s==="sell"?" sellopt":""}" data-bside="${s}" aria-pressed="${s===B.side}">${s==="buy"?"Buy":"Sell"}</button>`).join("")}</div>
     <p class="step">1. ${sell?"Get back":"Pay with"}</p><div class="opts" role="group" aria-label="${sell?"Get back":"Pay with"}">${Object.keys(ch.tokens).map(k=>`<button class="opt" data-bp="${k}" aria-pressed="${k===B.pay}">${k}</button>`).join("")}</div>
     <p class="step"><label for="bamt">2. Amount in ${esc(inSym())}</label></p><div class="addr"><input id="bamt" inputmode="decimal" autocomplete="off" placeholder="${sell?"1000":B.pay==="ETH"?"0.01":B.pay==="SOL"?"0.1":"10"}" value="${esc(B.amt)}" style="flex:1;border:0;min-width:0;background:none;font-size:18px;font-weight:700">${sell&&B.bal!=null&&B.bal!=="0"?`<button type="button" class="mini" id="bmax">Max</button>`:`<span style="font-weight:700">${esc(inSym())}</span>`}</div>
     ${B.bal!=null?`<p class="small" style="margin:6px 0 0">You have ${fTok(fromUnits(B.bal,inDec()))} ${esc(inSym())}${!sell&&B.pay===ch.gas?" (keep a little for network fees)":sell||B.pay!==ch.gas?` · you also need a little ${ch.gas} for network fees`:""}</p>`:""}
@@ -1110,7 +1112,7 @@ function renderBuy(state){
     <p class="small" style="margin:0">At least ${fTok(fromUnits(q.toAmountMin,outD))} if the price moves${q.fromAmountUSD?` · ${sell?"worth":"you pay"} about $${Number(q.fromAmountUSD).toFixed(2)}`:""}</p>
     <p class="small" style="margin:6px 0 0">Fees: ${buyFees(q)}${q.gasUSD?` · network about $${q.gasUSD.toFixed(2)}`:""}${q.route?` · via ${esc(q.route)}`:""}</p></div>`}
   h+=`${state?`<p class="msg ${state.bad?"bad":""}">${state.msg}</p>`:""}
-    <div class="foot"><button class="btn white" data-bx ${B.busy?"disabled":""}>Cancel</button>${!B.account?`<button class="btn" id="bcn">${ch.sol?"Connect Phantom":"Connect wallet"}</button>`:q?`<button class="btn" id="bgo" ${B.busy?"disabled":""}>${verb} $${esc(c.symbol)}</button>`:`<button class="btn" id="bq" ${B.busy?"disabled":""}>Get price</button>`}</div>
+    <div class="foot"><button class="btn white" data-bx ${B.busy?"disabled":""}>Cancel</button>${!B.account?`<button class="btn" id="bcn">${ch.sol?"Connect Phantom":"Connect wallet"}</button>`:q?`<button class="btn${sell?" red":""}" id="bgo" ${B.busy?"disabled":""}>${verb} $${esc(c.symbol)}</button>`:`<button class="btn" id="bq" ${B.busy?"disabled":""}>Get price</button>`}</div>
     <p class="small" style="margin:14px 0 0">Swaps run through LI.FI from your own wallet. Fathood never holds your money. Not financial advice: anyone can add a coin and promoted spots are paid, so check the contract and liquidity yourself.</p>`;
   $("#buyMd").innerHTML=h;
   $$("#buyMd [data-bx]").forEach(b=>b.onclick=()=>buyDlg.close());
