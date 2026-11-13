@@ -1,6 +1,6 @@
 import { sql } from "../lib/db.mjs";
 import { lookup } from "../lib/lookup.mjs";
-import { parseLogo, saveLogo, testPrices, setTestPrices, TEST_PRICE_HOURS, db, json, newId, ID_RE, DAY, ipOf, isAdmin, clean, cleanUrl, addrOk, CHAIN_NAMES, PACKAGES, BOOSTS, PAY_CHAINS } from "../lib/coinlist.mjs";
+import { parseLogo, saveLogo, testPrices, setTestPrices, TEST_PRICE_HOURS, db, json, newId, ID_RE, DAY, ipOf, isAdmin, clean, cleanUrl, addrOk, CHAIN_NAMES, PACKAGES, BOOSTS, PAY_CHAINS, marketCols } from "../lib/coinlist.mjs";
 import { slotsTaken, coinSpotlight } from "../lib/db.mjs";
 import { TOPICS, ensureTickets, getPic, deletePics } from "../lib/tickets.mjs";
 import { ensureVisits } from "../lib/visits.mjs";
@@ -162,7 +162,7 @@ export default async (req, context) => {
         verified: !!b.verified, pair_address: same ? found.pairAddress || null : null, image: cleanUrl(b.image) || (same ? found.image || null : null),
         name: clean(b.name, 40) || found.name || "", symbol: (clean(b.symbol, 12) || found.symbol || "").replace(/^\$/, "").toUpperCase(),
         description: clean(b.description, 1000), website: cleanUrl(b.website), x: cleanUrl(b.x), telegram: cleanUrl(b.telegram), discord: cleanUrl(b.discord),
-        liquidity_at_listing: found.liquidity || 0, liquidity: same ? found.liquidity || null : null };
+        liquidity_at_listing: found.liquidity || 0, liquidity: same ? found.liquidity || null : null, ...(same ? marketCols(found.market) : {}) };
       if (row.name.length < 2 || !/^[A-Z0-9]{2,12}$/.test(row.symbol)) return json({ error: "Enter a name and a symbol of 2–12 letters or numbers." }, 400);
       if (b.logo) { const logo = parseLogo(b.logo); if (!logo) return json({ error: "Upload a PNG, JPG or WebP logo." }, 400); row.image = await saveLogo(row.id, logo); }
       // An auto-indexed copy becomes this listing

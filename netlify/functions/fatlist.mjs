@@ -2,7 +2,7 @@ import { sql, hit, toCoin, VISIBLE, LIVE_EXTRAS, liveAds, dayNumber } from "../l
 import { getSnapshot } from "../lib/market.mjs";
 import { lookup } from "../lib/lookup.mjs";
 import { parseLogo, saveLogo, json, newId, ID_RE, ipOf, clean, cleanUrl, addrOk, chainName, testPrices, prices,
-  CHAIN_NAMES, payChainsOn, DISCOUNTS, AUTO_LIST_MIN_LIQUIDITY, INDEX_MIN_LIQUIDITY, INDEX_CHAINS, fakeVolume } from "../lib/coinlist.mjs";
+  CHAIN_NAMES, payChainsOn, marketCols, db, DISCOUNTS, AUTO_LIST_MIN_LIQUIDITY, INDEX_MIN_LIQUIDITY, INDEX_CHAINS, fakeVolume } from "../lib/coinlist.mjs";
 
 export const config = { path: "/api/fatlist" };
 
@@ -73,9 +73,10 @@ async function submit(b, context) {
   const status = found.found && found.liquidity >= AUTO_LIST_MIN_LIQUIDITY ? "approved" : "pending";
   const row = { id, chain, address: addr, ...f, image: found.image || null, status, source: "submitted",
     pair_address: found.pairAddress || null, liquidity_at_listing: found.liquidity || 0, liquidity: found.liquidity || null,
-    approved_at: status === "approved" ? new Date() : null };
+    approved_at: status === "approved" ? new Date() : null, ...(found.found && !found.fromDb ? marketCols(found.market) : {}) };
   if (logo) row.image = await saveLogo(id, logo);
   await sql()`insert into coins ${sql()(row)}`;
+  if (status === "approved") await db().delete("snapshot/board"); // show it on the board straight away
   return json({ ok: true, id, status });
 }
 

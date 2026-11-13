@@ -145,6 +145,10 @@ export function addrOk(a) {
     /^0x[a-fA-F0-9]{64}(::\w+::\w+)?$/.test(a) || /^[A-Za-z0-9_-]{48}$/.test(a) || /^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(a);
 }
 
+// Market numbers from a lookup, as coin columns (used when a coin is added, so it has a price straight away).
+export const marketCols = (m) => (m ? { price: m.price, change24: m.change24, mcap: m.mcap, volume24: m.volume24,
+  pair_created_at: m.pairCreatedAt ? new Date(m.pairCreatedAt) : null, dex_url: m.url, market_at: new Date() } : {});
+
 export const shortAddr = (a) => `${a.slice(0, 6)}…${a.slice(-4)}`;
 
 // ---------- uploaded logos (sent by the browser already shrunk to 256×256)

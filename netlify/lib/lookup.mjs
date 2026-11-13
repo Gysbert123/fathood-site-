@@ -29,6 +29,9 @@ export async function lookup(address) {
     data = {
       found: true, chain: p.chainId, address: p.baseToken.address, name: clean(p.baseToken.name, 40), symbol: clean(p.baseToken.symbol, 12),
       image: cleanUrl(p.info?.imageUrl), liquidity: p.liquidity?.usd || 0, pairAddress: p.pairAddress, description: "",
+      // live market numbers, so a coin shows its price the moment it's added (not only after the next 15-minute refresh)
+      market: { price: nn(p.priceUsd), change24: nn(p.priceChange?.h24), mcap: nn(p.marketCap ?? p.fdv), volume24: nn(p.volume?.h24),
+        pairCreatedAt: p.pairCreatedAt ? new Date(p.pairCreatedAt).toISOString() : null, url: cleanUrl(p.url) || null },
       ...pickLinks(p.info),
     };
     const net = GT_NETWORK[p.chainId];
@@ -52,6 +55,7 @@ export async function lookup(address) {
 }
 
 const num = (v) => (v == null || v === "" || isNaN(Number(v)) ? 0 : Number(v));
+function nn(v) { return v == null || v === "" || isNaN(Number(v)) ? null : Number(v); }
 async function geckoLookup(address) {
   const nets = /^0x[a-fA-F0-9]{40}$/.test(address) ? [["robinhood", "robinhood"], ["base", "base"], ["ethereum", "eth"], ["bsc", "bsc"]]
     : /^[1-9A-HJ-NP-Za-km-z]{32,44}$/.test(address) ? [["solana", "solana"]] : [];
@@ -61,6 +65,7 @@ async function geckoLookup(address) {
       if (!t || !t.symbol) continue;
       const data = { found: true, chain, address: t.address || address, name: clean(t.name, 40), symbol: clean(t.symbol, 12).replace(/^\$/, ""),
         image: /missing/i.test(t.image_url || "") ? "" : cleanUrl(t.image_url), liquidity: num(t.total_reserve_in_usd), pairAddress: null,
+        market: { price: nn(t.price_usd), change24: null, mcap: nn(t.market_cap_usd) ?? nn(t.fdv_usd), volume24: nn(t.volume_usd?.h24), pairCreatedAt: null, url: null },
         description: "", website: "", x: "", telegram: "", discord: "" };
       try {
         const pool = (await get(`https://api.geckoterminal.com/api/v2/networks/${net}/tokens/${encodeURIComponent(address)}/pools?page=1`))?.data?.[0];
