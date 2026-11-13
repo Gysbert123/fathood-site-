@@ -1,5 +1,5 @@
 import { sql, hit, slotsTaken, coinSpotlight } from "../lib/db.mjs";
-import { db, json, newId, ID_RE, DAY, ipOf, clean, priceFor, prices, testPrices, parseLogo, saveLogo, PACKAGES, PAY_CHAINS, ORDER_MINUTES } from "../lib/coinlist.mjs";
+import { db, json, newId, ID_RE, DAY, ipOf, clean, priceFor, prices, testPrices, parseLogo, saveLogo, PACKAGES, PAY_CHAINS, ORDER_MINUTES, payWallet, SOL_ADDR_RE, SOL_SIG_RE } from "../lib/coinlist.mjs";
 
 export const config = { path: "/api/fatpay" };
 const TRANSFER = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
@@ -24,6 +24,13 @@ async function decimalsOf(chain, token) {
   if (!(d >= 0 && d <= 36)) throw new Error("bad decimals");
   await db().set(key, String(d)); return d;
 }
+async function solUsd() {
+  try { const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=solana&vs_currencies=usd", { signal: AbortSignal.timeout(6000) });
+    const p = (await r.json())?.solana?.usd; if (p > 0) return p; } catch {}
+  const r = await fetch("https://api.coinbase.com/v2/prices/SOL-USD/spot", { signal: AbortSignal.timeout(6000) });
+  const p = Number((await r.json())?.data?.amount); if (p > 0) return p;
+  throw new Error("no SOL price");
+}
 async function ethUsd() {
   try { const r = await fetch("https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd", { signal: AbortSignal.timeout(6000) });
     const p = (await r.json())?.ethereum?.usd; if (p > 0) return p; } catch {}
@@ -37,19 +44,20 @@ function fmtUnits(raw, dec) {
 }
 const ms = (d) => (d ? new Date(d).getTime() : null);
 const publicOrder = (o) => ({
-  id: o.id, kind: o.kind, label: o.label, coin: o.coin_label, usd: Number(o.usd), chain: o.chain, chainId: PAY_CHAINS[o.chain].chainId, token: o.token,
+  id: o.id, kind: o.kind, label: o.label, coin: o.coin_label, usd: Number(o.usd), chain: o.chain, chainId: PAY_CHAINS[o.chain].chainId || null, token: o.token,
   tokenAddress: o.token_address, amount: o.amount, amountRaw: o.amount_raw, decimals: o.decimals, to: o.pay_to,
   expiresAt: ms(o.expires_at), status: o.status, txHash: o.tx_hash || null, explorer: o.tx_hash ? PAY_CHAINS[o.chain].explorer + o.tx_hash : null,
 });
 
 async function quote(b, context) {
-  const wallet = process.env.PAY_WALLET || "";
-  if (!/^0x[a-fA-F0-9]{40}$/.test(wallet)) return json({ error: "Payments aren’t switched on yet. Message the team on Telegram to book." }, 503);
-  if (!(await hit("quote", ipOf(context), 30))) return json({ error: "Too many payment attempts. Try again in an hour." }, 429);
   const chain = String(b.chain || ""), token = String(b.token || ""), pc = PAY_CHAINS[chain];
   if (!pc || !(token in pc.tokens)) return json({ error: "Pick a payment network and coin from the list." }, 400);
-  const payer = String(b.payer || "").toLowerCase();
-  if (!/^0x[a-f0-9]{40}$/.test(payer)) return json({ error: "Connect your wallet first." }, 400);
+  const wallet = payWallet(chain);
+  if (!wallet) return json({ error: `Payments on ${pc.name} aren’t switched on yet. Pick another network, or message the team on Telegram to book.` }, 503);
+  if (!(await hit("quote", ipOf(context), 30))) return json({ error: "Too many payment attempts. Try again in an hour." }, 429);
+  // Solana addresses are case-sensitive, so they're kept exactly as they are
+  const payer = pc.solana ? String(b.payer || "") : String(b.payer || "").toLowerCase();
+  if (!(pc.solana ? SOL_ADDR_RE.test(payer) : /^0x[a-f0-9]{40}$/.test(payer))) return json({ error: "Connect your wallet first." }, 400);
   if (!ID_RE.test(String(b.listingId || ""))) return json({ error: "Pick a coin." }, 400);
   const [coin] = await sql()`select id, name, symbol, status, verified, verify_paid from coins where id = ${b.listingId}`;
   if (!coin) return json({ error: "That coin isn’t on the Fat List." }, 404);
@@ -57,7 +65,7 @@ async function quote(b, context) {
   const now = Date.now();
   const test = !!(await testPrices()), P = prices(test);
   const o = { id: newId(), kind: b.kind, coin_id: coin.id, coin_label: `${coin.name} (${coin.symbol})`, chain, token, payer,
-    pay_to: wallet.toLowerCase(), expires_at: new Date(now + ORDER_MINUTES * 60000), status: "awaiting" };
+    pay_to: wallet, expires_at: new Date(now + ORDER_MINUTES * 60000), status: "awaiting" };
   if (b.kind === "claim") {
     if (!ID_RE.test(String(b.claimId || ""))) return json({ error: "Fill in your coin’s details first." }, 400);
     const [cl] = await sql()`select id, status from claims where id = ${b.claimId} and coin_id = ${coin.id}`;
@@ -116,7 +124,11 @@ async function quote(b, context) {
   if (test) o.label += " (TEST PRICE)";
 
   const tokenAddr = pc.tokens[token];
-  if (tokenAddr) {
+  if (pc.solana) {
+    const dec = pc.decimals[token];
+    if (tokenAddr) Object.assign(o, { decimals: dec, token_address: tokenAddr, amount_raw: (BigInt(Math.round(o.usd * 100)) * 10n ** BigInt(dec) / 100n).toString() });
+    else { const p = await solUsd(); Object.assign(o, { decimals: dec, token_address: null, eth_price: p, amount_raw: (BigInt(Math.ceil((o.usd / p) * 1e6)) * 1000n).toString() }); }
+  } else if (tokenAddr) {
     const dec = await decimalsOf(chain, tokenAddr);
     Object.assign(o, { decimals: dec, token_address: tokenAddr.toLowerCase(), amount_raw: (BigInt(Math.round(o.usd * 100)) * 10n ** BigInt(dec) / 100n).toString() });
   } else {
@@ -134,11 +146,20 @@ async function verify(b, context) {
   const [o] = await sql()`select * from orders where id = ${b.orderId}`;
   if (!o) return json({ error: "Unknown order." }, 404);
   if (o.status === "paid") return json({ ok: true, paid: true, order: publicOrder(o) });
-  const hash = String(b.txHash || "").toLowerCase();
-  if (!/^0x[a-f0-9]{64}$/.test(hash)) return json({ error: "That isn’t a valid transaction hash." }, 400);
+  const sol = !!PAY_CHAINS[o.chain]?.solana;
+  const hash = sol ? String(b.txHash || "").trim() : String(b.txHash || "").toLowerCase();
+  if (!(sol ? SOL_SIG_RE.test(hash) : /^0x[a-f0-9]{64}$/.test(hash))) return json({ error: "That isn’t a valid transaction hash." }, 400);
   const [used] = await sql()`select id from orders where chain = ${o.chain} and tx_hash = ${hash}`;
   if (used && used.id !== o.id) return json({ error: "That transaction was already used for another order." }, 409);
+  const bad = sol ? await checkSolana(o, hash) : await checkEvm(o, hash);
+  if (bad) return bad;
 
+  return markPaid(o, hash);
+}
+
+// EVM chains: the receipt must show the right amount going to the Fathood wallet from the connected wallet.
+// Returns a Response if the payment isn't (yet) good, or null when it is.
+async function checkEvm(o, hash) {
   const receipt = await rpc(o.chain, "eth_getTransactionReceipt", [hash]);
   if (!receipt) return json({ ok: true, paid: false, waiting: "Waiting for the network to include your payment." });
   if (receipt.status !== "0x1") return json({ error: "That transaction failed on-chain, so no payment went through." }, 400);
@@ -161,6 +182,36 @@ async function verify(b, context) {
     if (got === 0n) return json({ error: `No ${o.token} transfer to the Fathood wallet was found in that transaction.` }, 400);
     if (got < needAmt) return json({ error: `That payment was less than the ${o.amount} ${o.token} quoted.` }, 400);
   }
+  return null;
+}
+
+// Solana: read the confirmed transaction and compare the Fathood wallet's balance before and after.
+async function checkSolana(o, sig) {
+  const tx = await rpc(o.chain, "getTransaction", [sig, { encoding: "json", commitment: "confirmed", maxSupportedTransactionVersion: 0 }]);
+  if (!tx) return json({ ok: true, paid: false, waiting: "Waiting for the network to confirm your payment." });
+  if (tx.meta?.err) return json({ error: "That transaction failed on-chain, so no payment went through." }, 400);
+  const ts = Number(tx.blockTime || 0) * 1000;
+  if (ts && ts < new Date(o.created_at).getTime() - 30000) return json({ error: "That payment was sent before this order was created." }, 400);
+  if (ts > new Date(o.expires_at).getTime() + 15 * 60000) return json({ error: "This price quote expired before the payment arrived. Send us a ticket with your transaction link." }, 400);
+  const keys = [...(tx.transaction?.message?.accountKeys || []), ...(tx.meta?.loadedAddresses?.writable || []), ...(tx.meta?.loadedAddresses?.readonly || [])]
+    .map((k) => (typeof k === "string" ? k : k.pubkey));
+  if (keys[0] !== o.payer) return json({ error: "That payment came from a different wallet than the one you connected." }, 400);
+  const needAmt = BigInt(o.amount_raw);
+  let got = 0n;
+  if (!o.token_address) {
+    const i = keys.indexOf(o.pay_to);
+    if (i < 0) return json({ error: "That payment wasn’t sent to the Fathood wallet." }, 400);
+    got = BigInt(tx.meta.postBalances[i]) - BigInt(tx.meta.preBalances[i]);
+  } else {
+    const sum = (list) => (list || []).filter((t) => t.mint === o.token_address && t.owner === o.pay_to).reduce((s, t) => s + BigInt(t.uiTokenAmount?.amount || "0"), 0n);
+    got = sum(tx.meta.postTokenBalances) - sum(tx.meta.preTokenBalances);
+  }
+  if (got <= 0n) return json({ error: `No ${o.token} payment to the Fathood wallet was found in that transaction.` }, 400);
+  if (got < needAmt) return json({ error: `That payment was less than the ${o.amount} ${o.token} quoted.` }, 400);
+  return null;
+}
+
+async function markPaid(o, hash) {
   let row;
   try {
     [row] = await sql()`update orders set status = 'paid', tx_hash = ${hash}, paid_at = now(),
@@ -186,6 +237,13 @@ export default async (req, context) => {
     const b = await req.json().catch(() => ({}));
     if (b.action === "quote") return await quote(b, context);
     if (b.action === "verify") return await verify(b, context);
+    // a fresh Solana blockhash, so the browser can build the payment for Phantom to sign
+    if (b.action === "solBlockhash") {
+      if (!payWallet("solana")) return json({ error: "Solana payments aren’t switched on yet." }, 503);
+      if (!(await hit("solbh", ipOf(context), 120))) return json({ error: "Too many tries. Wait a few minutes." }, 429);
+      const r = await rpc("solana", "getLatestBlockhash", [{ commitment: "confirmed" }]);
+      return json({ ok: true, blockhash: r.value.blockhash });
+    }
     return json({ error: "Unknown action." }, 400);
   } catch (e) {
     console.error(e);

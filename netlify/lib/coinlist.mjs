@@ -55,7 +55,25 @@ export const PAY_CHAINS = {
     explorer: "https://etherscan.io/tx/",
     tokens: { ETH: null, USDG: "0xe343167631d89B6Ffc58B88d6b7fB0228795491D", USDT: "0xdAC17F958D2ee523a2206206994597C13D831ec7", USDC: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48" },
   },
+  // Solana: paid from Phantom (or another Solana wallet) to PAY_WALLET_SOL. USDC is Circle's official mint (6 decimals).
+  solana: {
+    name: "Solana", solana: true,
+    rpc: () => process.env.SOLANA_RPC_URL || "https://api.mainnet-beta.solana.com",
+    explorer: "https://solscan.io/tx/",
+    tokens: { SOL: null, USDC: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" },
+    decimals: { SOL: 9, USDC: 6 },
+  },
 };
+export const SOL_ADDR_RE = /^[1-9A-HJ-NP-Za-km-z]{32,44}$/;
+export const SOL_SIG_RE = /^[1-9A-HJ-NP-Za-km-z]{64,90}$/;
+// The receiving wallet for each payment network (public addresses, set in Netlify; never a key or seed phrase).
+export function payWallet(chain) {
+  if (chain === "solana") { const w = process.env.PAY_WALLET_SOL || ""; return SOL_ADDR_RE.test(w) ? w : ""; }
+  const w = process.env.PAY_WALLET || ""; return /^0x[a-fA-F0-9]{40}$/.test(w) && PAY_CHAINS[chain] ? w.toLowerCase() : "";
+}
+// Networks that can take payments right now (only those with a receiving wallet set).
+export const payChainsOn = () => Object.fromEntries(Object.entries(PAY_CHAINS).filter(([k]) => payWallet(k))
+  .map(([k, c]) => [k, { name: c.name, chainId: c.chainId || null, solana: !!c.solana, tokens: Object.keys(c.tokens), ...(c.solana ? { mints: c.tokens, decimals: c.decimals } : {}) }]));
 
 // Chain names (DexScreener chain ids) and the matching GeckoTerminal network ids.
 export const CHAIN_NAMES = {

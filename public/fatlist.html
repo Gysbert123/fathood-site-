@@ -420,7 +420,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 <section id="v-grow" hidden>
   <div class="wrap page">
     <h1>Grow your coin</h1>
-    <p class="lede">Pay from your wallet in ETH, USDG, USDC or USDT on Robinhood Chain or Ethereum. Everything switches on automatically once the payment confirms.</p>
+    <p class="lede">Pay from your wallet in ETH, USDG, USDC or USDT on Robinhood Chain or Ethereum, or in SOL or USDC on Solana with Phantom. Everything switches on automatically once the payment confirms.</p>
     <div class="tabs2" role="tablist" id="growTabs">
       <button role="tab" data-g="boost" aria-selected="true">Boost</button>
       <button role="tab" data-g="promote" aria-selected="false">Promote</button>
@@ -545,7 +545,7 @@ const DEMO_COINS=[["Fathood","FATHOOD","robinhood",0.000412,38.2,4.1e6,310e3,3,1
 const DEMO_SETTINGS={packages:{spotlight:{group:"promote",name:"Spotlight card",per3:74,perDay:74/3,spots:3,perSpot:4,rotateSeconds:10,maxAtOnce:12,blurb:"A big card at the top of the Fat List. Pick spot 1, 2 or 3. Each spot takes turns between up to 4 coins, 10 seconds each."},row:{group:"promote",name:"Promoted row",per3:24.99,perDay:24.99/3,maxAtOnce:10,blurb:"Pinned above the Trending list with a lime highlight."},banner:{group:"advertise",name:"Banner ad",perDay:199,maxAtOnce:2,blurb:"Your coin and a one-line message across the top of every page, including Hood Talk."},side:{group:"advertise",name:"Left side banner",fixedUsd:250,fixedDays:3,perDay:250,boosts:100,votes:50,maxAtOnce:1,blurb:"Your banner down the whole left side of every Fat List and Hood Talk page for 3 days. Includes 100 boosts and 50 votes."}},
  boosts:{b10:{name:"10 boosts",boosts:10,hours:12,usd:4.99},b30:{name:"30 boosts",boosts:30,hours:24,usd:9.99},b100:{name:"100 boosts",boosts:100,hours:48,usd:19.99}},
  discounts:{1:0,3:0,7:.1,14:.15},verifyUsd:4.99,claimUsd:1.99,autoListMin:5000,chains:{robinhood:"Robinhood Chain",solana:"Solana",ethereum:"Ethereum",base:"Base",bsc:"BNB Chain",arbitrum:"Arbitrum",polygon:"Polygon",avalanche:"Avalanche",sui:"Sui",ton:"TON",tron:"Tron",hyperevm:"HyperEVM"},
- payChains:{robinhood:{name:"Robinhood Chain",chainId:4663,tokens:["ETH","USDG","USDC"]},ethereum:{name:"Ethereum",chainId:1,tokens:["ETH","USDG","USDT","USDC"]}},paymentsOn:false};
+ payChains:{robinhood:{name:"Robinhood Chain",chainId:4663,tokens:["ETH","USDG","USDC"]},ethereum:{name:"Ethereum",chainId:1,tokens:["ETH","USDG","USDT","USDC"]},solana:{name:"Solana",chainId:null,solana:true,tokens:["SOL","USDC"]}},paymentsOn:false};
 const DEMO_ADDR="0x7a1e9b0c2f3d4e5a6b7c8d9e0f1a2b3c4d5e6f70";
 let DEMO_POSTS=[
  {id:"1700000000002-aaaaaaa2",title:"Why Fry Guy might be the next Robinhood Chain runner",author:DEMO_ADDR,authorName:"Fry Lord",coins:[{id:DEMO_COINS[8].id,name:"Fry Guy",symbol:"FRY"}],disclosure:true,likes:42,comments:2,createdAt:Date.now()-2*3600e3,
@@ -598,12 +598,12 @@ function renderAd(){
 setInterval(()=>{if(ads.length>1&&!document.hidden){adIdx++;renderAd()}},8000);
 
 // ---------- coin board
-let tab="trending",chain="all",q="",maxAge=0;
+let tab="trending",chain="robinhood",q="",maxAge=0;
 function buildChips(){
-  const present=[...new Set(coins.map(c=>c.chain))],el=$("#chips");el.innerHTML="";
-  el.hidden=present.length<2; // only worth showing once coins from more than one chain are listed
-  if(el.hidden&&chain!=="all")chain="all";
-  ["all",...present].forEach(k=>{const b=document.createElement("button");b.className="chip";b.textContent=k==="all"?"All chains":chainName(k);
+  // Robinhood Chain is home and the default view; Solana is always offered; other chains show once they have coins.
+  const present=[...new Set(coins.map(c=>c.chain))].filter(k=>k!=="robinhood"&&k!=="solana"),el=$("#chips");el.innerHTML="";el.hidden=false;
+  el.setAttribute("role","group");el.setAttribute("aria-label","Chain");
+  ["robinhood","solana",...present,"all"].forEach(k=>{const b=document.createElement("button");b.className="chip";b.type="button";b.textContent=k==="all"?"All chains":chainName(k).replace(/ Chain$/,"");
     b.setAttribute("aria-pressed",String(k===chain));b.onclick=()=>{chain=k;[...el.children].forEach(x=>x.setAttribute("aria-pressed",String(x===b)));renderRows()};el.appendChild(b)});
 }
 const SORT_LAB={mcap_desc:"Market cap ↓",mcap_asc:"Market cap ↑",volume_desc:"Volume ↓",volume_asc:"Volume ↑",price_desc:"Price ↓",price_asc:"Price ↑"};
@@ -613,7 +613,7 @@ function syncSort(){
   $$("#sortMenu [data-s]").forEach(x=>x.setAttribute("aria-checked",String(x.dataset.s===tab)));
   $("#ageBtn").textContent=maxAge?`Age: under ${maxAge}h`:"Age: Any";$("#ageBtn").classList.toggle("on",!!maxAge);
   $$("#ageMenu [data-age]").forEach(x=>x.setAttribute("aria-checked",String(+x.dataset.age===maxAge)));
-  $("#clearF").hidden=tab==="trending"&&!maxAge&&chain==="all";
+  $("#clearF").hidden=tab==="trending"&&!maxAge&&chain==="robinhood";
 }
 function closeMenus(except){$$(".tools .menu").forEach(m=>{if(m===except)return;m.hidden=true;m.previousElementSibling.setAttribute("aria-expanded","false")})}
 $$(".tools .ddb").forEach(b=>b.onclick=e=>{e.stopPropagation();const m=b.nextElementSibling,open=m.hidden;closeMenus(m);m.hidden=!open;b.setAttribute("aria-expanded",String(open));if(open)(m.querySelector('[aria-checked="true"]')||m.querySelector("button")).focus()});
@@ -622,7 +622,7 @@ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$$(".tools .menu").
 $("#tabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;tab=b.dataset.t;syncSort();renderRows()};
 $("#sortMenu").onclick=e=>{const b=e.target.closest("[data-s]");if(!b)return;tab=b.dataset.s;closeMenus();syncSort();renderRows();$("#sortBtn").focus()};
 $("#ageMenu").onclick=e=>{const b=e.target.closest("[data-age]");if(!b)return;maxAge=+b.dataset.age;closeMenus();syncSort();renderRows();$("#ageBtn").focus()};
-$("#clearF").onclick=()=>{tab="trending";maxAge=0;chain="all";buildChips();syncSort();renderRows()};
+$("#clearF").onclick=()=>{tab="trending";maxAge=0;chain="robinhood";buildChips();syncSort();renderRows()};
 let qTimer=null;
 $("#q").oninput=e=>{q=e.target.value.trim().toLowerCase();searchHits=[];renderRows();clearTimeout(qTimer);
   if(DEMO||q.replace(/^\$/,"").length<2)return;
@@ -645,7 +645,8 @@ $("#spots").addEventListener("click",e=>{const a=e.target.closest("[data-spot]")
 function sorted(){
   const qq=q.replace(/^\$/,"");
   const pool=[...coins,...searchHits.filter(h=>!coins.some(c=>c.id===h.id))];
-  let l=pool.filter(c=>(chain==="all"||c.chain===chain)&&(!maxAge||(ageOf(c)!=null&&ageOf(c)*24<=maxAge))&&(!qq||c.name.toLowerCase().includes(qq)||c.symbol.toLowerCase().includes(qq)||c.address.toLowerCase()===qq));
+  // a search looks across every chain
+  let l=pool.filter(c=>(chain==="all"||qq||c.chain===chain)&&(!maxAge||(ageOf(c)!=null&&ageOf(c)*24<=maxAge))&&(!qq||c.name.toLowerCase().includes(qq)||c.symbol.toLowerCase().includes(qq)||c.address.toLowerCase()===qq));
   // Trending = trading activity, votes and newness. Gainers = biggest 24h price rise. Boosted coins always lead Trending.
   const score=c=>(c.votes||0)*3+Math.log10((c.volume||0)+1)*20+Math.log10((c.liquidity||0)+1)*8+Math.max(0,2-(ageOf(c)??2))*5;
   const so={trending:(a,b)=>((b.boosts||0)-(a.boosts||0))||score(b)-score(a),gainers:(a,b)=>(b.change??-1e9)-(a.change??-1e9),new:(a,b)=>(ageOf(a)??1e9)-(ageOf(b)??1e9),votes:(a,b)=>(b.votes||0)-(a.votes||0)};
@@ -657,7 +658,7 @@ function renderRows(){
   if($("#sortBtn"))syncSort();
   const l=sorted();let n=0;
   const tn=$("#totalNote");if(tn)tn.textContent=total>coins.length?`Showing the top ${coins.length} of ${total.toLocaleString()} coins. Search by name, symbol or contract address to find any of them.`:"";
-  if(!l.length){$("#rows").innerHTML=`<tr><td colspan="9" class="empty">${coins.length?(maxAge?`No coins younger than ${maxAge} hour${maxAge>1?"s":""} match. Try a longer age or Any.`:"No coins match that. Clear the search or pick another chain."):'No coins on the Fat List yet. <a href="#add">Add the first one</a>.'}</td></tr>`;return}
+  if(!l.length){$("#rows").innerHTML=`<tr><td colspan="9" class="empty">${coins.length?(maxAge?`No coins younger than ${maxAge} hour${maxAge>1?"s":""} match. Try a longer age or Any.`:(chain!=="all"&&!q&&!coins.some(c=>c.chain===chain)?`No ${esc(chainName(chain))} coins on the Fat List yet. <a href="#add">Add the first one</a>.`:"No coins match that. Clear the search or pick another chain.")):'No coins on the Fat List yet. <a href="#add">Add the first one</a>.'}</td></tr>`;return}
   const pin=c=>tab==="trending"&&c.promo;
   $("#rows").innerHTML=l.map(c=>`<tr class="${pin(c)?"promo":""}" data-id="${esc(c.id)}" tabindex="0">
     <td class="num">${pin(c)?"★":++n}</td>
@@ -923,6 +924,32 @@ $("#growForm").onsubmit=e=>{
 
 // ---------- wallet
 const eth=()=>window.ethereum;
+// Solana wallet: Phantom (also works with other wallets that act like it, e.g. Solflare or Backpack)
+const solw=()=>(window.phantom&&window.phantom.solana)||window.solana||null;
+const isSol=()=>!!(S.payChains[P.chain]||{}).solana;
+const phantomLink=()=>"https://phantom.app/ul/browse/"+encodeURIComponent(location.origin+location.pathname+"#grow")+"?ref="+encodeURIComponent(location.origin);
+// web3.js only loads when someone pays on Solana. Pinned version + integrity check.
+let solLib=null;
+function loadSolLib(){return solLib||(solLib=new Promise((res,rej)=>{const s=document.createElement("script");s.src="https://cdn.jsdelivr.net/npm/@solana/web3.js@1.98.4/lib/index.iife.min.js";
+  s.integrity="sha256-Cc2+qVGy7Q4RvL466x7p8DX5+1HtISrKZFR1roJojMM=";s.crossOrigin="anonymous";s.onload=()=>res(window.solanaWeb3);s.onerror=()=>{solLib=null;rej(new Error("lib"))};document.head.appendChild(s)}))}
+const SOL_IDS={token:"TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",ata:"ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL"};
+async function buildSolTx(o,from){
+  const W=await loadSolLib(),PK=W.PublicKey,me=new PK(from),to=new PK(o.to);
+  const bh=await api("/api/fatpay",{body:{action:"solBlockhash"}});if(!bh.ok)throw new Error(bh.error||"blockhash");
+  const tx=new W.Transaction({feePayer:me,recentBlockhash:bh.blockhash});
+  if(!o.tokenAddress){tx.add(W.SystemProgram.transfer({fromPubkey:me,toPubkey:to,lamports:Number(o.amountRaw)}));return tx}
+  const mint=new PK(o.tokenAddress),TP=new PK(SOL_IDS.token),AP=new PK(SOL_IDS.ata);
+  const ata=owner=>PK.findProgramAddressSync([owner.toBytes(),TP.toBytes(),mint.toBytes()],AP)[0];
+  const src=ata(me),dst=ata(to);
+  // make sure the Fathood wallet can receive this token (does nothing if it already can)
+  tx.add(new W.TransactionInstruction({programId:AP,data:Uint8Array.of(1),keys:[{pubkey:me,isSigner:true,isWritable:true},{pubkey:dst,isSigner:false,isWritable:true},
+    {pubkey:to,isSigner:false,isWritable:false},{pubkey:mint,isSigner:false,isWritable:false},{pubkey:W.SystemProgram.programId,isSigner:false,isWritable:false},{pubkey:TP,isSigner:false,isWritable:false}]}));
+  // the token transfer itself (transferChecked: exact amount and decimals)
+  const data=new Uint8Array(10);data[0]=12;let a=BigInt(o.amountRaw);for(let i=1;i<=8;i++){data[i]=Number(a&255n);a>>=8n}data[9]=o.decimals;
+  tx.add(new W.TransactionInstruction({programId:TP,data,keys:[{pubkey:src,isSigner:false,isWritable:true},{pubkey:mint,isSigner:false,isWritable:false},
+    {pubkey:dst,isSigner:false,isWritable:true},{pubkey:me,isSigner:true,isWritable:false}]}));
+  return tx;
+}
 function noWalletMsg(hash){const here=location.host+location.pathname;return `No wallet found in this browser. On a phone, open this page inside your wallet app: <a href="https://metamask.app.link/dapp/${esc(here)}${hash}">open in MetaMask</a>, or paste fathood.org/fatlist.html into Rabby or OKX Wallet’s browser.`}
 const toHex=s=>"0x"+[...new TextEncoder().encode(s)].map(b=>b.toString(16).padStart(2,"0")).join("");
 
@@ -930,19 +957,22 @@ const toHex=s=>"0x"+[...new TextEncoder().encode(s)].map(b=>b.toString(16).padSt
 const payDlg=$("#payDlg"),HEX=n=>"0x"+BigInt(n).toString(16);
 const RH={chainId:"0x1237",chainName:"Robinhood Chain",nativeCurrency:{name:"Ether",symbol:"ETH",decimals:18},rpcUrls:["https://rpc.mainnet.chain.robinhood.com"],blockExplorerUrls:["https://robinhoodchain.blockscout.com"]};
 let P=null;
-function openPay(o){P={...o,chain:"robinhood",token:"ETH",account:null,order:null,polling:false,closed:false};renderPay();payDlg.showModal()}
+function openPay(o){
+  // start on Robinhood Chain if it's on, otherwise the first network that is; inside Phantom's browser start on Solana
+  const ks=Object.keys(S.payChains||{}),start=(solw()&&!eth()&&ks.includes("solana"))?"solana":ks.includes("robinhood")?"robinhood":(ks[0]||"robinhood");
+  P={...o,chain:start,token:((S.payChains[start]||{}).tokens||["ETH"])[0],account:null,order:null,polling:false,closed:false};renderPay();payDlg.showModal()}
 payDlg.addEventListener("close",()=>{if(P)P.closed=true});
 payDlg.addEventListener("click",e=>{if(e.target===payDlg&&!(P&&P.polling))payDlg.close()});
 function renderPay(state){
   const pc=S.payChains,c=pc[P.chain];
   let h=`<h2>${esc(P.title)}</h2><p class="small" style="margin:6px 0 0">Total <b class="num">$${fUsd(P.usd)}</b></p>`;
-  if(!S.paymentsOn&&!DEMO){h+=`<p class="msg bad">Payments aren’t switched on yet. Message the team on Telegram to book this.</p><div class="foot"><button class="btn white" data-x>Close</button></div>`;$("#payMd").innerHTML=h;wireClose();return}
+  if((!S.paymentsOn||!c)&&!DEMO){h+=`<p class="msg bad">Payments aren’t switched on yet. Message the team on Telegram to book this.</p><div class="foot"><button class="btn white" data-x>Close</button></div>`;$("#payMd").innerHTML=h;wireClose();return}
   if(!P.order){
     h+=`<p class="step">1. Pay on</p><div class="opts" role="group" aria-label="Network">${Object.entries(pc).map(([k,v])=>`<button class="opt" data-ch="${k}" aria-pressed="${k===P.chain}">${esc(v.name)}</button>`).join("")}</div>
       <p class="step">2. Pay with</p><div class="opts" role="group" aria-label="Coin">${c.tokens.map(t=>`<button class="opt" data-tk="${t}" aria-pressed="${t===P.token}">${t}</button>`).join("")}</div>
-      <p class="step">3. Wallet</p>${P.account?`<p class="small" style="margin:0">Connected <b>${short(P.account)}</b></p>`:`<p class="small" style="margin:0">Use the wallet that will send the payment. MetaMask, Rabby and OKX Wallet all work.</p>`}
+      <p class="step">3. Wallet</p>${P.account?`<p class="small" style="margin:0">Connected <b>${short(P.account)}</b></p>`:c.solana?`<p class="small" style="margin:0">Use Phantom (Solflare and Backpack work too). On a phone, <a href="${esc(phantomLink())}">open this page in the Phantom app</a>.</p>`:`<p class="small" style="margin:0">Use the wallet that will send the payment. MetaMask, Rabby and OKX Wallet all work.</p>`}
       ${state?`<p class="msg ${state.bad?"bad":""}">${state.msg}</p>`:""}
-      <div class="foot"><button class="btn white" data-x>Cancel</button>${P.account?`<button class="btn" id="getq">Get exact amount</button>`:`<button class="btn" id="cn">Connect wallet</button>`}</div>`;
+      <div class="foot"><button class="btn white" data-x>Cancel</button>${P.account?`<button class="btn" id="getq">Get exact amount</button>`:`<button class="btn" id="cn">${c.solana?"Connect Phantom":"Connect wallet"}</button>`}</div>`;
   }else if(P.order.status==="paid"){
     const o=P.order,what={claim:" The team checks it’s really your coin, usually within 24 hours, then your details go live.",promo:" It goes live on your start date and shows automatically.",boost:" Your boosts are live now.",verify:" The team checks your coin and adds the blue tick, usually within a few hours."}[P.kind]||"";
     h+=`<p class="payamt">Paid. You’re in.</p><p>${esc(o.label)} for ${esc(o.coin)} is confirmed.${what}</p>
@@ -954,19 +984,25 @@ function renderPay(state){
       ${state?`<p class="msg ${state.bad?"bad":""}">${state.msg}</p>`:""}
       <div class="foot"><button class="btn white" data-x>Cancel</button><button class="btn" id="pay" ${P.polling?"disabled":""}>${P.polling?"Checking payment…":`Pay ${esc(o.amount)} ${esc(o.token)}`}</button></div>
       <details style="margin-top:16px"><summary class="small" style="cursor:pointer;font-weight:700">Already sent it? Paste the transaction hash</summary>
-        <div class="addr" style="margin-top:8px"><input id="txh" placeholder="0x…" style="flex:1;border:0;min-width:0;background:none" spellcheck="false"><button class="mini" id="chk">Check</button></div></details>`;
+        <div class="addr" style="margin-top:8px"><input id="txh" placeholder="${S.payChains[o.chain].solana?"Transaction signature":"0x…"}" style="flex:1;border:0;min-width:0;background:none" spellcheck="false"><button class="mini" id="chk">Check</button></div></details>`;
   }
   $("#payMd").innerHTML=h;wireClose();
-  $$("[data-ch]").forEach(b=>b.onclick=()=>{P.chain=b.dataset.ch;if(!S.payChains[P.chain].tokens.includes(P.token))P.token="ETH";renderPay()});
+  $$("[data-ch]").forEach(b=>b.onclick=()=>{const was=isSol();P.chain=b.dataset.ch;if(!S.payChains[P.chain].tokens.includes(P.token))P.token=S.payChains[P.chain].tokens[0];if(was!==isSol())P.account=null;renderPay()});
   $$("[data-tk]").forEach(b=>b.onclick=()=>{P.token=b.dataset.tk;renderPay()});
   const cn=$("#cn");if(cn)cn.onclick=connectPay;
   const qb=$("#getq");if(qb)qb.onclick=getQuote;
   const pb=$("#pay");if(pb)pb.onclick=pay;
-  const ck=$("#chk");if(ck)ck.onclick=()=>{const x=$("#txh").value.trim();if(!/^0x[a-fA-F0-9]{64}$/.test(x)){renderPay({bad:1,msg:"That isn’t a transaction hash. It starts with 0x and is 66 characters long."});return}poll(x)};
+  const ck=$("#chk");if(ck)ck.onclick=()=>{const x=$("#txh").value.trim();
+    if(isSol()?!/^[1-9A-HJ-NP-Za-km-z]{64,90}$/.test(x):!/^0x[a-fA-F0-9]{64}$/.test(x)){renderPay({bad:1,msg:isSol()?"That isn’t a Solana transaction signature. Copy it from Phantom’s activity or Solscan.":"That isn’t a transaction hash. It starts with 0x and is 66 characters long."});return}poll(x)};
 }
 function wireClose(){$$("#payMd [data-x]").forEach(b=>b.onclick=()=>payDlg.close())}
 async function connectPay(){
-  if(DEMO){P.account=DEMO_ADDR;renderPay();return}
+  if(DEMO){P.account=isSol()?"Fath00dDemo1111111111111111111111111111111":DEMO_ADDR;renderPay();return}
+  if(isSol()){
+    const w=solw();if(!w){renderPay({bad:1,msg:`No Solana wallet found in this browser. On a phone, <a href="${esc(phantomLink())}">open this page in the Phantom app</a>. On a computer, install the Phantom extension.`});return}
+    try{const r=await w.connect();P.account=(r&&r.publicKey||w.publicKey).toString();renderPay()}
+    catch(e){renderPay({bad:1,msg:e&&e.code===4001?"You declined the connection. Tap Connect Phantom to try again.":"Couldn’t connect to Phantom. Unlock it and try again."})}
+    return}
   if(!eth()){renderPay({bad:1,msg:noWalletMsg("#grow")});return}
   try{const a=await eth().request({method:"eth_requestAccounts"});P.account=a[0];renderPay()}
   catch(e){renderPay({bad:1,msg:e&&e.code===4001?"You declined the connection. Tap Connect wallet to try again.":"Couldn’t connect to your wallet. Unlock it and try again."})}
@@ -983,6 +1019,7 @@ async function getQuote(){
 async function pay(){
   const o=P.order,w=eth();
   if(Date.now()>o.expiresAt){P.order=null;renderPay({bad:1,msg:"That price expired. Get a fresh amount and pay again."});return}
+  if(S.payChains[o.chain].solana)return paySol(o);
   try{
     const want="0x"+o.chainId.toString(16),cur=await w.request({method:"eth_chainId"});
     if(cur.toLowerCase()!==want){
@@ -996,6 +1033,17 @@ async function pay(){
     poll(await w.request({method:"eth_sendTransaction",params:[tx]}));
   }catch(e){renderPay({bad:1,msg:e&&e.code===4001?"You cancelled in your wallet. Nothing was sent.":"Your wallet couldn’t send the payment. Check you have enough "+esc(o.token)+" plus a little ETH for gas."})}
 }
+async function paySol(o){
+  const w=solw();if(!w){renderPay({bad:1,msg:`Phantom isn’t open in this browser. <a href="${esc(phantomLink())}">Open this page in the Phantom app</a>.`});return}
+  try{
+    renderPay({msg:"Getting the payment ready…"});
+    if(!w.publicKey||w.publicKey.toString()!==P.account){const r=await w.connect();if((r&&r.publicKey||w.publicKey).toString()!==P.account){renderPay({bad:1,msg:"Phantom switched to a different account. Switch back to the one you connected, or cancel and start again."});return}}
+    const tx=await buildSolTx(o,P.account);
+    renderPay({msg:"Confirm the payment in Phantom…"});
+    const r=await w.signAndSendTransaction(tx);
+    poll(r.signature||r);
+  }catch(e){renderPay({bad:1,msg:e&&e.code===4001?"You cancelled in Phantom. Nothing was sent.":e&&e.message==="lib"?"Couldn’t load the Solana payment helper. Check your connection and try again.":"Phantom couldn’t send the payment. Check you have enough "+esc(o.token)+(o.token==="SOL"?"":" plus a little SOL")+" for network fees."})}
+}
 async function poll(hash){
   P.polling=true;renderPay({msg:"Payment sent. Waiting for the network to confirm it…"});
   const until=Date.now()+8*6e4;
@@ -1008,7 +1056,7 @@ async function poll(hash){
     }catch(_){}
     await new Promise(r=>setTimeout(r,4000));
   }
-  P.polling=false;if(!P.closed)renderPay({bad:1,msg:`Still not confirmed. Your payment is safe. Message the team on Telegram with this hash: <code style="word-break:break-all">${esc(hash)}</code>`});
+  P.polling=false;if(!P.closed)renderPay({bad:1,msg:`Still not confirmed. Your payment is safe. Send us a ticket (Contact &amp; help) with this transaction: <code style="word-break:break-all">${esc(hash)}</code>`});
 }
 async function refresh(){if(DEMO)return;try{const j=await api("/api/fatlist?fresh="+Date.now());coins=j.coins;ads=j.ads||[];side=j.side||null;total=j.total||coins.length;renderTick();renderSide();renderAd();buildChips();renderSpots();renderRows()}catch(_){}}
 

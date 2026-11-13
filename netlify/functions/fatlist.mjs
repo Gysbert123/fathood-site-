@@ -2,14 +2,13 @@ import { sql, hit, toCoin, VISIBLE, LIVE_EXTRAS, liveAds, dayNumber } from "../l
 import { getSnapshot } from "../lib/market.mjs";
 import { lookup } from "../lib/lookup.mjs";
 import { parseLogo, saveLogo, json, newId, ID_RE, ipOf, clean, cleanUrl, addrOk, chainName, testPrices, prices,
-  CHAIN_NAMES, PAY_CHAINS, DISCOUNTS, AUTO_LIST_MIN_LIQUIDITY, INDEX_MIN_LIQUIDITY, INDEX_CHAINS, fakeVolume } from "../lib/coinlist.mjs";
+  CHAIN_NAMES, payChainsOn, DISCOUNTS, AUTO_LIST_MIN_LIQUIDITY, INDEX_MIN_LIQUIDITY, INDEX_CHAINS, fakeVolume } from "../lib/coinlist.mjs";
 
 export const config = { path: "/api/fatlist" };
 
 const settings = async () => ({
   ...prices(await testPrices()), discounts: DISCOUNTS, chains: CHAIN_NAMES,
-  payChains: Object.fromEntries(Object.entries(PAY_CHAINS).map(([k, c]) => [k, { name: c.name, chainId: c.chainId, tokens: Object.keys(c.tokens) }])),
-  paymentsOn: /^0x[a-fA-F0-9]{40}$/.test(process.env.PAY_WALLET || ""), autoListMin: AUTO_LIST_MIN_LIQUIDITY,
+  payChains: payChainsOn(), paymentsOn: Object.keys(payChainsOn()).length > 0, autoListMin: AUTO_LIST_MIN_LIQUIDITY,
 });
 
 async function findExisting(chain, address) {
