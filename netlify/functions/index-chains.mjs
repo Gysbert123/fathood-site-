@@ -1,9 +1,9 @@
-// Runs every 30 minutes (kept slow to save Netlify credits): pulls brand-new, trending and the biggest (by 24h volume) coins on the chains in INDEX_CHAINS from GeckoTerminal,
+// Runs once an hour, at quarter past (kept slow to save Netlify credits): pulls brand-new, trending and the biggest (by 24h volume) coins on the chains in INDEX_CHAINS from GeckoTerminal,
 // so the Fat List has every coin, not only the ones people add. Also tidies up old rows.
 import { sql } from "../lib/db.mjs";
 import { INDEX_CHAINS, newId, clean, cleanUrl, fakeVolume } from "../lib/coinlist.mjs";
 
-export const config = { schedule: "*/30 * * * *" };
+export const config = { schedule: "15 * * * *" };
 const QUOTES = new Set(["WETH", "ETH", "USDG", "USDC", "USDT", "SYRUPUSDG", "DAI"]);
 const n = (v) => (v == null || v === "" || isNaN(Number(v)) ? null : Number(v));
 

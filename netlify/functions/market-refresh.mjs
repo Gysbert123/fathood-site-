@@ -1,9 +1,9 @@
-// Runs every 15 minutes (kept slow to save Netlify credits): refreshes prices from DexScreener, then rebuilds the board everyone loads.
+// Runs every 30 minutes (kept slow to save Netlify credits): refreshes prices from DexScreener, then rebuilds the board everyone loads.
 import { refreshMarket, buildSnapshot } from "../lib/market.mjs";
 import { sql } from "../lib/db.mjs";
 import { db } from "../lib/coinlist.mjs";
 
-export const config = { schedule: "*/15 * * * *" };
+export const config = { schedule: "*/30 * * * *" };
 
 export default async () => {
   try {

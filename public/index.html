@@ -108,6 +108,10 @@ body{position:relative}
 </style>
 </head>
 <body>
+<script>
+// Lore, rules, tokenomics and roadmap moved to /about.html. Old links still land in the right place.
+(function(){var h=location.hash.slice(1);if(/^(lore|rules|tokenomics|roadmap)$/.test(h))location.replace("/about.html#"+h)})();
+</script>
 <div id="page" style="font-family: 'Space Grotesk', system-ui, sans-serif; color: #111111; background: #FFF8E7; min-height: 100vh">
 
   <!-- NAV (same menu on every page: site-nav.css + site-nav.js) -->
@@ -128,11 +132,9 @@ body{position:relative}
           <li><button type="button" class="sn-g" aria-expanded="false">More</button>
             <ul class="sn-sub">
               <li><a href="/#buy">How to buy</a></li>
-              <li><a href="/#tokenomics">Tokenomics</a></li>
-              <li><a href="/#roadmap">Roadmap</a></li>
+              <li><a href="/about.html">About $FATHOOD<small>Lore, rules and tokenomics</small></a></li>
+              <li><a href="/about.html#roadmap">Roadmap</a></li>
               <li><a href="/#torchpad">Launch</a></li>
-              <li><a href="/#lore">Lore</a></li>
-              <li><a href="/#rules">The rules</a></li>
               <li><a href="/#safe">Stay safe</a></li>
               <li><a href="/contact.html">Contact &amp; help</a></li>
             </ul></li>
@@ -328,230 +330,18 @@ body{position:relative}
     <div class="wall-lightbox" id="wall-lightbox" hidden><button type="button" aria-label="Close">×</button><img alt="A $FATHOOD meme from the Wall of Fat"></div>
   </section>
 
-  <!-- LORE -->
-  <section id="lore" style="padding: 88px 24px">
-    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap-reverse; align-items: center; gap: 48px">
-      <div style="flex: 1 1 440px; min-width: 0">
-        <video src="/media/video-095eb3e588.mp4" poster="/media/img-22fbece9ad.jpg" muted loop playsinline preload="none" data-lazyplay aria-label="Fathood wakes up from gaming, rises as a golden paladin with a hammer and leads the holders out of the trenches" style="width: 100%; display: block; border: 4px solid #111111; border-radius: 24px; box-shadow: -10px 10px 0 #1F4FD1; transform: rotate(-1.5deg); height: auto; background: #111111"></video>
+  <!-- ABOUT (lore, rules, tokenomics and roadmap live on /about.html) -->
+  <section id="about" style="padding: 72px 24px">
+    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 28px">
+      <div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+        <p style="margin: 0; font-weight: 700; font-size: 15px; letter-spacing: 2px; text-transform: uppercase; color: #1F4FD1">About $FATHOOD</p>
+        <h2 style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: clamp(2rem, 4.4vw, 3.4rem); line-height: 1.05">Fair launch. No bundles. No rugs.</h2>
+        <p style="margin: 0; font-size: 1.15rem; line-height: 1.6">1,000,000,000 supply on Robinhood Chain, launched on Torchpad. Read the lore, the house rules, the tokenomics and where Fathood goes next.</p>
       </div>
-      <div style="flex: 1 1 440px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
-        <p style="margin: 0; font-weight: 700; font-size: 15px; letter-spacing: 2px; text-transform: uppercase; color: #1F4FD1">The lore</p>
-        <h2 style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: clamp(2rem, 4.4vw, 3.4rem); line-height: 1.05">Rugged. Scammed. Left for dead in the trenches.</h2>
-        <p style="margin: 0; font-size: 1.15rem; line-height: 1.6">He cannonballed into Binance, FTX, Wall Street and the rugs. Crawled out of the rubble, chased down the scams and swallowed them whole.</p>
-        <p style="margin: 0; font-size: 1.15rem; line-height: 1.6">Now Fathood just cast resurrection. Real memes, funny stories, the way it should have always been. Are you ready to come back and fight the real meme coin battle?</p>
-        <p style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-size: 1.5rem; color: #C8221C">Let them fight. We hold. We get fat.</p>
+      <div style="display: flex; flex-wrap: wrap; gap: 10px">
+        <a href="/about.html" style="background: #111111; color: #FFF8E7; text-decoration: none; font-weight: 700; font-size: 18px; padding: 16px 28px; border-radius: 14px; border: 3px solid #111111; box-shadow: 5px 5px 0 #1F4FD1">Read about $FATHOOD</a>
+        <a href="/about.html#roadmap" style="background: #FFF8E7; color: #111111; text-decoration: none; font-weight: 700; font-size: 18px; padding: 16px 28px; border-radius: 14px; border: 3px solid #111111; box-shadow: 5px 5px 0 #111111">Roadmap</a>
       </div>
-    </div>
-  </section>
-
-  <!-- RULES -->
-  <section id="rules" style="background: #111111; color: #FFF8E7; padding: 88px 24px; border-top: 4px solid #111111">
-    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px">
-      <div style="display: flex; flex-direction: column; gap: 12px; max-width: 44rem">
-        <p style="margin: 0; font-weight: 700; font-size: 15px; letter-spacing: 2px; text-transform: uppercase; color: var(--accent)">The house rules</p>
-        <h2 style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: clamp(2rem, 4.4vw, 3.4rem); line-height: 1.05">Let’s make memes great again.</h2>
-        <p style="margin: 0; font-size: 1.15rem; line-height: 1.6; color: #E9E2CF">No more pump and dump. No more scams. No more rugs. This isn’t a quick flip, it’s a long-term hold.</p>
-      </div>
-      <div style="display: flex; flex-wrap: wrap; gap: 20px">
-        <div style="flex: 1 1 240px; min-width: 0; background: #FFF8E7; color: #111111; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 12px">
-          <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"></path><path d="M5 7h14"></path><path d="M5 7l-3 7a4 4 0 0 0 6 0z"></path><path d="M19 7l-3 7a4 4 0 0 0 6 0z"></path></svg>
-          <h3 style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: 1.5rem">Fair launch</h3>
-          <p style="margin: 0; line-height: 1.55">Everyone gets in on the same terms, at the same time, on Torchpad.</p>
-        </div>
-        <div style="flex: 1 1 240px; min-width: 0; background: var(--accent); color: #111111; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 12px">
-          <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="13" rx="2"></rect><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><path d="M3 3l18 18"></path></svg>
-          <h3 style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: 1.5rem">No bundles</h3>
-          <p style="margin: 0; line-height: 1.55">No insiders scooping the supply in the launch block. Clean chart from day one.</p>
-        </div>
-        <div style="flex: 1 1 240px; min-width: 0; background: #FFF8E7; color: #111111; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 12px">
-          <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#111111" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"></path><path d="M8.5 12l2.5 2.5 4.5-5"></path></svg>
-          <h3 style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: 1.5rem">No rugs, no dev dumps</h3>
-          <p style="margin: 0; line-height: 1.55">The dev isn’t here to cash out on you. We’re holding right next to you.</p>
-        </div>
-        <div style="flex: 1 1 240px; min-width: 0; background: #1F4FD1; color: #FFFFFF; border-radius: 20px; padding: 28px; display: flex; flex-direction: column; gap: 12px">
-          <svg aria-hidden="true" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 10c-2 1.5-3 3.5-3 6a5 5 0 0 0 5 5h6a5 5 0 0 0 5-5c0-2.5-1-4.5-3-6"></path><path d="M9 10l-1.5-5h9L15 10z"></path><path d="M12 13v5"></path><path d="M10 15.5h4"></path></svg>
-          <h3 style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: 1.5rem">Fat bags only</h3>
-          <p style="margin: 0; line-height: 1.55">Not a quick flip. We’re holding on until we are fat.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- TOKENOMICS -->
-  <section id="tokenomics" style="padding: 88px 24px; border-top: 4px solid #111111">
-    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px">
-      <div style="display: flex; flex-direction: column; gap: 12px">
-        <p style="margin: 0; font-weight: 700; font-size: 15px; letter-spacing: 2px; text-transform: uppercase; color: #1F4FD1">Tokenomics</p>
-        <h2 style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: clamp(2rem, 4.4vw, 3.4rem); line-height: 1.05">The menu.</h2>
-      </div>
-      <div style="display: flex; flex-wrap: wrap; gap: 20px">
-        <div style="flex: 1 1 200px; min-width: 0; border: 4px solid #111111; border-radius: 20px; padding: 24px; background: #FFFFFF; box-shadow: 6px 6px 0 #111111">
-          <p style="margin: 0 0 8px; font-weight: 700; font-size: 14px; letter-spacing: 1px; text-transform: uppercase">Ticker</p>
-          <p style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-size: 1.8rem">$FATHOOD</p>
-        </div>
-        <div style="flex: 1 1 200px; min-width: 0; border: 4px solid #111111; border-radius: 20px; padding: 24px; background: #FFFFFF; box-shadow: 6px 6px 0 #111111">
-          <p style="margin: 0 0 8px; font-weight: 700; font-size: 14px; letter-spacing: 1px; text-transform: uppercase">Chain</p>
-          <p style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-size: 1.8rem">Robinhood Chain</p>
-        </div>
-        <div style="flex: 1 1 200px; min-width: 0; border: 4px solid #111111; border-radius: 20px; padding: 24px; background: #111111; color: #FFF8E7; box-shadow: 6px 6px 0 #3FD62A">
-          <p style="margin: 0 0 8px; font-weight: 700; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: #B9F7A8">Launchpad</p>
-          <p style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-size: 1.8rem; display: flex; align-items: center; gap: 10px"><span class="fh-torch" aria-hidden="true" style="width: 26px; height: 32px"></span>Torchpad</p>
-        </div>
-        <div style="flex: 1 1 200px; min-width: 0; border: 4px solid #111111; border-radius: 20px; padding: 24px; background: #FFFFFF; box-shadow: 6px 6px 0 #111111">
-          <p style="margin: 0 0 8px; font-weight: 700; font-size: 14px; letter-spacing: 1px; text-transform: uppercase">Total supply</p>
-          <p style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-size: 1.45rem; word-break: break-word">1,000,000,000</p>
-        </div>
-        <div style="flex: 1 1 200px; min-width: 0; border: 4px solid #111111; border-radius: 20px; padding: 24px; background: #FFFFFF; box-shadow: 6px 6px 0 #111111">
-          <p style="margin: 0 0 8px; font-weight: 700; font-size: 14px; letter-spacing: 1px; text-transform: uppercase">Buy / sell tax</p>
-          <p style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-size: 1.8rem">3%</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ROADMAP -->
-  <style>
-    .rm-tree { display: flex; flex-direction: column; align-items: center; }
-    .rm-card { background: #FFFFFF; color: #111111; border: 4px solid #111111; border-radius: 20px; padding: 24px; box-shadow: 6px 6px 0 #111111; display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 460px; box-sizing: border-box; }
-    .rm-card h3 { margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: 1.45rem; line-height: 1.1; }
-    .rm-card ul { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 8px; line-height: 1.45; }
-    .rm-card li { display: flex; gap: 10px; }
-    .rm-card li::before { content: ""; flex: none; width: 12px; height: 12px; margin-top: 6px; border: 3px solid #111111; border-radius: 50%; box-sizing: border-box; }
-    .rm-done li::before { background: #3FD62A; }
-    .rm-now li::before { background: #111111; }
-    .rm-badge { align-self: flex-start; font-weight: 700; font-size: 13px; letter-spacing: 1.5px; text-transform: uppercase; padding: 5px 12px; border-radius: 999px; border: 3px solid #111111; }
-    .rm-done { background: #E9FBE0; }
-    .rm-done .rm-badge { background: #3FD62A; }
-    .rm-now { background: var(--accent); box-shadow: 6px 6px 0 #1F4FD1; }
-    .rm-now .rm-badge { background: #111111; color: var(--accent); animation: rm-pulse 1.6s ease-in-out infinite; }
-    .rm-next .rm-badge { background: #1F4FD1; color: #FFFFFF; }
-    .rm-later .rm-badge { background: #FFF8E7; }
-    .rm-token.rm-next { box-shadow: 6px 6px 0 #3FD62A; }
-    .rm-token.rm-later { box-shadow: 6px 6px 0 #3FD62A; }
-    @keyframes rm-pulse { 50% { transform: scale(1.06); } }
-    @media (prefers-reduced-motion: reduce) { .rm-now .rm-badge { animation: none; } }
-    .rm-line { width: 6px; height: 40px; background: #111111; border-radius: 3px; }
-    .rm-fork { width: 100%; display: flex; flex-direction: column; align-items: center; }
-    .rm-bar { height: 6px; background: #111111; border-radius: 3px; width: 50%; }
-    .rm-branches { width: 100%; display: flex; gap: 28px; }
-    .rm-branch { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; }
-    .rm-label { font-family: 'Bowlby One', Impact, sans-serif; font-size: 1.1rem; letter-spacing: 1px; padding: 8px 18px; border-radius: 14px; border: 4px solid #111111; background: #111111; color: #FFF8E7; }
-    .rm-branch-token .rm-label { background: #3FD62A; color: #111111; }
-    @media (max-width: 760px) {
-      .rm-bar { display: none; }
-      .rm-branches { flex-direction: column; gap: 0; }
-      .rm-branch + .rm-branch::before { content: ""; display: block; width: 6px; height: 40px; background: #111111; border-radius: 3px; }
-    }
-  </style>
-  <section id="roadmap" aria-labelledby="roadmap-title" style="padding: 88px 24px; background: #FFF8E7; border-top: 4px solid #111111">
-    <div style="max-width: 1200px; margin: 0 auto; display: flex; flex-direction: column; gap: 40px">
-      <div style="display: flex; flex-direction: column; gap: 12px; max-width: 44rem">
-        <p style="margin: 0; font-weight: 700; font-size: 15px; letter-spacing: 2px; text-transform: uppercase; color: #1F4FD1">Roadmap</p>
-        <h2 id="roadmap-title" style="margin: 0; font-family: 'Bowlby One', Impact, sans-serif; font-weight: 400; font-size: clamp(2rem, 4.4vw, 3.4rem); line-height: 1.05">The Fathood family tree.</h2>
-        <p style="margin: 0; font-size: 1.15rem; line-height: 1.6">One trunk, two branches: the game keeps getting bigger, and $FATHOOD keeps getting more useful. No dates, no fake deadlines. We ship it when it’s fat enough.</p>
-      </div>
-
-      <div class="rm-tree">
-        <div class="rm-card rm-done">
-          <span class="rm-badge">Done</span>
-          <h3>Phase 1 · The launch</h3>
-          <ul>
-            <li>Fair launch of $FATHOOD on Torchpad, Robinhood Chain</li>
-            <li>fathood.org is live</li>
-            <li>Meme Booth + the Wall of Fat</li>
-          </ul>
-        </div>
-        <div class="rm-line" aria-hidden="true"></div>
-        <div class="rm-card rm-now">
-          <span class="rm-badge">Now</span>
-          <h3>Phase 2 · Fathood Battlegrounds beta</h3>
-          <ul>
-            <li>Free PC beta of our own battle royale game</li>
-            <li>Weekly online leaderboard</li>
-            <li>5 fighters, each with a special move</li>
-            <li>Burn $FATHOOD to unlock Predator</li>
-          </ul>
-        </div>
-        <div class="rm-fork" aria-hidden="true">
-          <div class="rm-line"></div>
-          <div class="rm-bar"></div>
-        </div>
-
-        <div class="rm-branches">
-          <div class="rm-branch rm-branch-game">
-            <div class="rm-line" aria-hidden="true"></div>
-            <span class="rm-label">THE GAME</span>
-            <div class="rm-line" aria-hidden="true"></div>
-            <div class="rm-card rm-next">
-              <span class="rm-badge">Next</span>
-              <h3>Phase 3 · Ranks + rare drip</h3>
-              <ul>
-                <li>New fighters: reach the rank, then burn to unlock</li>
-                <li>Rare, epic and legendary cosmetics: rank + burn</li>
-                <li>More maps and weapons</li>
-              </ul>
-            </div>
-            <div class="rm-line" aria-hidden="true"></div>
-            <div class="rm-card rm-later">
-              <span class="rm-badge">Later</span>
-              <h3>Phase 4 · Online + the Arena</h3>
-              <ul>
-                <li>Real online multiplayer</li>
-                <li>Release on itch.io and the Epic Games Store</li>
-                <li>Ranked Arena for top players: perk gear like crit, stun and life steal</li>
-              </ul>
-            </div>
-          </div>
-
-          <div class="rm-branch rm-branch-token">
-            <div class="rm-line" aria-hidden="true"></div>
-            <span class="rm-label">THE TOKEN</span>
-            <div class="rm-line" aria-hidden="true"></div>
-            <div class="rm-card rm-now rm-token">
-              <span class="rm-badge">Live now</span>
-              <h3>The Fat List</h3>
-              <ul>
-                <li>Every coin on Robinhood Chain in one place, ranked by the hood</li>
-                <li>Vote daily, search any coin, filter by age, volume and market cap</li>
-                <li>Hood Talk: write-ups from the community</li>
-                <li>Boosts, Spotlight cards and ads keep it running</li>
-              </ul>
-              <a href="/fatlist.html" style="display: inline-block; margin-top: 12px; font-weight: 700; color: #111111">Open the Fat List →</a>
-            </div>
-            <div class="rm-line" aria-hidden="true"></div>
-            <div class="rm-card rm-next rm-token">
-              <span class="rm-badge">Next</span>
-              <h3>The Buy button</h3>
-              <ul>
-                <li>A simple Buy button on fathood.org and the Fat List</li>
-                <li>Buy straight from us in a few taps, from your own wallet</li>
-                <li>A small fee on each buy helps keep Fathood running</li>
-              </ul>
-            </div>
-            <div class="rm-line" aria-hidden="true"></div>
-            <div class="rm-card rm-next rm-token">
-              <span class="rm-badge">Next</span>
-              <h3>Grow $FATHOOD</h3>
-              <ul>
-                <li>Paid DEX Screener profile</li>
-                <li>Supply lock</li>
-                <li>Regular token burns, fed by every in-game unlock</li>
-              </ul>
-            </div>
-            <div class="rm-line" aria-hidden="true"></div>
-            <div class="rm-card rm-later rm-token">
-              <span class="rm-badge">Later</span>
-              <h3>Spread the fat</h3>
-              <ul>
-                <li>New exchange listings</li>
-                <li>New Fathood games</li>
-                <li>More utility for holders</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </div>
-      <p style="margin: 0; max-width: 44rem; font-size: .95rem; line-height: 1.55; color: #555555">This roadmap is a plan, not a promise. Items, order and timing can change as the project grows, the market moves or the community asks for something better. Nothing here is financial advice.</p>
     </div>
   </section>
 
