@@ -9,15 +9,59 @@ const excerpt = (body) => body.replace(/^##.*$/gm, "").replace(/\s+/g, " ").trim
 const loginMessage = (host, address, nonce, issued) =>
   `${host} wants you to sign in to Hood Talk with your wallet.\n\nAddress: ${address}\nNonce: ${nonce}\nIssued: ${issued}\n\nSigning is free. It doesn’t send a transaction or give access to your funds.`;
 
+// Caller Scoreboard: every coin tagged in a post is a "call". We save the price when the post goes up,
+// then the price-refresh job fills in where it was 1 day, 7 days and 30 days later (see market-refresh.mjs).
+// Calls stay even if the author deletes the post, so nobody can hide their bad calls.
+let callsReady;
+export const ensureCalls = () => (callsReady ||= (async () => {
+  await sql()`create table if not exists calls (post_id text not null, coin_id text not null, author text not null, price float8 not null,
+    at timestamptz not null default now(), p1d float8, p7d float8, p30d float8, primary key (post_id, coin_id))`;
+  await sql()`create index if not exists calls_author on calls (author)`;
+  await sql()`alter table calls enable row level security`;
+})().catch((e) => { callsReady = null; throw e; }));
+
 async function coinTags(ids) {
   if (!ids.length) return {};
-  const rows = await sql()`select id, name, symbol, image from coins where id in ${sql()(ids)}`;
-  return Object.fromEntries(rows.map((r) => [r.id, { id: r.id, name: r.name, symbol: r.symbol, image: r.image }]));
+  const rows = await sql()`select id, name, symbol, image, price from coins where id in ${sql()(ids)}`;
+  return Object.fromEntries(rows.map((r) => [r.id, { id: r.id, name: r.name, symbol: r.symbol, image: r.image, price: r.price == null ? null : Number(r.price) }]));
+}
+async function callPrices(postIds) {
+  if (!postIds.length) return {};
+  try {
+    const [{ t }] = await sql()`select to_regclass('public.calls') as t`;
+    if (!t) return {};
+    const rows = await sql()`select post_id, coin_id, price from calls where post_id in ${sql()(postIds)}`;
+    return Object.fromEntries(rows.map((r) => [`${r.post_id}/${r.coin_id}`, Number(r.price)]));
+  } catch { return {}; }
 }
 async function cards(posts) {
-  const tags = await coinTags([...new Set(posts.flatMap((p) => p.coins))]);
+  const [tags, called] = await Promise.all([coinTags([...new Set(posts.flatMap((p) => p.coins))]), callPrices(posts.map((p) => p.id))]);
+  // each tagged coin shows how far it moved since the post went up
+  const since = (p, t) => { const was = called[`${p.id}/${t.id}`]; return was > 0 && t.price > 0 ? t.price / was - 1 : null; };
   return posts.map((p) => ({ id: p.id, title: p.title, excerpt: excerpt(p.body), author: p.author, authorName: p.author_name || shortAddr(p.author),
-    coins: p.coins.map((id) => tags[id]).filter(Boolean), disclosure: p.disclosure, likes: p.likes, comments: p.comments, createdAt: ms(p.created_at), body: p.body }));
+    coins: p.coins.map((id) => tags[id]).filter(Boolean).map(({ price, ...t }) => ({ ...t, since: since(p, { ...t, price }) })),
+    disclosure: p.disclosure, likes: p.likes, comments: p.comments, createdAt: ms(p.created_at), body: p.body }));
+}
+
+// Top callers: people with at least 3 calls that are a day old or more. A call is a hit if the coin was higher at its latest checkpoint
+// (30 days, else 7 days, else 1 day). Each call's gain counts at most +500% in the average, so one lucky moonshot can't carry a caller.
+async function callers() {
+  const [{ t }] = await sql()`select to_regclass('public.calls') as t`;
+  if (!t) return json({ callers: [] }, 200, { "cache-control": "public, max-age=300" });
+  const rows = await sql()`
+    with c as (
+      select c.author, co.symbol, c.coin_id, c.price, coalesce(c.p30d, c.p7d, c.p1d) as res
+      from calls c join posts p on p.id = c.post_id join coins co on co.id = c.coin_id
+      where c.price > 0 and coalesce(c.p30d, c.p7d, c.p1d) is not null and (not p.removed or p.removed_by = 'author'))
+    select c.author, u.name, count(*)::int as calls, avg((res > price)::int)::float8 as hit,
+      avg(least(res / price - 1, 5))::float8 as avg_gain, max(res / price - 1)::float8 as best,
+      (array_agg(symbol order by res / price desc))[1] as best_symbol, (array_agg(coin_id order by res / price desc))[1] as best_coin
+    from c left join users u on u.address = c.author
+    group by c.author, u.name having count(*) >= 3
+    order by hit desc, avg_gain desc limit 50`;
+  return json({ callers: rows.map((r) => ({ author: r.author, name: r.name || shortAddr(r.author), calls: r.calls, hit: r.hit, avgGain: r.avg_gain,
+    best: r.best, bestSymbol: r.best_symbol, bestCoin: r.best_coin })) }, 200,
+    { "cache-control": "public, max-age=300", "netlify-cdn-cache-control": "public, durable, s-maxage=600, stale-while-revalidate=3600" });
 }
 
 async function feed(u) {
@@ -61,6 +105,7 @@ export default async (req) => {
       }
       if (u.searchParams.has("me")) return json({ me: me ? { address: me.address, name: me.name } : null });
       if (u.searchParams.has("post")) return await one(u.searchParams.get("post"), me);
+      if (u.searchParams.has("callers")) return await callers();
       return await feed(u);
     }
     if (req.method !== "POST") return json({ error: "Method not allowed" }, 405);
@@ -100,6 +145,13 @@ export default async (req) => {
       const coins = want.length ? (await sql()`select id from coins where id in ${sql()(want)}`).map((r) => r.id) : [];
       const id = newId();
       await sql()`insert into posts (id, author, title, body, coins, disclosure) values (${id}, ${me.address}, ${title}, ${body}, ${coins}, ${!!b.disclosure})`;
+      if (coins.length) {
+        try {
+          await ensureCalls();
+          await sql()`insert into calls (post_id, coin_id, author, price)
+            select ${id}, c.id, ${me.address}, c.price from coins c where c.id in ${sql()(coins)} and c.price > 0 on conflict do nothing`;
+        } catch (e) { console.error("saving call failed", e); }
+      }
       return json({ ok: true, id });
     }
 

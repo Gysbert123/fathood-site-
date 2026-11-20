@@ -30,5 +30,15 @@ export default async () => {
     const s = await buildSnapshot();
     console.log("market", JSON.stringify(r), "board", s.coins.length, "of", s.total);
   } catch (e) { console.error("market-refresh failed", e); }
+  try {
+    // Caller Scoreboard: note where each called coin was 1, 7 and 30 days after the call (prices were just refreshed above).
+    const [{ t }] = await sql()`select to_regclass('public.calls') as t`;
+    if (t) {
+      for (const [col, days] of [["p1d", 1], ["p7d", 7], ["p30d", 30]]) {
+        await sql()`update calls c set ${sql()(col)} = co.price from coins co
+          where co.id = c.coin_id and co.price > 0 and c.${sql()(col)} is null and c.at < now() - make_interval(days => ${days})`;
+      }
+    }
+  } catch (e) { console.error("calls update failed", e); }
   return new Response("ok");
 };

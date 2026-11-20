@@ -254,6 +254,26 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 .coinhead{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
 .coinhead .av{width:72px;height:72px;font-size:22px;border-width:3px}
 .coinhead h1{margin:0;font-size:clamp(28px,6vw,46px);line-height:1}
+/* Fat Check: plain-English safety lights on a coin page */
+.fc{margin:0 0 22px;padding:16px 18px}
+.fc-top{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.fc-top h2{margin:0;font-size:20px}
+.fc-light{flex:none;display:inline-flex;align-items:center;gap:8px;border:3px solid var(--ink);border-radius:999px;padding:4px 14px 4px 8px;font-weight:700}
+.fc-dot{flex:none;width:16px;height:16px;border-radius:50%;border:2px solid var(--ink);display:inline-block}
+.fc-green{background:#3FD62A}.fc-yellow{background:#FFC531}.fc-red{background:#E5372F}
+.fc-light.green{background:#E4F9DC}.fc-light.yellow{background:#FFF1C9}.fc-light.red{background:#FFDCD9}
+.fc-verdict{margin:8px 0 0;font-weight:700}
+.fc details{margin-top:10px}.fc summary{cursor:pointer;font-weight:700;text-decoration:underline}
+.fc ul{list-style:none;margin:10px 0 0;padding:0;display:grid;gap:10px}
+.fc li{display:flex;gap:10px;align-items:flex-start;line-height:1.4}.fc li .fc-dot{margin-top:3px}
+.fc .fine{margin-top:10px}
+/* Top callers */
+.callers{list-style:none;margin:16px 0 0;padding:0;display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.callers li{display:flex;align-items:center;gap:12px;padding:12px 14px}
+.crank{font:400 20px/1 'Bowlby One',Impact,sans-serif;min-width:28px;text-align:center}
+.cwho{flex:1;min-width:0}.cwho b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.cwho small{color:var(--mute)}
+.cstat{text-align:right;min-width:62px}.cstat b{display:block;font-size:18px}.cstat small{color:var(--mute);font-size:12px}
+@media (max-width:480px){.callers li{gap:8px;padding:10px}.cstat{min-width:50px}.cstat b{font-size:15px}}
 .grid5{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:18px 0}
 .two{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:22px;align-items:start}
 @media (max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
@@ -273,7 +293,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 .tabs2 button{border:3px solid var(--ink);background:var(--paper);border-radius:12px;padding:10px 18px;font:400 18px 'Bowlby One',Impact,sans-serif;cursor:pointer;box-shadow:3px 3px 0 var(--ink)}
 .tabs2 button[aria-selected="true"]{background:var(--lime)}
 .adpreview{border:3px solid var(--ink);border-radius:12px;overflow:hidden;margin:4px 0 16px}
-.feed{display:grid;gap:16px}
+.feed{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}
 .post{padding:18px;text-decoration:none;display:block;color:inherit}
 .post h3{margin:6px 0 6px;font-size:21px;line-height:1.15}
 .post p{margin:0 0 10px;color:var(--mute)}
@@ -495,6 +515,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
       <div class="tabs" role="tablist" id="talkTabs">
         <button role="tab" data-s="latest" aria-selected="true">Latest</button>
         <button role="tab" data-s="top" aria-selected="false">Popular</button>
+        <button role="tab" data-s="callers" aria-selected="false">Top callers</button>
       </div>
       <div id="whoami" class="small"></div>
     </div>
@@ -516,7 +537,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
       <div class="f" data-k="title"><label for="w-title">Title</label><input id="w-title" maxlength="120"><div class="err"></div></div>
       <div class="f" data-k="body"><label for="w-body">Post</label><textarea id="w-body" maxlength="10000" style="min-height:260px"></textarea><div class="err"></div>
         <div class="hint">Leave an empty line between paragraphs. Start a line with ## for a heading. Links work as they are.</div></div>
-      <div class="f"><label for="w-coin">Tag up to 3 coins</label><input id="w-coin" placeholder="Search the Fat List" autocomplete="off"><div class="suggest" id="w-sug" hidden></div><div class="picked" id="w-picked"></div></div>
+      <div class="f"><label for="w-coin">Tag up to 3 coins</label><p class="small" id="w-coin-note" style="margin:0 0 6px">Each coin you tag counts as a <b>call</b> on the <a href="#talk" data-callers>Top callers</a> board. We save its price now and track it for 30 days.</p><input id="w-coin" placeholder="Search the Fat List" autocomplete="off" aria-describedby="w-coin-note"><div class="suggest" id="w-sug" hidden></div><div class="picked" id="w-picked"></div></div>
       <div class="f"><label class="check"><input type="checkbox" id="w-disc"><span>I hold a coin I’m writing about, or I was paid to write this. Readers will see a disclosure tag.</span></label></div>
       <div class="sum"><div class="hint">Posts that are scams, spam or impersonation get removed.</div><button class="btn" type="submit">Publish</button></div>
       <p class="msg bad" id="w-msg" hidden></p>
@@ -741,6 +762,27 @@ $("#rows").addEventListener("click",e=>{
 $("#rows").addEventListener("contextmenu",e=>{const v=e.target.closest("[data-v]");if(v&&voted.has(v.dataset.v)){e.preventDefault();vote(v.dataset.v,renderRows,true)}});
 $("#rows").addEventListener("keydown",e=>{if(e.key==="Enter"&&e.target.matches("tr[data-id]"))location.hash="#coin/"+e.target.dataset.id});
 
+// ---------- Fat Check (safety lights from GoPlus, explained simply)
+const FC_CHAINS=new Set(["robinhood","solana","ethereum","bsc","base","arbitrum","polygon","avalanche","optimism"]);
+const fcOk=c=>FC_CHAINS.has(c.chain);
+const FC_WORD={green:"Looks OK",yellow:"Be careful",red:"Red flags"};
+async function loadFatCheck(c){
+  const box=$("#fcBox");if(!box)return;
+  let r=null;
+  if(DEMO)r={ok:true,verdict:{light:"yellow",text:"Some things to watch. Read the checks before you buy."},checks:[{light:"green",label:"Can you sell?",text:"A test sell worked. No honeypot found."},{light:"yellow",label:"Liquidity",text:"$9K in the trading pool. That’s thin, so prices can swing hard."}]};
+  else r=await api("/api/fatcheck?id="+encodeURIComponent(c.id)).catch(()=>null);
+  if(!$("#fcBox")||box!==$("#fcBox"))return;
+  if(!r||r.supported===false){box.remove();return}
+  if(!r.ok||!r.verdict){box.innerHTML=`<div class="fc-top"><h2>Fat Check</h2><span class="small">We couldn’t check this coin right now. Try again later, and be careful.</span></div>`;return}
+  const v=r.verdict,dot=l=>`<span class="fc-dot fc-${l}" aria-hidden="true"></span>`;
+  box.innerHTML=`<div class="fc-top"><h2>Fat Check</h2><span class="fc-light ${v.light}">${dot(v.light)}${FC_WORD[v.light]}</span></div>
+    <p class="fc-verdict">${esc(v.text)}</p>
+    <details${v.light==="red"?" open":""}><summary>See the ${r.checks.length} checks</summary>
+      <ul>${r.checks.map(x=>`<li>${dot(x.light)}<span><b>${esc(x.label)}</b> <span class="sr">(${FC_WORD[x.light]})</span><br>${esc(x.text)}</span></li>`).join("")}</ul>
+      <p class="fine">Automatic check using GoPlus Security data. It can miss things and isn’t a guarantee or financial advice. Always check the contract yourself.</p>
+    </details>`;
+}
+
 // ---------- coin page
 const link=(u,label)=>u?`<a href="${esc(u)}" target="_blank" rel="noopener nofollow">${label}</a>`:"";
 async function showCoin(id){
@@ -762,6 +804,7 @@ async function showCoin(id){
     ${c.unclaimed?`<p class="note wait" style="margin-top:16px">${c.claimPending?"Someone has asked to claim this coin. The Fathood team is reviewing it.":`This coin was added automatically. Is it yours? <a href="#add/${esc(c.address)}">Claim it for $${S.claimUsd}</a> to add your logo, description and links.`}</p>`:""}
     <div class="grid5 num"><div class="stat"><span>Price</span><b>${fP(c.price)}</b></div><div class="stat"><span>24h</span><b class="${(c.change||0)>=0?"up":"down"}">${fC(c.change)}</b></div>
       <div class="stat"><span>Market cap</span><b>${fM(c.mcap)}</b></div><div class="stat"><span>Liquidity</span><b>${fM(c.liquidity)}</b></div><div class="stat"><span>24h volume</span><b>${fM(c.volume)}</b></div></div>
+    ${fcOk(c)?`<div class="box fc" id="fcBox" aria-live="polite"><div class="fc-top"><h2>Fat Check</h2><span class="small">Checking this coin…</span></div></div>`:""}
     <div class="two"><div>
       ${chart?`<div class="box panel">${chart}</div>`:""}
       <div class="box panel"><h2>About ${esc(c.name)}</h2><p style="white-space:pre-line;margin:0 0 14px">${esc(c.description||"No description yet.")}</p>
@@ -784,6 +827,7 @@ async function showCoin(id){
   const vf=$("#vf");if(vf)vf.onclick=()=>openPay({kind:"verify",listingId:c.id,title:`Blue tick check for ${c.name}`,usd:S.verifyUsd});
   $("#wc").onclick=()=>{writeCoins=[{id:c.id,name:c.name,symbol:c.symbol,image:c.image}]};
   loadFeed($("#coinFeed"),{coin:c.id},true);
+  if(fcOk(c))loadFatCheck(c);
 }
 
 // ---------- logo upload (shrinks to 256x256 in the browser)
@@ -1306,10 +1350,12 @@ async function signIn(msgEl){
     session={token:j.token,me:j.me};store.set("hoodtalk-session",{token:j.token});renderWho();return true;
   }catch(e){say(e&&e.code===4001?"You cancelled the signature. Signing is free and doesn’t send anything.":"Couldn’t sign in. Unlock your wallet and try again.");return false}
 }
+// how far a tagged coin moved since the post went up
+const sinceTag=c=>c.since==null?"":` <span class="${c.since>=0?"up":"down"}" title="Since this post went up">${c.since>=0?"+":""}${Math.abs(c.since)>=10?Math.round(c.since*100).toLocaleString():(c.since*100).toFixed(c.since*100>-10&&c.since*100<10?1:0)}%</span>`;
 function postCard(p){
   return `<a class="box post" href="#post/${esc(p.id)}"><div class="by">${pav(p.author)}<span>${esc(p.authorName)}</span><time datetime="${new Date(p.createdAt).toISOString()}">${ago(p.createdAt)}</time></div>
     <h3>${esc(p.title)}</h3><p>${esc(p.excerpt)}${p.excerpt.length>=220?"…":""}</p>
-    <div class="meta">${p.coins.map(c=>`<span class="cchip">${av(c)}$${esc(c.symbol)}</span>`).join("")}${p.disclosure?'<span class="disc">Author holds or was paid</span>':""}<span style="margin-left:auto">♥ ${p.likes} · 💬 ${p.comments}</span></div></a>`;
+    <div class="meta">${p.coins.map(c=>`<span class="cchip">${av(c)}$${esc(c.symbol)}${sinceTag(c)}</span>`).join("")}${p.disclosure?'<span class="disc">Author holds or was paid</span>':""}<span style="margin-left:auto">♥ ${p.likes} · 💬 ${p.comments}</span></div></a>`;
 }
 async function getFeed(params){
   if(DEMO){let l=DEMO_POSTS.slice();if(params.coin)l=l.filter(p=>p.coins.some(c=>c.id===params.coin));if(params.sort==="top")l.sort((a,b)=>b.likes-a.likes);return {posts:l.map(p=>({...p,excerpt:p.body.replace(/^##.*$/gm,"").replace(/\s+/g," ").trim().slice(0,220)})),next:null}}
@@ -1324,11 +1370,27 @@ async function loadFeed(el,params,compact,append){
     return j.next;
   }catch(_){el.innerHTML=`<p class="msg bad">Couldn’t load posts. Check your connection.</p>`;return null}
 }
+const pctTxt=v=>v==null?"–":`${v>=0?"+":""}${Math.round(v*100).toLocaleString()}%`;
+async function showCallers(){
+  const el=$("#feed");$("#more").hidden=true;el.innerHTML=`<p class="small">Loading the scoreboard…</p>`;
+  let j;
+  if(DEMO)j={callers:[{author:DEMO_ADDR,name:"crispyhands",calls:7,hit:0.71,avgGain:0.84,best:3.1,bestSymbol:"FATHOOD",bestCoin:null},{author:"0x5551110000000000000000000000000000000222",name:"0x5551…0222",calls:4,hit:0.25,avgGain:-0.31,best:0.12,bestSymbol:"TORCH",bestCoin:null}]};
+  else j=await api("/api/talk?callers=1").catch(()=>null);
+  if(talkSort!=="callers")return;
+  if(!j||!j.callers){el.innerHTML=`<p class="msg bad">Couldn’t load the scoreboard. Check your connection.</p>`;return}
+  const how=`<div class="box panel"><h2 style="margin-top:0">Who actually called it?</h2><p style="margin:0">Every coin you tag in a Hood Talk post is a <b>call</b>. We save the price when your post goes up, then check it after 1 day, 7 days and 30 days. A call is a <b>hit</b> if the coin went up. Deleting a post doesn’t delete the call. You need 3 calls that are at least a day old to show up here.</p></div>`;
+  if(!j.callers.length){el.innerHTML=how+`<div class="empty box">No one has 3 calls yet. <a href="#write">Write a post and tag a coin</a> to make your first call.</div>`;return}
+  el.innerHTML=how+`<ol class="callers">${j.callers.map((c,i)=>`<li class="box"><span class="crank num">${i+1}</span>${pav(c.author)}<div class="cwho"><b>${esc(c.name)}</b><small>${c.calls} calls · best: ${c.bestCoin?`<a href="#coin/${esc(c.bestCoin)}">$${esc(c.bestSymbol)}</a>`:`$${esc(c.bestSymbol||"")}`} <span class="${c.best>=0?"up":"down"}">${pctTxt(c.best)}</span></small></div>
+    <div class="cstat"><b class="num">${Math.round(c.hit*100)}%</b><small>hits</small></div><div class="cstat"><b class="num ${c.avgGain>=0?"up":"down"}">${pctTxt(c.avgGain)}</b><small>average</small></div></li>`).join("")}</ol>
+    <p class="fine">Each call’s gain counts at most +500% in the average, so one lucky moonshot can’t carry a caller. Past calls don’t predict future ones. Not financial advice.</p>`;
+}
 async function showTalk(){
   renderWho();$$("#talkTabs button").forEach(x=>x.setAttribute("aria-selected",String(x.dataset.s===talkSort)));
+  if(talkSort==="callers")return showCallers();
   $("#feed").innerHTML=`<p class="small">Loading posts…</p>`;
   talkNext=await loadFeed($("#feed"),{sort:talkSort});$("#more").hidden=!talkNext;
 }
+document.addEventListener("click",e=>{if(e.target.closest("[data-callers]"))talkSort="callers"});
 $("#talkTabs").onclick=e=>{const b=e.target.closest("button");if(!b)return;talkSort=b.dataset.s;showTalk()};
 $("#more").onclick=async()=>{talkNext=await loadFeed($("#feed"),{sort:"latest",before:talkNext},false,true);$("#more").hidden=!talkNext};
 
@@ -1348,7 +1410,7 @@ async function showPost(id){
   el.innerHTML=`<a class="back" href="#talk">← Hood Talk</a>
     <article class="box article"><div class="by">${pav(p.author)}<span>${esc(p.authorName)}</span><time datetime="${new Date(p.createdAt).toISOString()}">${ago(p.createdAt)}</time></div>
       <h1>${esc(p.title)}</h1>
-      <div class="meta" style="margin-bottom:18px">${p.coins.map(c=>`<a class="cchip" href="#coin/${esc(c.id)}">${av(c)}$${esc(c.symbol)}</a>`).join("")}${p.disclosure?'<span class="disc">Author holds a coin mentioned or was paid to write this</span>':""}</div>
+      <div class="meta" style="margin-bottom:18px">${p.coins.map(c=>`<a class="cchip" href="#coin/${esc(c.id)}">${av(c)}$${esc(c.symbol)}${sinceTag(c)}</a>`).join("")}${p.disclosure?'<span class="disc">Author holds a coin mentioned or was paid to write this</span>':""}</div>
       <div class="body">${renderBody(p.body,p.coins)}</div>
       <div class="actions"><button class="btn white like" id="lk" aria-pressed="${!!p.liked}">♥ ${p.likes}</button>
         ${p.mine?`<button class="btn white" id="del">Delete post</button>`:`<button class="linkbtn" id="rp">Report post</button>`}</div>
