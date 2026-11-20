@@ -137,7 +137,10 @@ export function prices(test) {
   return { packages: pk, boosts: one(BOOSTS, "usd"), verifyUsd: TEST_PRICE_USD, claimUsd: TEST_PRICE_USD, testPrices: true };
 }
 
-export const clean = (s, n) => String(s ?? "").replace(/[\u0000-\u0008\u000b-\u001f<>]/g, "").trim().slice(0, n);
+// Some data sources send names with HTML codes in them ("S&amp;P 500"). Turn those back into the real characters first.
+const ENT = { amp: "&", quot: '"', "#39": "'", "#x27": "'", apos: "'", lt: "<", gt: ">" };
+export const unent = (s) => String(s ?? "").replace(/&(amp|quot|#39|#x27|apos|lt|gt);/g, (_, k) => ENT[k]);
+export const clean = (s, n) => unent(s).replace(/[\u0000-\u0008\u000b-\u001f<>]/g, "").trim().slice(0, n);
 export const cleanUrl = (s) => { const u = clean(s, 300); return /^https:\/\/[^\s/]+\.[^\s]+$/.test(u) ? u : ""; };
 
 export function addrOk(a) {

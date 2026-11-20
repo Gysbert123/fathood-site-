@@ -16,6 +16,16 @@ export default async () => {
     }
   } catch (e) { console.error("vote reset failed", e); }
   try {
+    // One-off: fix coin names saved with HTML codes in them ("S&amp;P 500" -> "S&P 500"). Runs only once.
+    if (!(await db().get("once/name-codes-2026-11-20"))) {
+      const fix = (col) => sql()`update coins set ${sql()(col)} = replace(replace(replace(replace(${sql()(col)}, '&amp;', '&'), '&#39;', chr(39)), '&quot;', '"'), '&#x27;', chr(39))
+        where ${sql()(col)} ~ '&(amp|#39|quot|#x27);'`;
+      const a = await fix("name"), b = await fix("symbol");
+      await db().set("once/name-codes-2026-11-20", String(Date.now()));
+      console.log("fixed names", a.count, "symbols", b.count);
+    }
+  } catch (e) { console.error("name fix failed", e); }
+  try {
     const r = await refreshMarket({ budgetMs: 20000 });
     const s = await buildSnapshot();
     console.log("market", JSON.stringify(r), "board", s.coins.length, "of", s.total);

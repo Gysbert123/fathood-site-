@@ -92,6 +92,15 @@ h1,h2,h3,.disp{font-family:'Bowlby One',Impact,sans-serif;font-weight:400;letter
 .stick.stuck{border-bottom:3px solid var(--ink);box-shadow:0 6px 10px -8px rgba(0,0,0,.35)}
 @media (max-width:700px){.stick.stuck .chiprow{display:none}.stick.stuck{padding-bottom:0}}
 .ddb.nodrop::after{display:none}
+.chip.quiet{border-style:dashed}
+/* Phones: Buy and Sell stay at the bottom of the screen on a coin page. */
+.buybar{display:none}
+@media (max-width:700px){
+  .buybar{display:flex;gap:10px;position:fixed;left:0;right:0;bottom:0;z-index:60;padding:10px 16px calc(10px + env(safe-area-inset-bottom,0px));background:var(--cream);border-top:3px solid var(--ink)}
+  .buybar .btn{flex:1;margin:0}
+  #v-coin .page.hasbar{padding-bottom:120px}
+  #v-coin .page.hasbar #cbuy,#v-coin .page.hasbar #csell{display:none}
+}
 /* Simple view: fewer columns, no sideways scrolling. */
 .tbl.simple table{min-width:0}
 .tbl.simple th:nth-child(6),.tbl.simple td:nth-child(6),.tbl.simple th:nth-child(7),.tbl.simple td:nth-child(7),.tbl.simple th:nth-child(8),.tbl.simple td:nth-child(8){display:none}
@@ -247,7 +256,7 @@ footer .wrap{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:space-bet
 .coinhead h1{margin:0;font-size:clamp(28px,6vw,46px);line-height:1}
 .grid5{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin:18px 0}
 .two{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:22px;align-items:start}
-@media (max-width:860px){.two{grid-template-columns:1fr}}
+@media (max-width:860px){.two{grid-template-columns:minmax(0,1fr)}}
 .panel{padding:18px;margin-bottom:22px}
 .panel h2{margin:0 0 10px;font-size:22px}
 .chart{width:100%;height:420px;border:0;border-radius:12px;display:block;background:var(--soft)}
@@ -625,13 +634,17 @@ function renderAd(){
 setInterval(()=>{if(ads.length>1&&!document.hidden){adIdx++;renderAd()}},8000);
 
 // ---------- coin board
-let tab="trending",chain="robinhood",q="",maxAge=0;
+let tab="trending",chain="robinhood",q="",maxAge=0,showQuiet=false;
+// Quiet = almost no trading in the last 24 hours (under $100), older than 2 days, and not paid for or blue-ticked. Hidden unless you ask; a search still finds them.
+const isQuiet=c=>!c.promo&&!(c.boosts>0)&&!c.verified&&(ageOf(c)??99)>2&&(c.volume||0)<100;
 function buildChips(){
   // Robinhood Chain is home and the default view; Solana is always offered; other chains show once they have coins.
   const present=[...new Set(coins.map(c=>c.chain))].filter(k=>k!=="robinhood"&&k!=="solana"),el=$("#chips");el.innerHTML="";el.hidden=false;
   el.setAttribute("role","group");el.setAttribute("aria-label","Chain");
-  ["robinhood","solana",...present,"all"].forEach(k=>{const b=document.createElement("button");b.className="chip";b.type="button";b.textContent=k==="all"?"All chains":chainName(k).replace(/ Chain$/,"");
-    b.setAttribute("aria-pressed",String(k===chain));b.onclick=()=>{chain=k;[...el.children].forEach(x=>x.setAttribute("aria-pressed",String(x===b)));renderRows()};el.appendChild(b)});
+  ["robinhood","solana",...present,"all"].forEach(k=>{const b=document.createElement("button");b.className="chip";b.type="button";b.dataset.chain=k;b.textContent=k==="all"?"All chains":chainName(k).replace(/ Chain$/,"");
+    b.setAttribute("aria-pressed",String(k===chain));b.onclick=()=>{chain=k;$$("#chips [data-chain]").forEach(x=>x.setAttribute("aria-pressed",String(x===b)));renderRows()};el.appendChild(b)});
+  const qb=document.createElement("button");qb.className="chip quiet";qb.type="button";qb.id="quietBtn";qb.title="Coins with almost no trading in the last 24 hours";
+  qb.onclick=()=>{showQuiet=!showQuiet;renderRows()};el.appendChild(qb);
 }
 const SORT_LAB={mcap_desc:"Market cap ↓",mcap_asc:"Market cap ↑",volume_desc:"Volume ↓",volume_asc:"Volume ↑",price_desc:"Price ↓",price_asc:"Price ↑"};
 function syncSort(){
@@ -687,6 +700,8 @@ function sorted(){
   const pool=[...coins,...searchHits.filter(h=>!coins.some(c=>c.id===h.id))];
   // a search looks across every chain
   let l=pool.filter(c=>(chain==="all"||qq||c.chain===chain)&&(!maxAge||(ageOf(c)!=null&&ageOf(c)*24<=maxAge))&&(!qq||c.name.toLowerCase().includes(qq)||c.symbol.toLowerCase().includes(qq)||c.address.toLowerCase()===qq));
+  quietN=l.filter(isQuiet).length;
+  if(!showQuiet&&!qq)l=l.filter(c=>!isQuiet(c));
   // Trending = trading activity, votes and newness. Gainers = biggest 24h price rise. Boosted coins always lead Trending.
   const score=c=>(c.votes||0)*3+Math.log10((c.volume||0)+1)*20+Math.log10((c.liquidity||0)+1)*8+Math.max(0,2-(ageOf(c)??2))*5;
   const so={trending:(a,b)=>((b.boosts||0)-(a.boosts||0))||score(b)-score(a),gainers:(a,b)=>(b.change??-1e9)-(a.change??-1e9),new:(a,b)=>(ageOf(a)??1e9)-(ageOf(b)??1e9),votes:(a,b)=>(b.votes||0)-(a.votes||0)};
@@ -694,9 +709,11 @@ function sorted(){
   for(const k of ["mcap","volume","price"]){so[k+"_desc"]=by(k,-1);so[k+"_asc"]=by(k,1)}
   l.sort(so[tab]);return tab==="trending"?[...l.filter(c=>c.promo),...l.filter(c=>!c.promo)]:l;
 }
+let quietN=0;
 function renderRows(){
   if($("#sortBtn"))syncSort();
   const l=sorted();let n=0;
+  const qbtn=$("#quietBtn");if(qbtn){qbtn.hidden=!quietN&&!showQuiet;qbtn.textContent=showQuiet?`Hide quiet coins`:`Show ${quietN} quiet coin${quietN===1?"":"s"}`;qbtn.setAttribute("aria-pressed",String(showQuiet))}
   const tn=$("#totalNote");if(tn)tn.textContent=total>coins.length?`Showing the top ${coins.length} of ${total.toLocaleString()} coins. Search by name, symbol or contract address to find any of them.`:"";
   if(!l.length){$("#rows").innerHTML=`<tr><td colspan="9" class="empty">${coins.length?(maxAge?`No coins younger than ${maxAge} hour${maxAge>1?"s":""} match. Try a longer age or Any.`:(chain!=="all"&&!q&&!coins.some(c=>c.chain===chain)?`No ${esc(chainName(chain))} coins on the Fat List yet. <a href="#add">Add the first one</a>.`:"No coins match that. Clear the search or pick another chain.")):'No coins on the Fat List yet. <a href="#add">Add the first one</a>.'}</td></tr>`;return}
   const pin=c=>tab==="trending"&&c.promo;
@@ -758,6 +775,8 @@ async function showCoin(id){
       </div>
     </div></div>`;
   $("#cp").onclick=async e=>{try{await navigator.clipboard.writeText(c.address);e.target.textContent="Copied"}catch(_){e.target.textContent="Press and hold to copy"}};
+  if($("#cbuy")){el.classList.add("hasbar");el.insertAdjacentHTML("beforeend",`<div class="buybar"><button class="btn" data-bb="buy">Buy $${esc(c.symbol)}</button><button class="btn red" data-bb="sell">Sell</button></div>`);
+    el.querySelector(".buybar").onclick=e=>{const b=e.target.closest("[data-bb]");if(b)openBuy(c,b.dataset.bb)}}else el.classList.remove("hasbar");
   const cb=$("#cbuy");if(cb)cb.onclick=()=>openBuy(c);
   const cs=$("#csell");if(cs)cs.onclick=()=>openBuy(c,"sell");
   const cv=$("#cv"),cvr=()=>{cv.textContent="▲ "+c.votes;cv.setAttribute("aria-pressed",String(voted.has(c.id)));cv.title=voted.has(c.id)?"You voted. Right-click (or press and hold) to take your vote back.":"Vote"};
